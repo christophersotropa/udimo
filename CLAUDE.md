@@ -1,6 +1,6 @@
 # Udimo
 
-A browser editor for building Roblox UI with drag and drop. It exports real ScreenGuis as `.rbxmx` files (and a Luau builder script) that drop into Roblox Studio. The full plan is in `docs/PLAN.md`.
+A browser editor for building Roblox UI with drag and drop. It exports real ScreenGuis as `.rbxmx` files (and a Luau builder script) that drop into Roblox Studio. The full plan is in `PLAN.md`.
 
 ## Who I am and how to work with me
 
