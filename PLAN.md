@@ -16,7 +16,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 - [ ] GitHub repo, license, README
 - [ ] Vite + React + TypeScript app scaffolded, Tailwind added
-- [ ] ESLint, Prettier, VS Code settings
+- [ ] Oxlint, Prettier, VS Code settings
 - [ ] CI on GitHub Actions: lint, test, build on every push
 - [ ] "Hello world" deployed to a live URL
 
@@ -83,20 +83,20 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 The MVP needs no server: export runs in the browser, so hosting is free.
 
-| Layer | Choice | Why | Phase |
-| --- | --- | --- | --- |
-| Language | TypeScript | Roblox properties have strict shapes (UDim2, Color3, enums); types catch a bad export before Studio does | 0 |
-| App framework | React + Vite | Fast dev server, simple setup | 0 |
-| App styling | Tailwind CSS | Only for the editor's own panels, not the user's GUI | 0 |
-| Canvas | Plain HTML elements, absolutely positioned | Roblox UI maps almost 1:1 to CSS (UICorner = border-radius, UIStroke = border, UIGradient = linear-gradient, UIListLayout = flexbox) | 1 |
-| State | Zustand + Immer | One small store for the document; Immer patches power undo/redo | 1 |
-| Tests | Vitest | Same config as Vite; used most on the exporter | 0 |
-| Lint and format | ESLint + Prettier | Format on save, catch mistakes early | 0 |
-| Hosting | Vercel, free tier | Every push to `main` redeploys; PRs get preview links | 0 |
-| Studio plugin | Luau + Rojo | Plugin code lives in this repo | 2 |
-| AI service | Python, FastAPI, Pydantic | Pydantic validates AI output against the schema | 3 |
-| Accounts and storage | Supabase (Postgres, auth, storage) | Auth and storage built in | 5 |
-| Collaboration | Yjs | Standard CRDT library for live editing | 6 |
+| Layer                | Choice                                     | Why                                                                                                                                  | Phase |
+| -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| Language             | TypeScript                                 | Roblox properties have strict shapes (UDim2, Color3, enums); types catch a bad export before Studio does                             | 0     |
+| App framework        | React + Vite                               | Fast dev server, simple setup                                                                                                        | 0     |
+| App styling          | Tailwind CSS                               | Only for the editor's own panels, not the user's GUI                                                                                 | 0     |
+| Canvas               | Plain HTML elements, absolutely positioned | Roblox UI maps almost 1:1 to CSS (UICorner = border-radius, UIStroke = border, UIGradient = linear-gradient, UIListLayout = flexbox) | 1     |
+| State                | Zustand + Immer                            | One small store for the document; Immer patches power undo/redo                                                                      | 1     |
+| Tests                | Vitest                                     | Same config as Vite; used most on the exporter                                                                                       | 0     |
+| Lint and format      | Oxlint + Prettier                          | Format on save, catch mistakes early; Oxlint is a much faster ESLint alternative                                                     | 0     |
+| Hosting              | Vercel, free tier                          | Every push to `main` redeploys; PRs get preview links                                                                                | 0     |
+| Studio plugin        | Luau + Rojo                                | Plugin code lives in this repo                                                                                                       | 2     |
+| AI service           | Python, FastAPI, Pydantic                  | Pydantic validates AI output against the schema                                                                                      | 3     |
+| Accounts and storage | Supabase (Postgres, auth, storage)         | Auth and storage built in                                                                                                            | 5     |
+| Collaboration        | Yjs                                        | Standard CRDT library for live editing                                                                                               | 6     |
 
 **The key decision:** the editor's document is a JSON tree that mirrors Roblox instances (class, name, properties, children). The canvas reads it, the exporters write it, the AI produces it, Supabase stores it, Yjs syncs it.
 
@@ -220,20 +220,20 @@ udimo/
 
 ## First sprint
 
-| # | Build | Commit |
-| --- | --- | --- |
-| 1 | Create the repo, security settings, clone | `chore: ignore macOS and env files` |
-| 2 | Scaffold Vite + React + TypeScript in `apps/web`, npm workspaces | `chore: scaffold Vite + React + TypeScript app` |
-| 3 | Tailwind | `chore: add Tailwind CSS` |
-| 4 | ESLint, Prettier, `.vscode/` | `chore: add ESLint, Prettier and VS Code settings` |
-| 5 | GitHub Actions | `ci: lint, test and build on every push` |
-| 6 | Deploy to Vercel | `docs: add live demo link` |
-| 7 | Empty three-panel editor layout | `feat(editor): add three-panel editor layout` |
-| 8 | Document types (node, UDim2, Color3) | `feat(model): define instance tree types` |
-| 9 | Zustand store with tests | `feat(store): add document store with node CRUD` |
-| 10 | Render Frames and TextLabels | `feat(canvas): render Frames and TextLabels` |
-| 11 | `.rbxmx` exporter + Download | `feat(export): download ScreenGui as .rbxmx` |
-| 12 | Select and drag | `feat(canvas): select and drag elements` |
-| 13 | Resize handles | `feat(canvas): resize with handles` |
-| 14 | Properties panel | `feat(panels): add properties panel` |
-| 15 | Undo and redo | `feat(store): undo and redo` |
+| #   | Build                                                            | Commit                                           |
+| --- | ---------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | Create the repo, security settings, clone                        | `chore: ignore macOS and env files`              |
+| 2   | Scaffold Vite + React + TypeScript in `apps/web`, npm workspaces | `chore: scaffold Vite + React + TypeScript app`  |
+| 3   | Tailwind                                                         | `chore: add Tailwind CSS`                        |
+| 4   | Oxlint, Prettier, `.vscode/`                                     | `chore: add Prettier and VS Code settings`       |
+| 5   | GitHub Actions                                                   | `ci: lint, test and build on every push`         |
+| 6   | Deploy to Vercel                                                 | `docs: add live demo link`                       |
+| 7   | Empty three-panel editor layout                                  | `feat(editor): add three-panel editor layout`    |
+| 8   | Document types (node, UDim2, Color3)                             | `feat(model): define instance tree types`        |
+| 9   | Zustand store with tests                                         | `feat(store): add document store with node CRUD` |
+| 10  | Render Frames and TextLabels                                     | `feat(canvas): render Frames and TextLabels`     |
+| 11  | `.rbxmx` exporter + Download                                     | `feat(export): download ScreenGui as .rbxmx`     |
+| 12  | Select and drag                                                  | `feat(canvas): select and drag elements`         |
+| 13  | Resize handles                                                   | `feat(canvas): resize with handles`              |
+| 14  | Properties panel                                                 | `feat(panels): add properties panel`             |
+| 15  | Undo and redo                                                    | `feat(store): undo and redo`                     |
