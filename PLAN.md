@@ -1,0 +1,239 @@
+# Udimo — Project Plan
+
+Udimo is a browser editor for building Roblox UI visually. You drag and drop frames, text and buttons, then download a real `.rbxmx` file that drops into Roblox Studio as a working ScreenGui. No plugin required, no rebuilding by hand.
+
+## Goals
+
+1. **A real file, zero install.** Download `.rbxmx`, or copy one Luau script into the Command Bar. Both put a working ScreenGui in StarterGui.
+2. **Straightforward first.** The editor speaks Roblox (UDim2, Scale vs Offset, AnchorPoint) but hides it until you need it. One "Make responsive" button converts pixel sizes to Scale.
+3. **Free and open source.** Simple landing page, no sign-up, straight into the editor.
+
+## Roadmap
+
+Phase 1 (the MVP) is the only phase that has to be great; everything after it is optional. Phases 0 and 1 run in order, Phases 2 to 4 can be reordered, and Phase 6 needs Phase 5's accounts.
+
+### Phase 0 — Groundwork
+
+- [ ] GitHub repo, license, README
+- [ ] Vite + React + TypeScript app scaffolded, Tailwind added
+- [ ] ESLint, Prettier, VS Code settings
+- [ ] CI on GitHub Actions: lint, test, build on every push
+- [ ] "Hello world" deployed to a live URL
+
+### Phase 1 — MVP editor
+
+**Document and canvas**
+
+- [ ] Instance tree model with a ScreenGui root
+- [ ] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
+- [ ] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
+- [ ] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
+- [ ] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
+- [ ] Snapping and alignment guides against siblings and the parent
+- [ ] Insert palette (click or drag onto the canvas)
+
+**Panels**
+
+- [ ] Explorer tree: drag to reparent or reorder, rename, hide, lock
+- [ ] Properties: Position and Size as UDim2 (Scale + Offset), AnchorPoint, colors with transparency, text, font, TextScaled, ZIndex, LayoutOrder, Visible, image asset ID
+- [ ] "Make responsive" button: convert Offset to Scale (and back)
+
+**Editing basics**
+
+- [ ] Undo and redo, copy and paste, duplicate, delete, wrap selection in a Frame
+- [ ] Autosave in the browser; open and save a project `.json` file
+
+**Export**
+
+- [ ] Download `.rbxmx`
+- [ ] Copy a Luau builder script for the Command Bar
+- [ ] Export warnings (an image with no asset ID, text likely to overflow on phones)
+
+### Phase 2 — Polish and round trip
+
+- Import an existing `.rbxmx` ScreenGui, edit it, export it again
+- Starter templates: shop, HUD, inventory, settings, daily reward
+- Align and distribute for multi-select
+- Reusable components
+- Companion Studio plugin: paste a short code and the GUI lands in StarterGui
+- Shortcut cheat sheet and a first-run tour
+
+### Phase 3 — AI prompt to UI
+
+- Describe a screen, get an editable layout (not an image)
+- "Edit selection with AI"
+- AI output is validated against the same schema the editor uses
+
+### Phase 4 — Interactions, scripts and animation
+
+- Interaction builder: this button opens that frame, tabs, toggles, close buttons
+- Hover and press states
+- Tween animations on a simple timeline (TweenService)
+- A generated LocalScript ships inside the export
+
+### Phase 5 — Accounts and cloud storage
+
+- Sign in, cloud saves with thumbnails and version history, share links
+
+### Phase 6 — Collaboration
+
+- Live multi-user editing with cursors, comments pinned to elements
+
+## Tech stack
+
+The MVP needs no server: export runs in the browser, so hosting is free.
+
+| Layer | Choice | Why | Phase |
+| --- | --- | --- | --- |
+| Language | TypeScript | Roblox properties have strict shapes (UDim2, Color3, enums); types catch a bad export before Studio does | 0 |
+| App framework | React + Vite | Fast dev server, simple setup | 0 |
+| App styling | Tailwind CSS | Only for the editor's own panels, not the user's GUI | 0 |
+| Canvas | Plain HTML elements, absolutely positioned | Roblox UI maps almost 1:1 to CSS (UICorner = border-radius, UIStroke = border, UIGradient = linear-gradient, UIListLayout = flexbox) | 1 |
+| State | Zustand + Immer | One small store for the document; Immer patches power undo/redo | 1 |
+| Tests | Vitest | Same config as Vite; used most on the exporter | 0 |
+| Lint and format | ESLint + Prettier | Format on save, catch mistakes early | 0 |
+| Hosting | Vercel, free tier | Every push to `main` redeploys; PRs get preview links | 0 |
+| Studio plugin | Luau + Rojo | Plugin code lives in this repo | 2 |
+| AI service | Python, FastAPI, Pydantic | Pydantic validates AI output against the schema | 3 |
+| Accounts and storage | Supabase (Postgres, auth, storage) | Auth and storage built in | 5 |
+| Collaboration | Yjs | Standard CRDT library for live editing | 6 |
+
+**The key decision:** the editor's document is a JSON tree that mirrors Roblox instances (class, name, properties, children). The canvas reads it, the exporters write it, the AI produces it, Supabase stores it, Yjs syncs it.
+
+## How export works
+
+One element in the editor's document:
+
+```json
+{
+  "id": "n7",
+  "className": "TextButton",
+  "name": "BuyButton",
+  "parentId": "n3",
+  "props": {
+    "Size": { "xs": 0.4, "xo": 0, "ys": 0, "yo": 48 },
+    "Position": { "xs": 0.5, "xo": 0, "ys": 1, "yo": -24 },
+    "AnchorPoint": { "x": 0.5, "y": 1 },
+    "BackgroundColor3": { "r": 0.2, "g": 0.8, "b": 0.4 },
+    "Text": "Buy"
+  },
+  "modifiers": { "UICorner": { "radius": { "s": 0, "o": 12 } } }
+}
+```
+
+The exporter writes Roblox's XML model format. The root is `<roblox version="4">`, each instance is an `<Item class="..." referent="...">` with typed properties, children nest inside their parent, and enums are written as numbers. Reference: [Rojo's unofficial format spec](https://dom.rojo.space/xml.html).
+
+```xml
+<roblox version="4">
+  <Item class="ScreenGui" referent="RBX1">
+    <Properties><string name="Name">ShopGui</string></Properties>
+    <Item class="Frame" referent="RBX2">
+      <Properties>
+        <string name="Name">Panel</string>
+        <UDim2 name="Size"><XS>0.5</XS><XO>0</XO><YS>0.6</YS><YO>0</YO></UDim2>
+        <Color3 name="BackgroundColor3"><R>0.1</R><G>0.1</G><B>0.15</B></Color3>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>
+```
+
+**Getting it into Studio:**
+
+1. **Insert from File** (recommended): right-click StarterGui in the Explorer, choose Insert from File, pick the `.rbxmx`.
+2. **Drag and drop** into the viewport. It may land in Workspace; move it into StarterGui.
+3. **Luau script:** paste a generated `Instance.new` script into the Command Bar.
+
+**Known limits:** images must already be uploaded to Roblox (`rbxassetid://`); fonts preview with the closest web font; the browser preview is close to Studio, not pixel-identical.
+
+**Testing:** GUIs saved from Studio as `.rbxmx` live in `docs/reference/`, and unit tests compare the exporter's output against them.
+
+### Reference test case: Pet Inventory
+
+Phase 1 is done when Udimo can rebuild this layout and Studio opens the export looking the same. Tests use placeholder shapes, not real game art.
+
+```text
+ScreenGui  PetInventoryGui
+└─ Frame  Window                    UICorner, thick UIStroke
+   ├─ Frame  Header
+   │  ├─ ImageLabel  PawIcon
+   │  └─ TextLabel  Title           outlined text
+   ├─ ImageButton  CloseButton      AnchorPoint (0.5, 0.5) on the top-right corner
+   ├─ ScrollingFrame  PetGrid
+   │  ├─ UIGridLayout               3 columns
+   │  ├─ UIPadding
+   │  └─ Frame  PetSlot  (x6)       UICorner, UIStroke
+   │     ├─ ImageLabel  PetIcon
+   │     ├─ TextLabel  PetName
+   │     └─ Frame  SelectedDot
+   └─ Frame  DetailsPanel           UICorner, UIStroke
+      ├─ TextLabel  PetName
+      ├─ TextLabel  Rarity
+      ├─ ImageLabel  PetImage
+      ├─ TextLabel  Level
+      ├─ Frame  XPBar
+      │  └─ Frame  Fill             Size X (Scale) = progress
+      ├─ TextButton  EquipButton
+      └─ ImageButton  DeleteButton
+```
+
+## Repo layout
+
+Folders are created when their phase starts.
+
+```text
+udimo/
+├─ .github/workflows/ci.yml   # lint + test + build on every push and PR
+├─ .vscode/                   # recommended extensions, format on save
+├─ apps/web/                  # the editor
+│  └─ src/
+│     ├─ app/                 # app shell, layout, routes
+│     ├─ editor/canvas/       # canvas, selection, handles, guides
+│     ├─ editor/panels/       # Explorer, Properties, Palette, Toolbar
+│     ├─ model/               # types, Roblox class definitions, defaults
+│     ├─ store/               # document store, undo/redo
+│     ├─ export/              # rbxmx.ts, luau.ts (+ tests)
+│     ├─ import/              # rbxmx parser (Phase 2)
+│     └─ lib/                 # udim2, color, ids, geometry helpers
+├─ plugin/                    # Roblox Studio plugin (Phase 2)
+├─ services/ai/               # Python FastAPI service (Phase 3)
+├─ docs/                      # this plan, decisions, reference .rbxmx files
+└─ package.json               # npm workspaces root
+```
+
+`model/` and `export/` contain no React, just plain TypeScript, so they're easy to test and reusable later.
+
+## Git workflow
+
+- Commit when one thing you can describe in a sentence is done and the app still runs. Push at the end of every session.
+- Messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `style`. Example: `feat(canvas): drag to move selected element`.
+- Every feature: issue → branch (`feat/resize-handles`) → pull request with "Closes #N" → CI passes → squash merge.
+- Tag a release per phase: `v0.1.0` for Phase 1, `v0.2.0` for Phase 2.
+
+## Security
+
+- Commits use a GitHub noreply email.
+- Secret scanning, push protection and Dependabot are on.
+- `.env*`, `node_modules/`, `dist/` and `.DS_Store` are git-ignored.
+- No keys in code. Anything shipped to the browser is public, so server keys (AI, Supabase service role) live only on the server or in Vercel environment variables.
+- A committed key gets revoked and replaced, not just deleted.
+
+## First sprint
+
+| # | Build | Commit |
+| --- | --- | --- |
+| 1 | Create the repo, security settings, clone | `chore: ignore macOS and env files` |
+| 2 | Scaffold Vite + React + TypeScript in `apps/web`, npm workspaces | `chore: scaffold Vite + React + TypeScript app` |
+| 3 | Tailwind | `chore: add Tailwind CSS` |
+| 4 | ESLint, Prettier, `.vscode/` | `chore: add ESLint, Prettier and VS Code settings` |
+| 5 | GitHub Actions | `ci: lint, test and build on every push` |
+| 6 | Deploy to Vercel | `docs: add live demo link` |
+| 7 | Empty three-panel editor layout | `feat(editor): add three-panel editor layout` |
+| 8 | Document types (node, UDim2, Color3) | `feat(model): define instance tree types` |
+| 9 | Zustand store with tests | `feat(store): add document store with node CRUD` |
+| 10 | Render Frames and TextLabels | `feat(canvas): render Frames and TextLabels` |
+| 11 | `.rbxmx` exporter + Download | `feat(export): download ScreenGui as .rbxmx` |
+| 12 | Select and drag | `feat(canvas): select and drag elements` |
+| 13 | Resize handles | `feat(canvas): resize with handles` |
+| 14 | Properties panel | `feat(panels): add properties panel` |
+| 15 | Undo and redo | `feat(store): undo and redo` |
