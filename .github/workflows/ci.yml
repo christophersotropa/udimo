@@ -1,0 +1,29 @@
+# Runs on GitHub's servers for every push and pull request.
+# If any step fails, the commit gets a red X on GitHub.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Read-only access to the repo: CI only needs to check code, never change it.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Installs the exact versions from package-lock.json.
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build
