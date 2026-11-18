@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createId } from '../lib/ids.ts'
 import { createEmptyDocument } from '../model/document.ts'
+import { isInside } from '../model/tree.ts'
 import type {
   ClassName,
   NodeId,
@@ -15,6 +16,13 @@ export type ElementClassName = Exclude<ClassName, 'ScreenGui'>
 
 export type DocumentState = {
   document: UiDocument
+  // Ids of the selected elements, in the order they were selected. This is
+  // editor state, not part of the document: it's never exported.
+  selection: NodeId[]
+  // Selects one element. With `additive` (Shift-click) it's added to the
+  // selection instead, or removed if it was already selected.
+  select: (id: NodeId, additive?: boolean) => void
+  clearSelection: () => void
   // Replaces the whole document, e.g. when opening a project file.
   loadDocument: (document: UiDocument) => void
   // Adds a new element as the last child of `parentId` and returns its id.
@@ -47,16 +55,6 @@ function assertNotRoot(doc: UiDocument, id: NodeId, action: string) {
   if (id === doc.rootId) throw new Error(`Cannot ${action} the root ScreenGui`)
 }
 
-// True if `id` is `ancestorId` itself or sits anywhere inside it.
-function isInside(doc: UiDocument, id: NodeId, ancestorId: NodeId): boolean {
-  let current: NodeId | null = id
-  while (current !== null) {
-    if (current === ancestorId) return true
-    current = getNode(doc, current).parentId
-  }
-  return false
-}
-
 function removeFromParent(doc: UiDocument, node: UiNode) {
   if (node.parentId === null) return
   const parent = getNode(doc, node.parentId)
@@ -72,10 +70,32 @@ export function createDocumentStore(
   return create<DocumentState>()(
     immer((set) => ({
       document: initialDocument,
+      selection: [],
+
+      select: (id, additive = false) => {
+        set((state) => {
+          getNode(state.document, id) // throws if the id doesn't exist
+          assertNotRoot(state.document, id, 'select')
+          if (!additive) {
+            state.selection = [id]
+          } else if (state.selection.includes(id)) {
+            state.selection = state.selection.filter((other) => other !== id)
+          } else {
+            state.selection.push(id)
+          }
+        })
+      },
+
+      clearSelection: () => {
+        set((state) => {
+          state.selection = []
+        })
+      },
 
       loadDocument: (document) => {
         set((state) => {
           state.document = document
+          state.selection = [] // old ids mean nothing in the new document
         })
       },
 
@@ -147,6 +167,8 @@ export function createDocumentStore(
             toDelete.push(...current.children)
             delete doc.nodes[current.id]
           }
+          // Deleted elements can't stay selected.
+          state.selection = state.selection.filter((other) => doc.nodes[other])
         })
       },
     })),

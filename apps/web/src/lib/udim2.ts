@@ -10,6 +10,16 @@ export function udimToCss(scale: number, offset: number): string {
   return `calc(${scale * 100}% ${sign} ${Math.abs(offset)}px)`
 }
 
+// A Position moved by (dx, dy) game pixels. Only Offset changes, like
+// dragging in Studio, and it's rounded because Roblox offsets are whole pixels.
+export function addOffset(position: UDim2, dx: number, dy: number): UDim2 {
+  return {
+    ...position,
+    xo: Math.round(position.xo + dx),
+    yo: Math.round(position.yo + dy),
+  }
+}
+
 export type BoxCss = {
   left: string
   top: string
