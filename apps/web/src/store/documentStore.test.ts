@@ -27,8 +27,9 @@ function setup() {
   const store = createDocumentStore()
   const actions = store.getState()
   const doc = () => store.getState().document
+  const selection = () => store.getState().selection
   const rootId = doc().rootId
-  return { actions, doc, rootId }
+  return { actions, doc, selection, rootId }
 }
 
 describe('document store', () => {
@@ -172,5 +173,63 @@ describe('document store', () => {
 
     expect(doc()).not.toBe(before)
     expect(before.nodes[rootId].children).toEqual([])
+  })
+
+  describe('selection', () => {
+    it('starts empty', () => {
+      expect(setup().selection()).toEqual([])
+    })
+
+    it('select replaces the selection', () => {
+      const { actions, selection, rootId } = setup()
+      const a = actions.addNode(rootId, 'Frame')
+      const b = actions.addNode(rootId, 'Frame')
+      actions.select(a)
+      actions.select(b)
+      expect(selection()).toEqual([b])
+    })
+
+    it('additive select adds, and removes if already selected', () => {
+      const { actions, selection, rootId } = setup()
+      const a = actions.addNode(rootId, 'Frame')
+      const b = actions.addNode(rootId, 'Frame')
+      actions.select(a)
+      actions.select(b, true)
+      expect(selection()).toEqual([a, b])
+      actions.select(a, true)
+      expect(selection()).toEqual([b])
+    })
+
+    it('clearSelection empties it', () => {
+      const { actions, selection, rootId } = setup()
+      actions.select(actions.addNode(rootId, 'Frame'))
+      actions.clearSelection()
+      expect(selection()).toEqual([])
+    })
+
+    it('refuses the root and unknown ids', () => {
+      const { actions, rootId } = setup()
+      expect(() => actions.select(rootId)).toThrow('root')
+      expect(() => actions.select('nope')).toThrow('No node')
+    })
+
+    it('deleting a node also unselects it and its children', () => {
+      const { actions, selection, rootId } = setup()
+      const keep = actions.addNode(rootId, 'Frame')
+      const parent = actions.addNode(rootId, 'Frame')
+      const child = actions.addNode(parent, 'Frame')
+      actions.select(keep)
+      actions.select(child, true)
+
+      actions.deleteNode(parent)
+      expect(selection()).toEqual([keep])
+    })
+
+    it('loadDocument clears it', () => {
+      const { actions, selection, rootId } = setup()
+      actions.select(actions.addNode(rootId, 'Frame'))
+      actions.loadDocument(createDocumentStore().getState().document)
+      expect(selection()).toEqual([])
+    })
   })
 })

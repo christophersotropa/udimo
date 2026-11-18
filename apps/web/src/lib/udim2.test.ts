@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { boxCss, udimToCss } from './udim2.ts'
+import { addOffset, boxCss, udimToCss } from './udim2.ts'
+
+describe('addOffset', () => {
+  it('moves Offset only, keeping Scale', () => {
+    expect(addOffset({ xs: 0.5, xo: 10, ys: 1, yo: -24 }, 30, -6)).toEqual({
+      xs: 0.5,
+      xo: 40,
+      ys: 1,
+      yo: -30,
+    })
+  })
+
+  it('rounds to whole pixels', () => {
+    expect(addOffset({ xs: 0, xo: 0, ys: 0, yo: 0 }, 2.4, 2.6)).toEqual({
+      xs: 0,
+      xo: 2,
+      ys: 0,
+      yo: 3,
+    })
+  })
+})
 
 describe('udimToCss', () => {
   it('uses a plain percentage when there is no offset', () => {

@@ -9,6 +9,7 @@ import { nodeStyle } from './nodeStyle.ts'
 // element re-renders just that element.
 export function NodeView({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
+  const isSelected = useDocumentStore((state) => state.selection.includes(id))
   if (!node) return null
 
   const children = node.children.map((childId) => (
@@ -20,8 +21,17 @@ export function NodeView({ id }: { id: NodeId }) {
     return <div className="absolute inset-0">{children}</div>
   }
 
+  // An outline is drawn outside the element without changing its size,
+  // so selecting never shifts the layout.
+  const style = isSelected
+    ? {
+        ...nodeStyle(node),
+        outline: 'calc(2px / var(--canvas-scale)) solid rgb(59 130 246)',
+      }
+    : nodeStyle(node)
+
   return (
-    <div style={nodeStyle(node)} data-node-id={node.id} title={node.name}>
+    <div style={style} data-node-id={node.id} title={node.name}>
       {node.className === 'TextLabel' && <span>{resolveProps(node).Text}</span>}
       {children}
     </div>
