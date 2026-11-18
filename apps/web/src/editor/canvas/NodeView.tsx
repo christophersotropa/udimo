@@ -2,6 +2,7 @@ import { resolveProps } from '../../model/defaults.ts'
 import type { NodeId } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { nodeStyle } from './nodeStyle.ts'
+import { ResizeHandles } from './ResizeHandles.tsx'
 
 // Draws one node, then draws each of its children inside it, and so on down
 // the tree. A component that renders itself like this is called recursive.
@@ -10,6 +11,10 @@ import { nodeStyle } from './nodeStyle.ts'
 export function NodeView({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const isSelected = useDocumentStore((state) => state.selection.includes(id))
+  // Resize handles only when this is the one and only selected element.
+  const showHandles = useDocumentStore(
+    (state) => state.selection.length === 1 && state.selection[0] === id,
+  )
   if (!node) return null
 
   const children = node.children.map((childId) => (
@@ -34,6 +39,7 @@ export function NodeView({ id }: { id: NodeId }) {
     <div style={style} data-node-id={node.id} title={node.name}>
       {node.className === 'TextLabel' && <span>{resolveProps(node).Text}</span>}
       {children}
+      {showHandles && <ResizeHandles />}
     </div>
   )
 }
