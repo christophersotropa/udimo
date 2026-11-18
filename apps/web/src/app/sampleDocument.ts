@@ -10,6 +10,7 @@ export function createSampleDocument(): UiDocument {
   const { addNode, renameNode } = store.getState()
   const rootId = store.getState().document.rootId
   const white = color3FromRgb(255, 255, 255)
+  renameNode(rootId, 'ShopGui') // also the downloaded file's name
 
   // Offset only: a fixed 260 x 60 pixel box, 24 pixels from the top-left corner.
   const coins = addNode(rootId, 'TextLabel', {
