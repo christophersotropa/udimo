@@ -1,5 +1,6 @@
+import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import type { ClassName, NodeId, Props, UDim2 } from '../../model/types.ts'
+import type { NodeId, Props, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
   CheckboxField,
@@ -10,9 +11,6 @@ import {
   TextField,
 } from './fields.tsx'
 import { Panel } from './Panel.tsx'
-
-const TEXT_CLASSES: ClassName[] = ['TextLabel', 'TextButton', 'TextBox']
-const IMAGE_CLASSES: ClassName[] = ['ImageLabel', 'ImageButton']
 
 // Shows and edits the properties of the selected element.
 export function PropertiesPanel() {
@@ -178,7 +176,7 @@ function NodeProperties({ id }: { id: NodeId }) {
         </Row>
       </Section>
 
-      {TEXT_CLASSES.includes(node.className) && (
+      {isTextClass(node.className) && (
         <Section title="Text">
           <Row label="Text">
             <TextField
@@ -215,7 +213,7 @@ function NodeProperties({ id }: { id: NodeId }) {
         </Section>
       )}
 
-      {IMAGE_CLASSES.includes(node.className) && (
+      {isImageClass(node.className) && (
         <Section title="Image">
           <Row label="Image">
             <TextField
