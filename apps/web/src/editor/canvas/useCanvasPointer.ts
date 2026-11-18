@@ -65,6 +65,12 @@ export function useCanvasPointer(scale: number) {
     if (event.button !== 0) return // left button only
     const clicked = event.target as Element
 
+    // If a Properties box is mid-edit, finish it now: blurring it saves the
+    // typed value to the element it belongs to, before the selection changes.
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+
     // ---- A resize handle? (They sit inside the selected element.)
     const handleEl = clicked.closest<HTMLElement>('[data-handle-x]')
     const handleOwner = handleEl?.closest<HTMLElement>('[data-node-id]')
@@ -108,12 +114,12 @@ export function useCanvasPointer(scale: number) {
       store.select(id)
     }
 
-    const { document, selection } = useDocumentStore.getState()
+    const { document: doc, selection } = useDocumentStore.getState()
     if (!selection.includes(id)) return // Shift-click just unselected it
 
     const startPositions = new Map<NodeId, UDim2>()
-    for (const nodeId of topLevelNodes(document, selection)) {
-      startPositions.set(nodeId, resolveProps(document.nodes[nodeId]).Position)
+    for (const nodeId of topLevelNodes(doc, selection)) {
+      startPositions.set(nodeId, resolveProps(doc.nodes[nodeId]).Position)
     }
     beginDrag(event, { kind: 'move', startPositions })
   }
