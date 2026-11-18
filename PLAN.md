@@ -14,17 +14,17 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 ### Phase 0 — Groundwork
 
-- [ ] GitHub repo, license, README
-- [ ] Vite + React + TypeScript app scaffolded, Tailwind added
-- [ ] Oxlint, Prettier, VS Code settings
-- [ ] CI on GitHub Actions: lint, test, build on every push
-- [ ] "Hello world" deployed to a live URL
+- [x] GitHub repo, license, README
+- [x] Vite + React + TypeScript app scaffolded, Tailwind added
+- [x] Oxlint, Prettier, VS Code settings
+- [x] CI on GitHub Actions: lint, test, build on every push
+- [x] "Hello world" deployed to a live URL
 
 ### Phase 1 — MVP editor
 
 **Document and canvas**
 
-- [ ] Instance tree model with a ScreenGui root
+- [x] Instance tree model with a ScreenGui root
 - [ ] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
 - [ ] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
 - [ ] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
@@ -45,7 +45,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 **Export**
 
-- [ ] Download `.rbxmx`
+- [x] Download `.rbxmx`
 - [ ] Copy a Luau builder script for the Command Bar
 - [ ] Export warnings (an image with no asset ID, text likely to overflow on phones)
 
@@ -237,3 +237,28 @@ udimo/
 | 13  | Resize handles                                                   | `feat(canvas): resize with handles`              |
 | 14  | Properties panel                                                 | `feat(panels): add properties panel`             |
 | 15  | Undo and redo                                                    | `feat(store): undo and redo`                     |
+
+## Second sprint
+
+Finishes Phase 1. Each build that adds a class or modifier starts by saving a reference `.rbxmx` from Studio into `docs/reference/`, and its golden test checks the exporter against it.
+
+| #   | Build                                                              | Commit                                                |
+| --- | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| 16  | Insert palette: click to add a Frame or TextLabel                  | `feat(panels): add insert palette`                    |
+| 17  | Keyboard: delete, duplicate, arrow keys to nudge                   | `feat(editor): delete, duplicate and nudge`           |
+| 18  | Explorer tree: select, rename, hide, lock                          | `feat(panels): add explorer tree`                     |
+| 19  | Explorer drag and drop: reparent and reorder                       | `feat(panels): drag to reparent in explorer`          |
+| 20  | Autosave in the browser; open and save a project `.json`           | `feat(store): autosave and project files`             |
+| 21  | Copy and paste; wrap selection in a Frame                          | `feat(editor): copy, paste and wrap in Frame`         |
+| 22  | TextButton and TextBox                                             | `feat(canvas): add TextButton and TextBox`            |
+| 23  | ImageLabel, ImageButton and ScrollingFrame                         | `feat(canvas): add images and ScrollingFrame`         |
+| 24  | Modifiers in the model; UICorner and UIStroke                      | `feat(model): add UICorner and UIStroke`              |
+| 25  | UIGradient, UIPadding, UIAspectRatioConstraint                     | `feat(model): add gradient, padding and aspect ratio` |
+| 26  | UIListLayout and UIGridLayout                                      | `feat(canvas): add list and grid layouts`             |
+| 27  | Device presets (PC, tablet, phone), zoom and pan                   | `feat(canvas): device presets, zoom and pan`          |
+| 28  | Snapping and alignment guides                                      | `feat(canvas): snap to siblings and parent`           |
+| 29  | "Make responsive": Offset to Scale and back                        | `feat(panels): add make responsive button`            |
+| 30  | Fonts and TextScaled                                               | `feat(canvas): fonts and TextScaled`                  |
+| 31  | Luau builder script for the Command Bar                            | `feat(export): copy Luau builder script`              |
+| 32  | Export warnings                                                    | `feat(export): warn about common export problems`     |
+| 33  | Rebuild the Pet Inventory reference; fix what it finds; tag v0.1.0 | `test: rebuild the Pet Inventory reference`           |
