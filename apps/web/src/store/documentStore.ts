@@ -15,6 +15,8 @@ export type ElementClassName = Exclude<ClassName, 'ScreenGui'>
 
 export type DocumentState = {
   document: UiDocument
+  // Replaces the whole document, e.g. when opening a project file.
+  loadDocument: (document: UiDocument) => void
   // Adds a new element as the last child of `parentId` and returns its id.
   addNode: (
     parentId: NodeId,
@@ -70,6 +72,12 @@ export function createDocumentStore(
   return create<DocumentState>()(
     immer((set) => ({
       document: initialDocument,
+
+      loadDocument: (document) => {
+        set((state) => {
+          state.document = document
+        })
+      },
 
       addNode: (parentId, className, props = {}) => {
         const id = createId()

@@ -38,6 +38,15 @@ describe('document store', () => {
     expect(doc().nodes[rootId].className).toBe('ScreenGui')
   })
 
+  it('loadDocument replaces the whole document', () => {
+    const { actions, doc } = setup()
+    const other = createDocumentStore()
+    other.getState().addNode(other.getState().document.rootId, 'Frame')
+
+    actions.loadDocument(other.getState().document)
+    expect(doc()).toEqual(other.getState().document)
+  })
+
   describe('addNode', () => {
     it('adds a child named after its class and returns its id', () => {
       const { actions, doc, rootId } = setup()
