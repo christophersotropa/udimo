@@ -1,6 +1,6 @@
+import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
 import type {
-  ClassName,
   Color3,
   NodeId,
   UDim2,
@@ -14,9 +14,6 @@ import type {
 // Like Studio, it writes every supported property in full, with defaults
 // filled in, instead of leaving any out. So the file never depends on what
 // Roblox assumes for a missing property.
-
-const TEXT_CLASSES: ClassName[] = ['TextLabel', 'TextButton', 'TextBox']
-const IMAGE_CLASSES: ClassName[] = ['ImageLabel', 'ImageButton']
 
 // Enum values are written as numbers ("tokens"). Enum.ZIndexBehavior.Sibling = 1:
 // children draw above their parent, which is how the canvas draws them too.
@@ -86,7 +83,7 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
     int('ZIndex', p.ZIndex),
   )
 
-  if (TEXT_CLASSES.includes(node.className)) {
+  if (isTextClass(node.className)) {
     tags.push(
       DEFAULT_FONT,
       string('Text', p.Text),
@@ -96,7 +93,7 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
     )
   }
 
-  if (IMAGE_CLASSES.includes(node.className)) {
+  if (isImageClass(node.className)) {
     tags.push(content('Image', p.Image))
   }
 
