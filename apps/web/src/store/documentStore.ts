@@ -268,5 +268,8 @@ export function createDocumentStore(
   )
 }
 
+// The type of a store built by createDocumentStore, for functions that take one.
+export type DocumentStore = ReturnType<typeof createDocumentStore>
+
 // The one store the editor uses. In React: useDocumentStore((s) => s.document)
 export const useDocumentStore = createDocumentStore()

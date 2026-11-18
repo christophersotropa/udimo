@@ -1,0 +1,106 @@
+import { addOffset } from '../lib/udim2.ts'
+import { resolveProps } from '../model/defaults.ts'
+import { topLevelNodes } from '../model/tree.ts'
+import type { NodeId, UiDocument } from '../model/types.ts'
+import type { DocumentStore, ElementClassName } from './documentStore.ts'
+
+// Editor commands: actions on "whatever is selected" that may take several
+// store calls. Each takes the store as an argument, so tests can run them on
+// a fresh store. Each one is a single undo step.
+
+// How far a duplicate is shifted from its original, so you can see it.
+const DUPLICATE_OFFSET = 20
+
+// Runs `work` as one undo step. `finally` makes sure the group ends even if
+// something throws halfway, so later edits don't get swallowed into it.
+function asOneStep(store: DocumentStore, work: () => void) {
+  store.getState().beginGroup()
+  try {
+    work()
+  } finally {
+    store.getState().endGroup()
+  }
+}
+
+// The selected elements, minus any that sit inside another selected one.
+// Deleting or moving the parent already covers its children.
+function selectedTopLevel(store: DocumentStore): NodeId[] {
+  const { document, selection } = store.getState()
+  return topLevelNodes(document, selection)
+}
+
+export function deleteSelection(store: DocumentStore) {
+  const ids = selectedTopLevel(store)
+  if (ids.length === 0) return
+  asOneStep(store, () => {
+    for (const id of ids) store.getState().deleteNode(id)
+  })
+}
+
+// Moves each selected element by (dx, dy) pixels of Offset.
+export function nudgeSelection(store: DocumentStore, dx: number, dy: number) {
+  const ids = selectedTopLevel(store)
+  if (ids.length === 0) return
+  asOneStep(store, () => {
+    const { document, updateProps } = store.getState()
+    for (const id of ids) {
+      const position = resolveProps(document.nodes[id]).Position
+      updateProps(id, { Position: addOffset(position, dx, dy) })
+    }
+  })
+}
+
+// Copies a node and everything inside it under `parentId`, with new ids.
+// It reads from `sourceDoc`, a snapshot taken before copying began, so the
+// copies it makes along the way can never be copied again.
+function copySubtree(
+  store: DocumentStore,
+  sourceDoc: UiDocument,
+  sourceId: NodeId,
+  parentId: NodeId,
+): NodeId {
+  const source = sourceDoc.nodes[sourceId]
+  const { addNode, renameNode } = store.getState()
+  // Only the root is a ScreenGui, and the root is never copied.
+  const copyId = addNode(
+    parentId,
+    source.className as ElementClassName,
+    source.props,
+  )
+  renameNode(copyId, source.name) // Roblox keeps the name on a duplicate
+  for (const childId of source.children) {
+    copySubtree(store, sourceDoc, childId, copyId)
+  }
+  return copyId
+}
+
+// Duplicates each selected element (with its children) right after the
+// original, shifted a little, then selects the copies.
+export function duplicateSelection(store: DocumentStore) {
+  const ids = selectedTopLevel(store)
+  if (ids.length === 0) return
+  const sourceDoc = store.getState().document
+
+  asOneStep(store, () => {
+    const copies = ids.map((id) => {
+      const original = sourceDoc.nodes[id]
+      const parentId = original.parentId!
+      const copyId = copySubtree(store, sourceDoc, id, parentId)
+
+      // addNode put the copy last; move it to just after the original,
+      // so it sits next to it in the Explorer and draws just above it.
+      const { document, moveNode, updateProps } = store.getState()
+      const index = document.nodes[parentId].children.indexOf(id) + 1
+      moveNode(copyId, parentId, index)
+
+      const position = resolveProps(original).Position
+      updateProps(copyId, {
+        Position: addOffset(position, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
+      })
+      return copyId
+    })
+
+    const { select } = store.getState()
+    copies.forEach((copyId, i) => select(copyId, i > 0))
+  })
+}
