@@ -133,13 +133,17 @@ export function useCanvasPointer(scale: number) {
     if (!current.started && Math.hypot(screenDx, screenDy) < DRAG_THRESHOLD) {
       return
     }
-    current.started = true
+    const { updateProps, beginGroup } = useDocumentStore.getState()
+    if (!current.started) {
+      current.started = true
+      // The many small moves of one drag become a single undo step.
+      beginGroup()
+    }
 
     // Always measure from where the drag began, not from the last move, so
     // rounding to whole pixels never adds up into drift.
     const dx = screenDx / scale
     const dy = screenDy / scale
-    const { updateProps } = useDocumentStore.getState()
 
     if (current.kind === 'move') {
       for (const [id, start] of current.startPositions) {
@@ -157,7 +161,9 @@ export function useCanvasPointer(scale: number) {
   }
 
   function endDrag(event: ReactPointerEvent<HTMLElement>) {
-    if (drag.current?.pointerId === event.pointerId) drag.current = null
+    if (drag.current?.pointerId !== event.pointerId) return
+    if (drag.current.started) useDocumentStore.getState().endGroup()
+    drag.current = null
   }
 
   return {
