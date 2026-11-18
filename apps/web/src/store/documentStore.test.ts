@@ -232,4 +232,115 @@ describe('document store', () => {
       expect(selection()).toEqual([])
     })
   })
+
+  describe('undo and redo', () => {
+    it('undo reverts the last edit, redo puts it back', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      actions.renameNode(id, 'Window')
+
+      actions.undo()
+      expect(doc().nodes[id].name).toBe('Frame')
+      actions.undo()
+      expect(doc().nodes[id]).toBeUndefined()
+
+      actions.redo()
+      actions.redo()
+      expect(doc().nodes[id].name).toBe('Window')
+      expectConsistent(doc())
+    })
+
+    it('undo and redo do nothing when there is nothing to do', () => {
+      const { actions, doc } = setup()
+      const before = doc()
+      actions.undo()
+      actions.redo()
+      expect(doc()).toBe(before)
+    })
+
+    it('a new edit after undo clears redo', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      actions.renameNode(id, 'A')
+      actions.undo()
+      actions.renameNode(id, 'B')
+
+      actions.redo() // nothing to redo: 'A' is gone for good
+      expect(doc().nodes[id].name).toBe('B')
+    })
+
+    it('skips edits that change nothing', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'TextLabel', { TextSize: 20 })
+      actions.renameNode(id, 'TextLabel') // same name
+      actions.updateProps(id, { TextSize: 20 }) // same value
+
+      actions.undo() // undoes the addNode, not a no-op
+      expect(doc().nodes[id]).toBeUndefined()
+    })
+
+    it('a failed edit saves no undo step', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      expect(() => actions.deleteNode(rootId)).toThrow()
+
+      actions.undo() // undoes the addNode
+      expect(doc().nodes[id]).toBeUndefined()
+    })
+
+    it('a group of edits is undone in one step', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+
+      actions.beginGroup()
+      for (let x = 1; x <= 5; x++) {
+        actions.updateProps(id, { Position: { xs: 0, xo: x, ys: 0, yo: 0 } })
+      }
+      actions.endGroup()
+      expect(doc().nodes[id].props.Position?.xo).toBe(5)
+
+      actions.undo()
+      expect(doc().nodes[id].props.Position).toBeUndefined()
+      actions.redo()
+      expect(doc().nodes[id].props.Position?.xo).toBe(5)
+    })
+
+    it('a group that changed nothing saves no step', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      actions.beginGroup()
+      actions.endGroup()
+
+      actions.undo() // undoes the addNode
+      expect(doc().nodes[id]).toBeUndefined()
+    })
+
+    it('unselects elements that undo removes', () => {
+      const { actions, selection, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      actions.select(id)
+      actions.undo()
+      expect(selection()).toEqual([])
+    })
+
+    it('selecting is not an undo step', () => {
+      const { actions, doc, rootId } = setup()
+      const id = actions.addNode(rootId, 'Frame')
+      actions.select(id)
+      actions.clearSelection()
+
+      actions.undo() // undoes the addNode
+      expect(doc().nodes[id]).toBeUndefined()
+    })
+
+    it('loadDocument clears the history', () => {
+      const { actions, doc, rootId } = setup()
+      actions.addNode(rootId, 'Frame')
+      const fresh = createDocumentStore().getState().document
+      actions.loadDocument(fresh)
+
+      actions.undo()
+      expect(doc()).toBe(fresh)
+    })
+  })
 })

@@ -2,8 +2,17 @@ import { type ReactNode, useState } from 'react'
 import { color3ToHex, hexToColor3 } from '../../lib/color.ts'
 import { clamp, formatNumber, parseNumberInput } from '../../lib/numbers.ts'
 import type { Color3 } from '../../model/types.ts'
+import { useDocumentStore } from '../../store/documentStore.ts'
 
 // Small building blocks for the Properties panel.
+
+// Boxes that save on every keystroke (text) or every color-picker drag would
+// otherwise make one undo step per tiny change. Focus starts an undo group
+// and blur ends it, so one visit to a box is one undo step.
+const undoGroupWhileFocused = {
+  onFocus: () => useDocumentStore.getState().beginGroup(),
+  onBlur: () => useDocumentStore.getState().endGroup(),
+}
 
 const inputClass =
   'w-full min-w-0 rounded bg-zinc-800 px-1.5 py-1 text-xs text-zinc-100 ring-1 ring-zinc-700 outline-none focus:ring-blue-500'
@@ -111,6 +120,7 @@ export function TextField({
       className={inputClass}
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      {...undoGroupWhileFocused}
     />
   )
 }
@@ -154,6 +164,7 @@ export function ColorField({
         className="h-6 w-8 cursor-pointer rounded bg-transparent"
         value={hex}
         onChange={(event) => onChange(hexToColor3(event.target.value))}
+        {...undoGroupWhileFocused}
       />
       <span className="font-mono text-xs text-zinc-400">{hex}</span>
     </label>
