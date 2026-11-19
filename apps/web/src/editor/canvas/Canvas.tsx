@@ -133,7 +133,7 @@ export function Canvas() {
           {Math.round(view.zoom * 100)}%
         </p>
         <div
-          className="relative overflow-hidden bg-zinc-800"
+          className="relative overflow-hidden bg-screen"
           style={
             {
               width: screen.width,

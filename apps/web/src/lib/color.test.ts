@@ -4,6 +4,7 @@ import {
   color3ToCss,
   color3ToHex,
   hexToColor3,
+  parseHexColor,
 } from './color.ts'
 
 describe('hex colors', () => {
@@ -35,5 +36,22 @@ describe('color3ToCss', () => {
   it('turns Roblox transparency into CSS alpha', () => {
     expect(color3ToCss({ r: 0, g: 0, b: 0 }, 0.25)).toBe('rgb(0 0 0 / 0.75)')
     expect(color3ToCss({ r: 0, g: 0, b: 0 }, 1)).toBe('rgb(0 0 0 / 0)')
+  })
+})
+
+describe('parseHexColor', () => {
+  it('reads hex codes with or without #, in any case', () => {
+    expect(parseHexColor('#FF0000')).toEqual({ r: 1, g: 0, b: 0 })
+    expect(parseHexColor(' 00ff00 ')).toEqual({ r: 0, g: 1, b: 0 })
+  })
+
+  it('doubles the digits of a 3-digit code, like CSS', () => {
+    expect(parseHexColor('#fff')).toEqual({ r: 1, g: 1, b: 1 })
+  })
+
+  it("returns null for anything that isn't a hex color", () => {
+    expect(parseHexColor('red')).toBeNull()
+    expect(parseHexColor('#12345')).toBeNull()
+    expect(parseHexColor('')).toBeNull()
   })
 })

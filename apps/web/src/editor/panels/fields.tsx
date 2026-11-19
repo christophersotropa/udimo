@@ -1,8 +1,9 @@
 import { type ReactNode, useState } from 'react'
-import { color3ToHex, hexToColor3 } from '../../lib/color.ts'
+import { color3ToHex, hexToColor3, parseHexColor } from '../../lib/color.ts'
 import { clamp, formatNumber, parseNumberInput } from '../../lib/numbers.ts'
 import type { Color3, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
+import { Switch } from '../ui/Switch.tsx'
 
 // Small building blocks for the Properties panel.
 
@@ -15,9 +16,9 @@ const undoGroupWhileFocused = {
 }
 
 const inputClass =
-  'w-full min-w-0 rounded bg-zinc-800 px-1.5 py-1 text-xs text-zinc-100 ring-1 ring-zinc-700 outline-none focus:ring-blue-500'
+  'h-8 w-full min-w-0 rounded-md bg-app px-2.5 text-sm text-ink ring-1 ring-line outline-none hover:ring-hover focus:ring-accent'
 
-// A titled group of rows, e.g. "Layout".
+// A titled group of rows, e.g. "Layout", separated by a line.
 export function Section({
   title,
   children,
@@ -26,8 +27,8 @@ export function Section({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-2 border-b border-zinc-800 pb-3">
-      <h3 className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+    <section className="space-y-2 border-b border-line px-3.5 py-3.5">
+      <h3 className="pb-0.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
         {title}
       </h3>
       {children}
@@ -44,12 +45,36 @@ export function Row({
   children: ReactNode
 }) {
   return (
-    <div className="grid grid-cols-[96px_1fr] items-center gap-2">
-      <span className="truncate text-xs text-zinc-400" title={label}>
+    <div className="grid grid-cols-[84px_1fr] items-center gap-2">
+      <span className="truncate text-sm text-muted" title={label}>
         {label}
       </span>
-      <div className="flex min-w-0 gap-1">{children}</div>
+      <div className="flex min-w-0 gap-1.5">{children}</div>
     </div>
+  )
+}
+
+// The "Scale | Offset px" headings over a block of UDim rows.
+export function ColumnHeads({ left, right }: { left: string; right: string }) {
+  return (
+    <p className="grid grid-cols-[84px_1fr_1fr] gap-1.5 text-[11px] text-faint">
+      <span />
+      <span className="pl-1">{left}</span>
+      <span className="pl-1">{right}</span>
+    </p>
+  )
+}
+
+// A small line of help under a field.
+export function Hint({
+  children,
+  warn = false,
+}: {
+  children: ReactNode
+  warn?: boolean
+}) {
+  return (
+    <p className={`text-xs ${warn ? 'text-warn' : 'text-faint'}`}>{children}</p>
   )
 }
 
@@ -91,7 +116,7 @@ export function NumberField({
       type="text"
       inputMode="decimal" // number keyboard on phones and tablets
       aria-label={label}
-      className={inputClass}
+      className={`${inputClass} tabular-nums`}
       value={draft ?? formatNumber(value)}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
@@ -125,7 +150,8 @@ export function TextField({
   )
 }
 
-export function CheckboxField({
+// An on/off property, shown as a switch.
+export function ToggleField({
   label,
   value,
   onChange,
@@ -134,18 +160,11 @@ export function CheckboxField({
   value: boolean
   onChange: (value: boolean) => void
 }) {
-  return (
-    <input
-      type="checkbox"
-      aria-label={label}
-      className="size-4 accent-blue-500"
-      checked={value}
-      onChange={(event) => onChange(event.target.checked)}
-    />
-  )
+  return <Switch label={label} checked={value} onChange={onChange} />
 }
 
-// The browser's own color picker, plus the hex code next to it.
+// A color: a swatch that opens the browser's color picker, and the hex code
+// next to it, which you can also type into (saved on Enter or click away).
 export function ColorField({
   label,
   value,
@@ -155,19 +174,41 @@ export function ColorField({
   value: Color3
   onChange: (value: Color3) => void
 }) {
-  const hex = color3ToHex(value)
+  const hex = color3ToHex(value).toUpperCase()
+  const [draft, setDraft] = useState<string | null>(null)
+
+  function commit() {
+    if (draft === null) return
+    const typed = parseHexColor(draft)
+    if (typed) onChange(typed) // anything else goes back to the old color
+    setDraft(null)
+  }
+
   return (
-    <label className="flex items-center gap-2">
+    <div className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md bg-app pl-1.5 ring-1 ring-line focus-within:ring-accent">
+      {/* The swatch is a real color input, made to look like a square. */}
       <input
         type="color"
-        aria-label={label}
-        className="h-6 w-8 cursor-pointer rounded bg-transparent"
-        value={hex}
+        aria-label={`${label} picker`}
+        className="size-5 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
+        value={hex.toLowerCase()}
         onChange={(event) => onChange(hexToColor3(event.target.value))}
         {...undoGroupWhileFocused}
       />
-      <span className="font-mono text-xs text-zinc-400">{hex}</span>
-    </label>
+      <input
+        type="text"
+        aria-label={label}
+        spellCheck={false}
+        className="h-full min-w-0 flex-1 bg-transparent font-mono text-sm text-ink outline-none"
+        value={draft ?? hex}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+          if (event.key === 'Escape') setDraft(null)
+        }}
+      />
+    </div>
   )
 }
 
@@ -191,7 +232,7 @@ export function SelectField<T extends string>({
       aria-label={label}
       value={value}
       onChange={(event) => onChange(event.target.value as T)}
-      className="min-w-0 flex-1 rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-100 ring-1 ring-zinc-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+      className={`${inputClass} pr-1`}
     >
       {options.map((option) => (
         <option key={option} value={option}>
@@ -202,19 +243,23 @@ export function SelectField<T extends string>({
   )
 }
 
-// Position and Size: Scale and Offset for X, then for Y, like Studio shows them.
+// A UDim2 (like Position or Size) as two rows, X then Y, each with Scale
+// and Offset, like Studio shows them. `name` is the property, for screen
+// readers; `short` is the visible label ("Pos" shows "Pos X", "Pos Y").
 export function UDim2Rows({
   name,
+  short = name,
   value,
   onChange,
 }: {
   name: string
+  short?: string
   value: UDim2
   onChange: (value: UDim2) => void
 }) {
   return (
     <>
-      <Row label={`${name} X`}>
+      <Row label={`${short} X`}>
         <NumberField
           label={`${name} X Scale`}
           value={value.xs}
@@ -227,7 +272,7 @@ export function UDim2Rows({
           onChange={(xo) => onChange({ ...value, xo })}
         />
       </Row>
-      <Row label={`${name} Y`}>
+      <Row label={`${short} Y`}>
         <NumberField
           label={`${name} Y Scale`}
           value={value.ys}

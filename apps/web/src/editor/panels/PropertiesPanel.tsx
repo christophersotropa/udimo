@@ -6,13 +6,15 @@ import { isLaidOut } from '../../model/layout.ts'
 import type { NodeId, Props } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
-  CheckboxField,
   ColorField,
+  ColumnHeads,
+  Hint,
   NumberField,
   Row,
   Section,
   SelectField,
   TextField,
+  ToggleField,
   UDim2Rows,
 } from './fields.tsx'
 import { ModifiersSection } from './ModifiersSection.tsx'
@@ -27,25 +29,27 @@ const FONT_LABELS = Object.fromEntries(
 // Shows and edits the properties of the selected element.
 export function PropertiesPanel() {
   const selection = useDocumentStore((state) => state.selection)
-  const selectionCount = selection.length
-  const selectedId = useDocumentStore((state) =>
-    state.selection.length === 1 ? state.selection[0] : null,
-  )
+  const selectedId = selection.length === 1 ? selection[0] : null
 
   return (
-    <Panel title="Properties" side="right">
+    // No title bar: the selected element's name heads the panel instead.
+    <Panel title="Properties" side="right" padded={false} showTitle={false}>
       {selectedId ? (
         // key: a different element gets fresh inputs, never leftover drafts.
         <NodeProperties key={selectedId} id={selectedId} />
-      ) : (
-        <div className="space-y-3">
-          <p className="text-sm text-zinc-500">
-            {selectionCount > 1
-              ? `${selectionCount} elements selected. Select one to edit its properties.`
-              : 'Select an element to edit its properties.'}
+      ) : selection.length > 1 ? (
+        <div className="space-y-3 px-3.5 py-4">
+          <p className="font-semibold">{selection.length} elements</p>
+          <p className="text-sm text-muted">
+            Select one to edit its properties, or convert them all at once:
           </p>
-          {selectionCount > 1 && <ResponsiveButtons ids={selection} />}
+          <ResponsiveButtons ids={selection} />
         </div>
+      ) : (
+        <p className="px-3.5 py-4 text-sm text-muted">
+          Select an element to see its properties. Right-click the canvas or the
+          Explorer to add one.
+        </p>
       )}
     </Panel>
   )
@@ -61,6 +65,10 @@ function NodeProperties({ id }: { id: NodeId }) {
     const parent = state.document.nodes[state.document.nodes[id].parentId!]
     return parent.modifiers?.UIListLayout ? 'UIListLayout' : 'UIGridLayout'
   })
+  const parentName = useDocumentStore((state) => {
+    const parentId = state.document.nodes[id]?.parentId
+    return parentId ? state.document.nodes[parentId].name : ''
+  })
   if (!node) return null
 
   // Unset properties show their Roblox defaults. Editing one saves it.
@@ -68,35 +76,41 @@ function NodeProperties({ id }: { id: NodeId }) {
   const set = (props: Props) => updateProps(id, props)
 
   return (
-    <div className="space-y-3">
-      <Section title="Element">
-        <Row label="Name">
-          <TextField
-            label="Name"
-            value={node.name}
-            onChange={(name) => renameNode(id, name)}
-          />
-        </Row>
-        <Row label="Class">
-          <span className="text-xs text-zinc-300">{node.className}</span>
-        </Row>
-      </Section>
+    <div>
+      {/* The name (click to edit) and what it is. */}
+      <div className="border-b border-line px-3.5 pt-3.5 pb-3">
+        <input
+          aria-label="Name"
+          value={node.name}
+          onChange={(event) => renameNode(id, event.target.value)}
+          // One visit to the box is one undo step. Leaving it empty would
+          // leave the element nameless, so it falls back to its class name.
+          onFocus={() => useDocumentStore.getState().beginGroup()}
+          onBlur={(event) => {
+            if (event.target.value.trim() === '') {
+              renameNode(id, node.className)
+            }
+            useDocumentStore.getState().endGroup()
+          }}
+          className="-mx-1 w-full rounded px-1 text-base font-semibold text-ink outline-none hover:bg-raised focus:bg-raised focus:ring-1 focus:ring-accent"
+        />
+        <p className="text-sm text-muted">
+          {node.className} · inside {parentName}
+        </p>
+      </div>
 
       <Section title="Layout">
         {parentLayout && (
-          <p className="text-[11px] text-amber-300/80">
+          <Hint warn>
             The parent's {parentLayout} places this element, so Position
             {parentLayout === 'UIGridLayout' ? ' and Size are' : ' is'} ignored.
             Reorder it in the Explorer or with LayoutOrder.
-          </p>
+          </Hint>
         )}
-        <p className="grid grid-cols-[96px_1fr_1fr] gap-1 text-[10px] text-zinc-500">
-          <span />
-          <span>Scale</span>
-          <span>Offset (px)</span>
-        </p>
+        <ColumnHeads left="Scale" right="Offset px" />
         <UDim2Rows
           name="Position"
+          short="Pos"
           value={p.Position}
           onChange={(Position) => set({ Position })}
         />
@@ -105,7 +119,7 @@ function NodeProperties({ id }: { id: NodeId }) {
           value={p.Size}
           onChange={(Size) => set({ Size })}
         />
-        <Row label="AnchorPoint">
+        <Row label="Anchor">
           <NumberField
             label="AnchorPoint X"
             value={p.AnchorPoint.x}
@@ -140,7 +154,7 @@ function NodeProperties({ id }: { id: NodeId }) {
           />
         </Row>
         <Row label="Visible">
-          <CheckboxField
+          <ToggleField
             label="Visible"
             value={p.Visible}
             onChange={(Visible) => set({ Visible })}
@@ -223,17 +237,17 @@ function NodeProperties({ id }: { id: NodeId }) {
             />
           </Row>
           <Row label="TextScaled">
-            <CheckboxField
+            <ToggleField
               label="TextScaled"
               value={p.TextScaled}
               onChange={(TextScaled) => set({ TextScaled })}
             />
           </Row>
           {p.TextScaled && (
-            <p className="text-[11px] text-zinc-500">
+            <Hint>
               TextScaled is on: the text grows or shrinks to fill its box (up to
               100), so TextSize is ignored.
-            </p>
+            </Hint>
           )}
         </Section>
       )}
@@ -243,7 +257,7 @@ function NodeProperties({ id }: { id: NodeId }) {
         <Section title="Button">
           <Row label="AutoButtonColor">
             {/* Only visible in game: the canvas doesn't react to hovering. */}
-            <CheckboxField
+            <ToggleField
               label="AutoButtonColor"
               value={p.AutoButtonColor}
               onChange={(AutoButtonColor) => set({ AutoButtonColor })}
@@ -269,7 +283,7 @@ function NodeProperties({ id }: { id: NodeId }) {
             />
           </Row>
           <Row label="ClearTextOnFocus">
-            <CheckboxField
+            <ToggleField
               label="ClearTextOnFocus"
               value={p.ClearTextOnFocus}
               onChange={(ClearTextOnFocus) => set({ ClearTextOnFocus })}
@@ -287,17 +301,19 @@ function NodeProperties({ id }: { id: NodeId }) {
               onChange={(Image) => set({ Image })}
             />
           </Row>
-          <p className="text-[11px] text-zinc-500">
+          <Hint>
             Paste an image ID or its Roblox link. Upload the image to Roblox
             first; the canvas shows a placeholder.
-          </p>
+          </Hint>
         </Section>
       )}
 
       {node.className === 'ScrollingFrame' && (
         <Section title="Scrolling">
+          <ColumnHeads left="Scale" right="Offset px" />
           <UDim2Rows
             name="CanvasSize"
+            short="Canvas"
             value={p.CanvasSize}
             onChange={(CanvasSize) => set({ CanvasSize })}
           />
