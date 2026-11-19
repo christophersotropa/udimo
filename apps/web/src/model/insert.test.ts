@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { insertParent, planInsert } from './insert.ts'
+import { cascadeShift, insertParent, planInsert } from './insert.ts'
 
 // ScreenGui > frame > label
 function setup() {
@@ -70,5 +70,20 @@ describe('planInsert', () => {
       yo: -30,
     })
     expect(third.props.Position).toEqual({ xs: 0.5, xo: -10, ys: 0.5, yo: -10 })
+  })
+})
+
+describe('cascadeShift', () => {
+  const at = (xo: number, yo: number) => ({ xs: 0, xo, ys: 0, yo })
+
+  it('is 0 when nothing is in the way', () => {
+    expect(cascadeShift([at(0, 0)], [at(50, 50)])).toBe(0)
+  })
+
+  it('steps 20px until every new position is clear', () => {
+    expect(cascadeShift([at(10, 10), at(30, 30)], [at(10, 10)])).toBe(40)
+    // Two pasted elements move together; either one clashing is enough.
+    expect(cascadeShift([at(120, 120)], [at(0, 0), at(100, 100)])).toBe(0)
+    expect(cascadeShift([at(100, 100)], [at(0, 0), at(100, 100)])).toBe(20)
   })
 })

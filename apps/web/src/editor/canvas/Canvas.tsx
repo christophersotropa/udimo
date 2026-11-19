@@ -1,13 +1,13 @@
 import { type CSSProperties, useRef } from 'react'
+import { SCREEN } from '../../model/screen.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { NodeView } from './NodeView.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
 import { useFitScale } from './useFitScale.ts'
 
-// The game screen is laid out at its real size (a 1080p PC screen), so
-// Offset pixels mean the same thing as in Roblox. Then the whole screen is
-// shrunk with a CSS transform to fit the canvas area.
-const SCREEN = { width: 1920, height: 1080 }
+// The game screen (SCREEN) is laid out at its real size, so Offset pixels
+// mean the same thing as in Roblox. Then the whole screen is shrunk with a
+// CSS transform to fit the canvas area.
 
 export function Canvas() {
   const areaRef = useRef<HTMLElement>(null)
