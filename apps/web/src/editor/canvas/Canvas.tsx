@@ -133,9 +133,14 @@ export function Canvas() {
       style={{ cursor }}
       className="relative min-h-0 min-w-0 touch-none overflow-hidden bg-app select-none"
     >
-      {/* This box takes the zoomed size, at the view's position. */}
+      {/* This box takes the zoomed size, at the view's position. The
+          checkerboard is painted here, not on the scaled screen inside:
+          scaled to an in-between zoom (say 40.3%), its 24 px tiles stop
+          landing on whole pixels and Safari draws thin white seams between
+          them while the zoom changes. Here, unscaled, the squares are a
+          fixed size on screen at any zoom, like other design tools. */}
       <div
-        className="absolute ring-1 ring-line"
+        className="screen-checker absolute ring-1 ring-line"
         style={{
           left: view.x,
           top: view.y,
@@ -152,7 +157,7 @@ export function Canvas() {
           </span>
         </p>
         <div
-          className="screen-checker relative overflow-hidden"
+          className="relative overflow-hidden"
           style={
             {
               width: screen.width,
