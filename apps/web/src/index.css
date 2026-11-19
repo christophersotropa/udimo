@@ -34,7 +34,9 @@
 }
 
 /* The game screen's background: a checkerboard, the usual way design tools
-   show "nothing here yet" (the game world goes behind your UI). */
+   show "nothing here yet" (the game world goes behind your UI). It's on the
+   unscaled box around the screen (Canvas.tsx), so the tile is always a
+   whole number of screen pixels: 16 px, squares of 8. */
 .screen-checker {
   background-color: var(--color-screen);
   background-image: conic-gradient(
@@ -43,7 +45,7 @@
     var(--color-screen-alt) 0 75%,
     transparent 0
   );
-  background-size: 24px 24px;
+  background-size: 16px 16px;
 }
 
 /* The page itself never scrolls: the app is exactly the window's height

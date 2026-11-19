@@ -275,6 +275,6 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 44  | Font weights per font, named like Studio, plus italic (B and I toggles)                       | `feat(model): font weights and italic`                     |
 | 45  | Dockable side panels: resize, move to either side, or stack both on one side (like Studio)    | `feat(editor): dockable side panels`                       |
 | 46  | Real images on the canvas (research Roblox's rules first; a small Vercel function if allowed) | `feat(canvas): show real images`                           |
-| 47  | Fix the stray white lines that appear on the canvas's game screen                             | `fix(canvas): stray white lines`                           |
+| 47  | Fix the stray white lines on the canvas in Safari (seams in the scaled checkerboard)          | `fix(canvas): stray white lines in Safari`                 |
 
 Tag `v0.1.0` (the end of Phase 1) once the Pet Inventory comparison is clean and Phase 1 feels finished. It's a separate step, not part of a build.
