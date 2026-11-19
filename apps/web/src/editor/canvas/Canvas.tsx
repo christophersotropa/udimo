@@ -149,11 +149,11 @@ export function Canvas() {
         }}
       >
         {/* Above the screen: the ScreenGui's name on the left, the screen
-            size and zoom on the right. */}
+            size on the right (the zoom is in the zoom bar). */}
         <p className="absolute -top-6 right-0 left-0 flex justify-between gap-3 font-mono text-[11px] whitespace-nowrap text-faint">
           <span className="truncate">{rootName}</span>
           <span>
-            {screen.width} × {screen.height} · {Math.round(view.zoom * 100)}%
+            {screen.width} × {screen.height}
           </span>
         </p>
         <div
