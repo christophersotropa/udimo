@@ -14,8 +14,22 @@ export const SORT_ORDER = { Name: 0, Custom: 1, LayoutOrder: 2 } as const
 // Udimo always uses Outline, Roblox's default.
 export const BORDER_MODE = { Outline: 0, Middle: 1, Inset: 2 } as const
 
-// How thick a font is. (Roblox has more weights; Udimo offers these two.)
-export const FONT_WEIGHT = { Regular: 400, Bold: 700 } as const
+// How thick a font is: Roblox's FontWeight, named and numbered as Roblox
+// does. Each font offers only some of these (FONTS in fonts.ts lists
+// which); a weight it lacks is drawn as its closest (closestWeight).
+export const FONT_WEIGHT = {
+  Thin: 100,
+  ExtraLight: 200,
+  Light: 300,
+  Regular: 400,
+  Medium: 500,
+  SemiBold: 600,
+  Bold: 700,
+  ExtraBold: 800,
+  Heavy: 900,
+} as const
+// Upright or slanted text (Roblox's FontStyle).
+export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
 export const APPLY_STROKE_MODE = { Contextual: 0, Border: 1 } as const
 
@@ -25,6 +39,7 @@ export type VerticalAlignment = keyof typeof VERTICAL_ALIGNMENT
 export type SortOrder = keyof typeof SORT_ORDER
 export type ApplyStrokeMode = keyof typeof APPLY_STROKE_MODE
 export type FontWeight = keyof typeof FONT_WEIGHT
+export type FontStyle = keyof typeof FONT_STYLE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

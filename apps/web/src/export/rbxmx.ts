@@ -60,7 +60,7 @@ function propertyTag({ name, value }: Property): string {
         : ''
       return tag(
         'Font',
-        `<Family><url>${escapeXml(value.family)}</url></Family><Weight>${FONT_WEIGHT[value.weight]}</Weight><Style>Normal</Style>${cached}`,
+        `<Family><url>${escapeXml(value.family)}</url></Family><Weight>${FONT_WEIGHT[value.weight]}</Weight><Style>${value.style}</Style>${cached}`,
       )
     }
     // Sequences are plain numbers, a group per keypoint, the way Studio
