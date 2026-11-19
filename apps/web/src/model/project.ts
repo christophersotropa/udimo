@@ -1,4 +1,13 @@
-import type { ClassName, NodeId, Props, UiDocument, UiNode } from './types.ts'
+import type {
+  ClassName,
+  ModifierClass,
+  ModifierProps,
+  Modifiers,
+  NodeId,
+  Props,
+  UiDocument,
+  UiNode,
+} from './types.ts'
 
 // Udimo's own project file: the document as JSON, plus a label and a version
 // number. Plain TypeScript, no React. Autosave uses the same format.
@@ -83,6 +92,17 @@ const isColor3 = (v: unknown) =>
   isRecord(v) && [v.r, v.g, v.b].every((c) => isNumber(c) && c >= 0 && c <= 1)
 const isBoolean = (v: unknown) => typeof v === 'boolean'
 const isString = (v: unknown) => typeof v === 'string'
+const isUDim = (v: unknown) => isRecord(v) && isNumber(v.s) && isNumber(v.o)
+
+type Check = (value: unknown) => boolean
+
+// One check per modifier property; TypeScript insists on every one.
+const MODIFIER_CHECKS: {
+  [K in ModifierClass]: Record<keyof ModifierProps[K], Check>
+} = {
+  UICorner: { CornerRadius: isUDim },
+  UIStroke: { Color: isColor3, Thickness: isNumber, Transparency: isNumber },
+}
 
 // One check per property. The type makes TypeScript insist on a check for
 // every property in Props, so a new property can't be forgotten here.
@@ -130,6 +150,32 @@ function readProps(value: unknown, name: string): Props {
   return props as Props
 }
 
+// Like readProps, for each modifier. Modifiers or properties this version
+// doesn't know are skipped. Returns undefined when there are none.
+function readModifiers(value: unknown, name: string): Modifiers | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) fail(`"${name}" has invalid modifiers.`)
+  const modifiers: Record<string, JsonRecord> = {}
+  for (const [modifier, raw] of Object.entries(value)) {
+    if (!Object.hasOwn(MODIFIER_CHECKS, modifier)) continue
+    if (!isRecord(raw)) fail(`"${name}" has an invalid ${modifier}.`)
+    const checks: Record<string, Check> =
+      MODIFIER_CHECKS[modifier as ModifierClass]
+    const props: JsonRecord = {}
+    for (const [key, propValue] of Object.entries(raw)) {
+      if (!Object.hasOwn(checks, key)) continue
+      if (!checks[key](propValue)) {
+        fail(`"${name}" has an invalid ${modifier} ${key}.`)
+      }
+      props[key] = propValue
+    }
+    modifiers[modifier] = props
+  }
+  return Object.keys(modifiers).length > 0
+    ? (modifiers as Modifiers)
+    : undefined
+}
+
 // Builds a fresh node from only the fields Udimo uses.
 function readNode(id: string, value: unknown): UiNode {
   if (!isSafeId(id)) fail('The project contains an invalid element id.')
@@ -162,6 +208,8 @@ function readNode(id: string, value: unknown): UiNode {
     children: [...children],
     props: readProps(value.props, name),
   }
+  const modifiers = readModifiers(value.modifiers, name)
+  if (modifiers) node.modifiers = modifiers
   if (locked) node.locked = true
   return node
 }
@@ -181,6 +229,7 @@ function readDocument(value: unknown): UiDocument {
   if (!root || root.className !== 'ScreenGui' || root.parentId !== null) {
     fail('The project must start with a ScreenGui.')
   }
+  if (root.modifiers) fail('A ScreenGui can’t have modifiers.')
 
   // Walk the tree from the root. Every child must exist, point back at its
   // parent, and be reached only once. That rules out loops and elements

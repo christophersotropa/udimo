@@ -7,7 +7,7 @@ import { createDocumentStore } from '../store/documentStore.ts'
 // It's built with a throwaway store, so it follows the same rules as any edit.
 export function createSampleDocument(): UiDocument {
   const store = createDocumentStore()
-  const { addNode, renameNode } = store.getState()
+  const { addNode, renameNode, addModifier, updateModifier } = store.getState()
   const rootId = store.getState().document.rootId
   const white = color3FromRgb(255, 255, 255)
   renameNode(rootId, 'ShopGui') // also the downloaded file's name
@@ -32,6 +32,15 @@ export function createSampleDocument(): UiDocument {
     BackgroundColor3: color3FromRgb(35, 40, 60),
   })
   renameNode(shopWindow, 'Window')
+  // Rounded corners and a faint white outline.
+  addModifier(shopWindow, 'UICorner')
+  updateModifier(shopWindow, 'UICorner', { CornerRadius: { s: 0, o: 16 } })
+  addModifier(shopWindow, 'UIStroke')
+  updateModifier(shopWindow, 'UIStroke', {
+    Color: white,
+    Thickness: 2,
+    Transparency: 0.7,
+  })
 
   const title = addNode(shopWindow, 'TextLabel', {
     Size: { xs: 1, xo: 0, ys: 0, yo: 80 },
@@ -53,6 +62,7 @@ export function createSampleDocument(): UiDocument {
     TextSize: 32,
   })
   renameNode(buy, 'BuyButton')
+  addModifier(buy, 'UICorner') // Studio's default 8px radius
 
   return store.getState().document
 }

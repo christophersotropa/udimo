@@ -6,6 +6,8 @@ import reference from '../../../../docs/reference/defaults.rbxmx?raw'
 import textReference from '../../../../docs/reference/text-classes.rbxmx?raw'
 // ScreenGui > ImageLabel, ImageButton and ScrollingFrame, all defaults.
 import imageReference from '../../../../docs/reference/image-classes.rbxmx?raw'
+// ScreenGui > Frame > UICorner and UIStroke, all defaults.
+import modifierReference from '../../../../docs/reference/corner-stroke.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -58,6 +60,16 @@ function imageDocument() {
   return store.getState().document
 }
 
+// ScreenGui > Frame with a default UICorner and UIStroke.
+function modifierDocument() {
+  const store = createDocumentStore()
+  const { addNode, addModifier } = store.getState()
+  const frame = addNode(store.getState().document.rootId, 'Frame')
+  addModifier(frame, 'UICorner')
+  addModifier(frame, 'UIStroke')
+  return store.getState().document
+}
+
 // The golden test: for each class, every property we write must match, value
 // for value, what Studio wrote in the reference file.
 function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
@@ -89,6 +101,37 @@ describe('documentToRbxmx', () => {
     'ImageButton',
     'ScrollingFrame',
   ])
+  goldenTest(modifierReference, documentToRbxmx(modifierDocument()), [
+    'UICorner',
+    'UIStroke',
+  ])
+
+  it('writes modifiers as children of their element, before its other children', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const frame = addNode(store.getState().document.rootId, 'Frame')
+    addNode(frame, 'TextLabel')
+    addModifier(frame, 'UICorner')
+    updateModifier(frame, 'UICorner', { CornerRadius: { s: 0.5, o: 0 } })
+
+    const xml = documentToRbxmx(store.getState().document)
+    const order = [...xml.matchAll(/<(\/?)Item(?: class="(\w+)")?/g)].map(
+      ([, close, className]) => (close ? '/' : className),
+    )
+    expect(order).toEqual([
+      'ScreenGui',
+      'Frame',
+      'UICorner',
+      '/',
+      'TextLabel',
+      '/',
+      '/',
+      '/',
+    ])
+    expect(propertiesOf(xml, 'UICorner').get('TopLeftRadius')).toBe(
+      'UDim:<S>0.5</S><O>0</O>',
+    )
+  })
 
   it('writes a pasted image id as an rbxassetid URI, and no image as null', () => {
     const store = createDocumentStore()

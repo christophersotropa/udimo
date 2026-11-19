@@ -59,6 +59,18 @@ describe('serializeProject and parseProject', () => {
     expect(doc.nodes[id].locked).toBe(true)
   })
 
+  it('keep modifiers', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const id = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(id, 'UICorner')
+    addModifier(id, 'UIStroke')
+    updateModifier(id, 'UIStroke', { Color: { r: 1, g: 0, b: 0 } })
+
+    const doc = store.getState().document
+    expect(parseProject(serializeProject(doc))).toEqual(doc)
+  })
+
   it('label the file with its format and version', () => {
     const data = JSON.parse(serializeProject(setup().doc)) as FileData
     expect(data.format).toBe('udimo')
@@ -134,6 +146,22 @@ describe('parseProject rejects', () => {
     expectRejected(badSize, 'invalid Size')
   })
 
+  it('a modifier with the wrong kind of value', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].modifiers = {
+        UIStroke: { Thickness: 'thick' },
+      }
+    })
+    expectRejected(text, 'invalid UIStroke Thickness')
+  })
+
+  it('modifiers on the ScreenGui', () => {
+    const text = brokenFile((data, { rootId }) => {
+      data.document.nodes[rootId].modifiers = { UICorner: {} }
+    })
+    expectRejected(text, 'can’t have modifiers')
+  })
+
   it('an id that could break the nodes object', () => {
     // "__proto__" written as a JSON key is a normal key after JSON.parse,
     // which is exactly how it would sneak in.
@@ -145,6 +173,16 @@ describe('parseProject rejects', () => {
 })
 
 describe('parseProject skips', () => {
+  it('modifiers it does not know', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].modifiers = { UIFlex: {}, UICorner: {} }
+    })
+    const frame = Object.values(parseProject(text).nodes).find(
+      (n) => n.className === 'Frame',
+    )!
+    expect(frame.modifiers).toEqual({ UICorner: {} })
+  })
+
   it('properties and fields it does not know', () => {
     const text = brokenFile((data, { frame }) => {
       data.document.nodes[frame].props = { Rotation: 45, Visible: false }

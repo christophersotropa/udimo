@@ -292,3 +292,27 @@ describe('copy, cut and paste', () => {
     expect(copySelection(setup().store)).toBeNull()
   })
 })
+
+describe('copies keep their modifiers', () => {
+  it('when duplicating and pasting, including children', () => {
+    const { store, doc, selection, panel, button } = setup()
+    const { addModifier, updateModifier } = store.getState()
+    addModifier(panel, 'UICorner')
+    updateModifier(panel, 'UICorner', { CornerRadius: { s: 0.5, o: 0 } })
+    addModifier(button, 'UIStroke')
+
+    store.getState().select(panel)
+    duplicateSelection(store)
+    const duplicate = doc().nodes[selection()[0]]
+    expect(duplicate.modifiers).toEqual({
+      UICorner: { CornerRadius: { s: 0.5, o: 0 } },
+    })
+    expect(doc().nodes[duplicate.children[0]].modifiers).toEqual({
+      UIStroke: {},
+    })
+
+    const fragment = copySelection(store)!
+    pasteFragment(store, fragment)
+    expect(doc().nodes[selection()[0]].modifiers?.UICorner).toBeDefined()
+  })
+})
