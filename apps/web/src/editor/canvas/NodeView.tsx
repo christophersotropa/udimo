@@ -1,9 +1,14 @@
 import { type ReactNode, useEffect, useState } from 'react'
+import { toContentUri } from '../../lib/assets.ts'
 import { color3ToCss } from '../../lib/color.ts'
-import { measureTextWidth, scaledTextSize } from '../../lib/text.ts'
+import {
+  measureLineHeight,
+  measureTextWidth,
+  scaledTextSize,
+} from '../../lib/text.ts'
 import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
-import { resolveProps } from '../../model/defaults.ts'
+import { PLACEHOLDER_IMAGE, resolveProps } from '../../model/defaults.ts'
 import { useShallow } from 'zustand/react/shallow'
 import { FONT_WEIGHT } from '../../model/enums.ts'
 import { FONTS } from '../../model/fonts.ts'
@@ -172,7 +177,12 @@ function NodeText({ id }: { id: NodeId }) {
     const widest = Math.max(
       ...lines.map((line) => measureTextWidth(line, cssFont)),
     )
-    fontSize = scaledTextSize(widest / 100, lines.length, scaledArea)
+    fontSize = scaledTextSize(
+      widest / 100,
+      lines.length,
+      scaledArea,
+      measureLineHeight(cssFont),
+    )
   }
 
   return (
@@ -199,16 +209,23 @@ function useFontsLoaded() {
   }, [])
 }
 
-// The browser can't load Roblox images (they need Roblox's servers), so an
-// image element shows a simple picture icon instead. An empty Image shows
-// nothing, like in game.
+// What an image element shows. An empty Image shows nothing, like in game.
+//
+// Studio's placeholder is itself a picture: a white square with a grey
+// picture icon. Like any image it fills the whole element and covers its
+// background (a red button with the placeholder looks white in Studio), so
+// it's drawn the same way, rounded with the element's corners.
+//
+// Real images can't be shown (the browser can't load them from Roblox's
+// servers), so those get just the grey icon, over the background.
 function ImagePlaceholder({ node }: { node: UiNode }) {
-  if (resolveProps(node).Image === '') return null
-  return (
+  const uri = toContentUri(resolveProps(node).Image)
+  if (uri === '') return null
+  const icon = (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="rgb(161 161 170)"
+      stroke="rgb(200 200 205)"
       strokeWidth={1.5}
       aria-hidden="true"
       className="absolute inset-0 m-auto h-1/2 w-1/2"
@@ -217,6 +234,15 @@ function ImagePlaceholder({ node }: { node: UiNode }) {
       <circle cx="9" cy="10" r="2" />
       <path d="M3 17l5-5 4 4 3-3 6 6" />
     </svg>
+  )
+  if (uri !== PLACEHOLDER_IMAGE) return icon
+  return (
+    <div
+      className="absolute inset-0 bg-[rgb(245_245_245)]"
+      style={{ borderRadius: 'inherit' }}
+    >
+      {icon}
+    </div>
   )
 }
 
@@ -242,7 +268,13 @@ function ScrollingContent({
   const shownY = useDocumentStore((state) =>
     visibleFraction(state.document, node.id, screen, 'y'),
   )
-  const bar = { position: 'absolute', backgroundColor: 'black' } as const
+  // Studio draws its default scroll bar as a light grey bar with round
+  // ends (compared side by side in build 33), so the canvas does too.
+  const bar = {
+    position: 'absolute',
+    backgroundColor: 'rgb(165 165 165)',
+    borderRadius: ScrollBarThickness / 2,
+  } as const
 
   return (
     // borderRadius 'inherit': with a UICorner, the clipping is rounded too.

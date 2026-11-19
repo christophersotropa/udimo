@@ -16,6 +16,12 @@ describe('scaledTextSize', () => {
     expect(scaledTextSize(1, 3, { width: 1000, height: 90 })).toBe(30)
   })
 
+  it('fits whole lines, letting the font keep room above and below', () => {
+    // Like the Pet Inventory's names in Studio: a 24px-tall box and a font
+    // whose lines are 1.26 times the text size gives size 19.
+    expect(scaledTextSize(1, 1, { width: 1000, height: 24 }, 1.26)).toBe(19)
+  })
+
   it('never goes over 100, or under 1', () => {
     expect(scaledTextSize(1, 1, { width: 5000, height: 5000 })).toBe(
       MAX_TEXT_SIZE,

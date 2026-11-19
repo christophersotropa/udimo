@@ -150,6 +150,18 @@ describe('exportWarnings', () => {
     })
   })
 
+  it('merges identical warnings into one, with a count', () => {
+    const { store, root } = setup('ImageLabel')
+    store.getState().addNode(root, 'ImageLabel', {
+      Position: { xs: 0, xo: 300, ys: 0, yo: 100 },
+    })
+    const placeholder = exportWarnings(store.getState().document).filter((w) =>
+      w.key.startsWith('image:'),
+    )
+    expect(placeholder).toHaveLength(1)
+    expect(placeholder[0].message).toMatch(/\(2 elements\)$/)
+  })
+
   describe('duplicate names', () => {
     it('notes siblings that share a name', () => {
       const { store, root } = setup('Frame')
