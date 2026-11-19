@@ -173,3 +173,42 @@ describe('wrapping inside a ScrollingFrame', () => {
     }
   })
 })
+
+describe('wrapping with padding and aspect ratios', () => {
+  it('moves nothing on screen', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier, select } = store.getState()
+    const rootId = store.getState().document.rootId
+    // A padded window...
+    const panel = addNode(rootId, 'Frame', {
+      Position: { xs: 0.1, xo: 0, ys: 0.1, yo: 0 },
+      Size: { xs: 0.5, xo: 0, ys: 0.5, yo: 0 },
+    })
+    addModifier(panel, 'UIPadding')
+    updateModifier(panel, 'UIPadding', {
+      PaddingLeft: { s: 0.05, o: 0 },
+      PaddingTop: { s: 0, o: 24 },
+    })
+    // ...holding a square icon (aspect ratio) and a label.
+    const icon = addNode(panel, 'ImageLabel', {
+      Position: { xs: 0, xo: 8, ys: 0.2, yo: 0 },
+      Size: { xs: 0.3, xo: 0, ys: 0.5, yo: 0 },
+    })
+    addModifier(icon, 'UIAspectRatioConstraint')
+    const label = addNode(panel, 'TextLabel', {
+      Position: { xs: 0.4, xo: 0, ys: 0, yo: 40 },
+    })
+    const before = store.getState().document
+    select(icon)
+    select(label, true)
+
+    wrapSelectionInFrame(store, SCREEN)
+    const after = store.getState().document
+    for (const id of [icon, label]) {
+      expectSameBox(
+        absoluteBox(after, id, SCREEN),
+        absoluteBox(before, id, SCREEN),
+      )
+    }
+  })
+})

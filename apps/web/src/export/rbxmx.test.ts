@@ -8,6 +8,8 @@ import textReference from '../../../../docs/reference/text-classes.rbxmx?raw'
 import imageReference from '../../../../docs/reference/image-classes.rbxmx?raw'
 // ScreenGui > Frame > UICorner and UIStroke, all defaults.
 import modifierReference from '../../../../docs/reference/corner-stroke.rbxmx?raw'
+// ScreenGui > Frame > UIGradient, UIPadding and UIAspectRatioConstraint.
+import layoutModifierReference from '../../../../docs/reference/gradient-padding-aspect.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -70,6 +72,18 @@ function modifierDocument() {
   return store.getState().document
 }
 
+// ScreenGui > Frame with a default UIGradient, UIPadding and
+// UIAspectRatioConstraint.
+function layoutModifierDocument() {
+  const store = createDocumentStore()
+  const { addNode, addModifier } = store.getState()
+  const frame = addNode(store.getState().document.rootId, 'Frame')
+  addModifier(frame, 'UIGradient')
+  addModifier(frame, 'UIPadding')
+  addModifier(frame, 'UIAspectRatioConstraint')
+  return store.getState().document
+}
+
 // The golden test: for each class, every property we write must match, value
 // for value, what Studio wrote in the reference file.
 function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
@@ -105,6 +119,30 @@ describe('documentToRbxmx', () => {
     'UICorner',
     'UIStroke',
   ])
+  goldenTest(
+    layoutModifierReference,
+    documentToRbxmx(layoutModifierDocument()),
+    ['UIGradient', 'UIPadding', 'UIAspectRatioConstraint'],
+  )
+
+  it('writes gradient sequences as Studio does', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const frame = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(frame, 'UIGradient')
+    updateModifier(frame, 'UIGradient', {
+      Color: [
+        { time: 0, color: { r: 1, g: 0, b: 0 } },
+        { time: 1, color: { r: 0, g: 0, b: 1 } },
+      ],
+      Rotation: 45,
+    })
+    const xml = documentToRbxmx(store.getState().document)
+    expect(xml).toContain(
+      '<ColorSequence name="Color">0 1 0 0 0 1 0 0 1 0 </ColorSequence>',
+    )
+    expect(propertiesOf(xml, 'UIGradient').get('Rotation')).toBe('float:45')
+  })
 
   it('writes modifiers as children of their element, before its other children', () => {
     const store = createDocumentStore()

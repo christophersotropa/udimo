@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { cornerRadiusPixels, resolveModifier } from './modifiers.ts'
+import { cornerRadiusPixels } from './layout.ts'
+import { resolveModifier } from './modifiers.ts'
 
 const SCREEN = { width: 1000, height: 500 }
 

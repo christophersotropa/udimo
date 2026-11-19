@@ -1,3 +1,4 @@
+import { isValidTimeline } from '../lib/sequence.ts'
 import type {
   ClassName,
   ModifierClass,
@@ -93,6 +94,14 @@ const isColor3 = (v: unknown) =>
 const isBoolean = (v: unknown) => typeof v === 'boolean'
 const isString = (v: unknown) => typeof v === 'string'
 const isUDim = (v: unknown) => isRecord(v) && isNumber(v.s) && isNumber(v.o)
+// A ColorSequence or NumberSequence: a list of keypoints with valid times.
+const isSequence = (isKeypoint: (k: JsonRecord) => boolean) => (v: unknown) =>
+  Array.isArray(v) &&
+  v.every((k) => isRecord(k) && isNumber(k.time) && isKeypoint(k)) &&
+  isValidTimeline(v as { time: number }[])
+const isColorSequence = isSequence((k) => isColor3(k.color))
+const isNumberSequence = isSequence((k) => isNumber(k.value))
+const isPositive = (v: unknown) => isNumber(v) && v > 0
 
 type Check = (value: unknown) => boolean
 
@@ -102,6 +111,18 @@ const MODIFIER_CHECKS: {
 } = {
   UICorner: { CornerRadius: isUDim },
   UIStroke: { Color: isColor3, Thickness: isNumber, Transparency: isNumber },
+  UIGradient: {
+    Color: isColorSequence,
+    Transparency: isNumberSequence,
+    Rotation: isNumber,
+  },
+  UIPadding: {
+    PaddingTop: isUDim,
+    PaddingBottom: isUDim,
+    PaddingLeft: isUDim,
+    PaddingRight: isUDim,
+  },
+  UIAspectRatioConstraint: { AspectRatio: isPositive },
 }
 
 // One check per property. The type makes TypeScript insist on a check for

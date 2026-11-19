@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { absoluteBox, boxInParent, visibleFraction } from './layout.ts'
+import {
+  absoluteBox,
+  boxInParent,
+  fitAspect,
+  visibleFraction,
+} from './layout.ts'
 
 const SCREEN = { width: 1000, height: 500 }
 
@@ -104,5 +109,57 @@ describe('ScrollingFrame', () => {
     const { doc, scroller } = setup()
     expect(visibleFraction(doc, scroller, SCREEN, 'y')).toBe(0.5)
     expect(visibleFraction(doc, scroller, SCREEN, 'x')).toBe(1)
+  })
+})
+
+describe('UIAspectRatioConstraint', () => {
+  it('fitAspect finds the biggest box of that shape inside the size', () => {
+    expect(fitAspect(400, 100, 1)).toEqual({ width: 100, height: 100 })
+    expect(fitAspect(100, 400, 2)).toEqual({ width: 100, height: 50 })
+  })
+
+  it('shrinks the element, keeping its AnchorPoint in place', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier } = store.getState()
+    const id = addNode(store.getState().document.rootId, 'Frame', {
+      AnchorPoint: { x: 0.5, y: 0.5 },
+      Position: { xs: 0.5, xo: 0, ys: 0.5, yo: 0 },
+      Size: { xs: 0, xo: 300, ys: 0, yo: 100 },
+    })
+    addModifier(id, 'UIAspectRatioConstraint') // AspectRatio 1: a square
+    const doc = store.getState().document
+    // A 100 × 100 square, still centered on the 1000 × 500 screen.
+    expect(absoluteBox(doc, id, SCREEN)).toEqual({
+      x: 450,
+      y: 200,
+      width: 100,
+      height: 100,
+    })
+  })
+})
+
+describe('UIPadding', () => {
+  it('shrinks the area children are laid out in, and moves its corner', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const panel = addNode(store.getState().document.rootId, 'Frame', {
+      Size: { xs: 0, xo: 200, ys: 0, yo: 100 },
+    })
+    addModifier(panel, 'UIPadding')
+    updateModifier(panel, 'UIPadding', {
+      PaddingLeft: { s: 0, o: 20 },
+      PaddingRight: { s: 0.1, o: 0 }, // 10% of 200 = 20
+      PaddingTop: { s: 0, o: 10 },
+    })
+    const child = addNode(panel, 'Frame', {
+      Size: { xs: 1, xo: 0, ys: 1, yo: 0 }, // fills the padded area
+    })
+    const doc = store.getState().document
+    expect(absoluteBox(doc, child, SCREEN)).toEqual({
+      x: 20,
+      y: 10,
+      width: 160,
+      height: 90,
+    })
   })
 })

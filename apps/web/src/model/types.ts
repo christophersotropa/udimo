@@ -34,6 +34,12 @@ export type UDim = {
   o: number // offset in pixels
 }
 
+// Sequences: values that change from time 0 to time 1 (say, across a
+// gradient). Roblox calls them ColorSequence and NumberSequence. The first
+// keypoint is always at time 0 and the last at time 1.
+export type ColorKeypoint = { time: number; color: Color3 }
+export type NumberKeypoint = { time: number; value: number }
+
 // ---------- Instances ----------
 
 // The Roblox classes Udimo can create in Phase 1.
@@ -93,6 +99,25 @@ export type ModifierProps = {
     Color?: Color3
     Thickness?: number // pixels
     Transparency?: number
+  }
+  UIGradient: {
+    // Multiplies the element's colors and transparency, changing across it.
+    Color?: ColorKeypoint[]
+    Transparency?: NumberKeypoint[]
+    Rotation?: number // degrees, clockwise; 0 runs left to right
+  }
+  UIPadding: {
+    // Space between the element's edges and its children (and its text).
+    // Scale is a fraction of the element's width (left/right) or height.
+    PaddingTop?: UDim
+    PaddingBottom?: UDim
+    PaddingLeft?: UDim
+    PaddingRight?: UDim
+  }
+  UIAspectRatioConstraint: {
+    // Width divided by height. The element becomes the biggest box with this
+    // shape that fits inside its Size.
+    AspectRatio?: number
   }
 }
 export type ModifierClass = keyof ModifierProps

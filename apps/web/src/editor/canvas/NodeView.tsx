@@ -3,8 +3,12 @@ import { color3ToCss } from '../../lib/color.ts'
 import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import { visibleFraction } from '../../model/layout.ts'
-import { cornerRadiusPixels } from '../../model/modifiers.ts'
+import {
+  absoluteBox,
+  cornerRadiusPixels,
+  visibleFraction,
+} from '../../model/layout.ts'
+import { resolveModifier } from '../../model/modifiers.ts'
 import { SCREEN } from '../../model/screen.ts'
 import type { NodeId, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -32,6 +36,17 @@ export function NodeView({ id }: { id: NodeId }) {
       ? cornerRadiusPixels(state.document, id, SCREEN)
       : 0,
   )
+  // Same for the size a UIAspectRatioConstraint forces (null without one).
+  const aspectWidth = useDocumentStore((state) =>
+    state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint
+      ? absoluteBox(state.document, id, SCREEN).width
+      : null,
+  )
+  const aspectHeight = useDocumentStore((state) =>
+    state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint
+      ? absoluteBox(state.document, id, SCREEN).height
+      : null,
+  )
   if (!node) return null
 
   const children = node.children.map((childId) => (
@@ -43,25 +58,72 @@ export function NodeView({ id }: { id: NodeId }) {
     return <div className="absolute inset-0">{children}</div>
   }
 
+  const pixels = {
+    cornerRadius,
+    aspectSize:
+      aspectWidth !== null && aspectHeight !== null
+        ? { width: aspectWidth, height: aspectHeight }
+        : null,
+  }
   // An outline is drawn outside the element without changing its size,
   // so selecting never shifts the layout.
   const style = isSelected
     ? {
-        ...nodeStyle(node, cornerRadius),
+        ...nodeStyle(node, pixels),
         outline: 'calc(2px / var(--canvas-scale)) solid rgb(59 130 246)',
       }
-    : nodeStyle(node, cornerRadius)
+    : nodeStyle(node, pixels)
+
+  // Text and children sit in the content area (inside any UIPadding).
+  // A ScrollingFrame's content area is on its scrollable canvas.
+  const content = (
+    <ContentArea node={node}>
+      {isTextClass(node.className) && <NodeText id={id} />}
+      {children}
+    </ContentArea>
+  )
 
   return (
     <div style={style} data-node-id={node.id} title={node.name}>
       {isImageClass(node.className) && <ImagePlaceholder node={node} />}
-      {isTextClass(node.className) && <NodeText id={id} />}
       {node.className === 'ScrollingFrame' ? (
-        <ScrollingContent node={node}>{children}</ScrollingContent>
+        <ScrollingContent node={node}>{content}</ScrollingContent>
       ) : (
-        children
+        content
       )}
       {showHandles && <ResizeHandles />}
+    </div>
+  )
+}
+
+// The box an element's text and children are laid out in: the whole
+// element, minus any UIPadding. It's positioned, so children's percentages
+// (Scale) are measured against it, like contentArea in model/layout.ts.
+// Text is centered in it both ways, like Roblox's default alignment.
+function ContentArea({
+  node,
+  children,
+}: {
+  node: UiNode
+  children: ReactNode
+}) {
+  const padding = resolveModifier(node, 'UIPadding')
+  // CSS left/right percentages are of the width, top/bottom of the height:
+  // the same as UIPadding's Scale.
+  const inset = padding
+    ? {
+        left: udimToCss(padding.PaddingLeft.s, padding.PaddingLeft.o),
+        right: udimToCss(padding.PaddingRight.s, padding.PaddingRight.o),
+        top: udimToCss(padding.PaddingTop.s, padding.PaddingTop.o),
+        bottom: udimToCss(padding.PaddingBottom.s, padding.PaddingBottom.o),
+      }
+    : { inset: 0 }
+  const centered = isTextClass(node.className)
+    ? 'flex items-center justify-center'
+    : ''
+  return (
+    <div className={`absolute ${centered}`} style={inset}>
+      {children}
     </div>
   )
 }

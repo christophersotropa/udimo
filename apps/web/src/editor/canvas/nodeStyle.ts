@@ -1,15 +1,22 @@
 import type { CSSProperties } from 'react'
 import { color3ToCss } from '../../lib/color.ts'
+import { gradientCss } from '../../lib/gradient.ts'
 import { boxCss } from '../../lib/udim2.ts'
 import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
+import type { ScreenSize } from '../../model/screen.ts'
 import type { UiNode } from '../../model/types.ts'
 
-// The CSS for one Roblox element on the canvas. `cornerRadius` is the
-// UICorner radius in pixels, worked out by the caller (it depends on the
-// element's size on screen, which this function can't see).
-export function nodeStyle(node: UiNode, cornerRadius = 0): CSSProperties {
+// Pixel values the caller works out from the whole document (they depend
+// on the element's size on screen, which this function can't see).
+export type NodePixels = {
+  cornerRadius: number // UICorner radius, 0 for none
+  aspectSize: ScreenSize | null // the size a UIAspectRatioConstraint forces
+}
+
+// The CSS for one Roblox element on the canvas.
+export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
   const p = resolveProps(node)
 
   const style: CSSProperties = {
@@ -24,7 +31,25 @@ export function nodeStyle(node: UiNode, cornerRadius = 0): CSSProperties {
     // underneath. 'auto' (not unset) matters, because pointer-events is
     // inherited: without it, a locked Frame's children would ignore it too.
     pointerEvents: node.locked ? 'none' : 'auto',
-    borderRadius: cornerRadius || undefined,
+    borderRadius: pixels.cornerRadius || undefined,
+  }
+
+  // A UIAspectRatioConstraint replaces the UDim2 size with its own.
+  // (Position and AnchorPoint still work: AnchorPoint's shift uses the
+  // element's actual size.)
+  if (pixels.aspectSize) {
+    style.width = pixels.aspectSize.width
+    style.height = pixels.aspectSize.height
+  }
+
+  const gradient = resolveModifier(node, 'UIGradient')
+  if (gradient) {
+    style.backgroundColor = undefined
+    style.backgroundImage = gradientCss(
+      p.BackgroundColor3,
+      p.BackgroundTransparency,
+      gradient,
+    )
   }
 
   // UIStroke draws an outline outside the element's edge. On a text element
@@ -38,11 +63,9 @@ export function nodeStyle(node: UiNode, cornerRadius = 0): CSSProperties {
   }
 
   if (isTextClass(node.className)) {
+    // Roblox centers text both ways by default (NodeView's content area does
+    // the centering) and doesn't wrap it. These are inherited by the text.
     Object.assign(style, {
-      // Roblox centers text both ways by default and doesn't wrap it.
-      display: p.Visible ? 'flex' : 'none',
-      alignItems: 'center',
-      justifyContent: 'center',
       whiteSpace: 'pre',
       lineHeight: 1,
       color: color3ToCss(p.TextColor3),
