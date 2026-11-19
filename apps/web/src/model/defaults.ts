@@ -5,6 +5,11 @@ import type { ClassName, Props, UiNode } from './types.ts'
 // docs/reference/defaults.rbxmx (and a test keeps them in sync with it).
 // The canvas and the exporter both fill unset properties from here, so the
 // editor and Studio always agree.
+// Studio's placeholder picture (a white square with a grey picture icon),
+// which new image elements start with.
+export const PLACEHOLDER_IMAGE =
+  'rbxasset://textures/ui/GuiImagePlaceholder.png'
+
 const BASE_DEFAULTS: Required<Props> = {
   Size: { xs: 0, xo: 100, ys: 0, yo: 100 },
   Position: { xs: 0, xo: 0, ys: 0, yo: 0 },
@@ -23,8 +28,7 @@ const BASE_DEFAULTS: Required<Props> = {
   PlaceholderText: '',
   PlaceholderColor3: { r: 0.5, g: 0.5, b: 0.5 }, // mid grey
   ClearTextOnFocus: true,
-  // Studio's grey placeholder picture, which new image elements start with.
-  Image: 'rbxasset://textures/ui/GuiImagePlaceholder.png',
+  Image: PLACEHOLDER_IMAGE,
   CanvasSize: { xs: 0, xo: 0, ys: 2, yo: 0 }, // twice the frame's height
   ScrollBarThickness: 12,
 }

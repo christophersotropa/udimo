@@ -1,6 +1,6 @@
 import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from './classes.ts'
-import { resolveProps } from './defaults.ts'
+import { PLACEHOLDER_IMAGE, resolveProps } from './defaults.ts'
 import { absoluteBox, contentArea } from './layout.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from './screen.ts'
 import type { NodeId, Props, UiDocument } from './types.ts'
@@ -29,9 +29,6 @@ export type MeasureText = (
 // A rough guess: most fonts average about half a text size per character.
 export const estimateTextWidth: MeasureText = (text, _font, size) =>
   text.length * size * 0.55
-
-// Studio's grey placeholder picture, which new images start with.
-const PLACEHOLDER_IMAGE = 'rbxasset://textures/ui/GuiImagePlaceholder.png'
 
 // Roughly how tall Roblox's top bar is. In game a ScreenGui is laid out
 // below it (Studio's default ScreenInsets, CoreUISafeInsets).
@@ -202,6 +199,23 @@ function duplicateNameWarnings(doc: UiDocument): Warning[] {
 
 // ---------- All of them ----------
 
+// Warnings with exactly the same message (say, six copies of the same
+// slot, each with a placeholder image) become one, with a count, so the
+// list stays readable. The first element is the one selected on click.
+function mergeRepeats(warnings: Warning[]): Warning[] {
+  const merged = new Map<string, { warning: Warning; count: number }>()
+  for (const warning of warnings) {
+    const seen = merged.get(warning.message)
+    if (seen) seen.count++
+    else merged.set(warning.message, { warning, count: 1 })
+  }
+  return [...merged.values()].map(({ warning, count }) =>
+    count === 1
+      ? warning
+      : { ...warning, message: `${warning.message} (${count} elements)` },
+  )
+}
+
 // Every warning for a document: per-element problems in tree order, then
 // the whole-screen notes.
 export function exportWarnings(
@@ -219,7 +233,7 @@ export function exportWarnings(
       },
     ]
   }
-  return [
+  return mergeRepeats([
     ...elements.flatMap((id) => [
       ...imageWarnings(doc, id),
       ...textWarnings(doc, id, measure),
@@ -227,5 +241,5 @@ export function exportWarnings(
     ...offScreenWarnings(doc),
     ...duplicateNameWarnings(doc),
     ...topBarWarning(doc),
-  ]
+  ])
 }

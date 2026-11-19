@@ -1,9 +1,10 @@
 import { type ChangeEvent, useRef, useState } from 'react'
 import { documentToLuau } from '../../export/luau.ts'
 import { ExportWarnings } from './ExportWarnings.tsx'
+import { confirmReplace } from './confirmReplace.ts'
+import { NewMenu } from './NewMenu.tsx'
 import { documentToRbxmx } from '../../export/rbxmx.ts'
 import { downloadTextFile } from '../../lib/download.ts'
-import { createEmptyDocument } from '../../model/document.ts'
 import {
   ProjectFileError,
   parseProject,
@@ -40,23 +41,6 @@ function saveProject() {
     serializeProject(doc),
     'application/json',
   )
-}
-
-// Replacing the document also clears undo, so ask first, unless there's
-// nothing to lose (an empty ScreenGui).
-function confirmReplace(): boolean {
-  const doc = useDocumentStore.getState().document
-  if (doc.nodes[doc.rootId].children.length === 0) return true
-  return window.confirm(
-    'This replaces your current design, and it can’t be undone. ' +
-      'Use Save first if you want to keep it. Continue?',
-  )
-}
-
-function newProject() {
-  if (confirmReplace()) {
-    useDocumentStore.getState().loadDocument(createEmptyDocument())
-  }
 }
 
 async function openProjectFile(file: File) {
@@ -119,14 +103,7 @@ export function Toolbar() {
       <div className="flex items-center gap-4">
         <span className="text-sm font-semibold">Udimo</span>
         <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={newProject}
-            title="Start an empty ScreenGui"
-            className={toolButtonClass}
-          >
-            New
-          </button>
+          <NewMenu buttonClass={toolButtonClass} />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
