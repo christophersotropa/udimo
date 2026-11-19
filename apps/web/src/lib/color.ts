@@ -28,3 +28,12 @@ export function color3ToCss(color: Color3, transparency = 0): string {
   const alpha = 1 - transparency
   return `rgb(${to255(color.r)} ${to255(color.g)} ${to255(color.b)} / ${alpha})`
 }
+
+// A hex color someone typed ("#2A3757", "2a3757", "#fff"), or null if it
+// isn't one. The 3-digit form doubles each digit, like CSS.
+export function parseHexColor(text: string): Color3 | null {
+  let hex = text.trim().replace(/^#/, '')
+  if (/^[0-9a-f]{3}$/i.test(hex)) hex = [...hex].map((c) => c + c).join('')
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return null
+  return hexToColor3(`#${hex}`)
+}

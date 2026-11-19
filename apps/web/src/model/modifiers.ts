@@ -76,3 +76,55 @@ export function resolveModifier<K extends ModifierClass>(
   const props = node.modifiers?.[modifier]
   return props ? { ...MODIFIER_DEFAULTS[modifier], ...props } : null
 }
+
+// A UDim as "14 px", "50%" or "50% + 4 px".
+function udimText({ s, o }: { s: number; o: number }): string {
+  const parts = [
+    s !== 0 && `${Math.round(s * 1000) / 10}%`,
+    (o !== 0 || s === 0) && `${o} px`,
+  ].filter(Boolean)
+  return parts.join(' + ')
+}
+
+// How each modifier describes itself. Typed so every modifier must have an
+// entry, like the exporter's tables.
+const SUMMARIES: {
+  [K in ModifierClass]: (props: Required<ModifierProps[K]>) => string
+} = {
+  UICorner: ({ CornerRadius }) => udimText(CornerRadius),
+  UIStroke: ({ Thickness }) => `${Thickness} px`,
+  UIGradient: ({ Rotation }) =>
+    Rotation === 0 ? 'left to right' : `${Rotation}°`,
+  UIPadding: (p) => {
+    const sides = [
+      p.PaddingTop,
+      p.PaddingRight,
+      p.PaddingBottom,
+      p.PaddingLeft,
+    ].map(udimText)
+    return sides.every((side) => side === sides[0])
+      ? sides[0]
+      : sides.join(' / ')
+  },
+  UIAspectRatioConstraint: ({ AspectRatio }) => `ratio ${AspectRatio}`,
+  UIListLayout: ({ FillDirection, Padding }) =>
+    `${FillDirection}, ${udimText(Padding)} gap`,
+  UIGridLayout: ({ CellSize }) => {
+    const size = (s: number, o: number) =>
+      s === 0 ? `${o}` : udimText({ s, o })
+    return `${size(CellSize.xs, CellSize.xo)} × ${size(CellSize.ys, CellSize.yo)} cells`
+  },
+}
+
+// A short description of a modifier's settings, for its card in the
+// Properties panel: "UICorner · 14 px", "UIListLayout · Vertical, 8 px gap".
+// `props` are the modifier's props with the defaults filled in.
+export function modifierSummary<K extends ModifierClass>(
+  modifier: K,
+  props: Required<ModifierProps[K]>,
+): string {
+  // TypeScript can't link SUMMARIES[modifier] to K by itself, so the lookup
+  // is widened by hand (the table's type already guarantees it matches).
+  const describe = SUMMARIES[modifier] as (p: typeof props) => string
+  return describe(props)
+}

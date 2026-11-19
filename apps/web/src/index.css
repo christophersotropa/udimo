@@ -21,6 +21,7 @@
   --color-accent-soft: rgb(59 108 244 / 0.18); /* selected rows */
   --color-warn: #f2b84b;
   --color-danger: #ef6b6b;
+  --color-screen: #3a3d47; /* the game screen, behind your UI */
 }
 
 /* The canvas area's dotted background. */
