@@ -172,15 +172,18 @@ export function ColorField({
 }
 
 // A dropdown for one of a Roblox enum's options, like FillDirection.
+// `labels` can give options friendlier names than their values.
 export function SelectField<T extends string>({
   label,
   value,
   options,
+  labels,
   onChange,
 }: {
   label: string
   value: T
   options: readonly T[]
+  labels?: Partial<Record<T, string>>
   onChange: (value: T) => void
 }) {
   return (
@@ -192,7 +195,7 @@ export function SelectField<T extends string>({
     >
       {options.map((option) => (
         <option key={option} value={option}>
-          {option}
+          {labels?.[option] ?? option}
         </option>
       ))}
     </select>

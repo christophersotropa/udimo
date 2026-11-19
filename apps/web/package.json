@@ -11,6 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/fredoka-one": "^5.3.0",
+    "@fontsource/luckiest-guy": "^5.3.0",
+    "@fontsource/roboto": "^5.3.0",
+    "@fontsource/source-sans-3": "^5.3.1",
     "immer": "^11.2.10",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

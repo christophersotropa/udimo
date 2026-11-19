@@ -3,10 +3,12 @@ import { isImageClass, isTextClass } from '../model/classes.ts'
 import {
   APPLY_STROKE_MODE,
   FILL_DIRECTION,
+  FONT_WEIGHT,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
   VERTICAL_ALIGNMENT,
 } from '../model/enums.ts'
+import { FONTS } from '../model/fonts.ts'
 import { resolveProps } from '../model/defaults.ts'
 import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
 import type {
@@ -16,6 +18,7 @@ import type {
   ModifierProps,
   NodeId,
   NumberKeypoint,
+  Props,
   UDim,
   UDim2,
   UiDocument,
@@ -86,9 +89,19 @@ const content = (name: string, uri: string) =>
     ? `<Content name="${name}"><uri>${escapeXml(uri)}</uri></Content>`
     : `<Content name="${name}"><null></null></Content>`
 
-// Studio's default font (Source Sans Pro, regular), written the way Studio does.
-const DEFAULT_FONT =
-  '<Font name="FontFace"><Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family><Weight>400</Weight><Style>Normal</Style><CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId></Font>'
+// A FontFace, written the way Studio does: the family, a weight number and
+// a style. For its default font (Source Sans Pro, regular) Studio also
+// writes a CachedFaceId, the actual font file. It's only a cache Roblox
+// fills in itself, and Studio leaves it out for other fonts (see
+// docs/reference/fonts.rbxmx), so only the default gets one.
+function fontFace(face: Required<Props>['FontFace']): string {
+  const weight = FONT_WEIGHT[face.weight]
+  const cached =
+    face.family === 'SourceSansPro' && face.weight === 'Regular'
+      ? '<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>'
+      : ''
+  return `<Font name="FontFace"><Family><url>${escapeXml(FONTS[face.family].family)}</url></Family><Weight>${weight}</Weight><Style>Normal</Style>${cached}</Font>`
+}
 
 // ---------- Writing the tree ----------
 
@@ -116,7 +129,7 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
 
   if (isTextClass(node.className)) {
     tags.push(
-      DEFAULT_FONT,
+      fontFace(p.FontFace),
       string('Text', p.Text),
       color3('TextColor3', p.TextColor3),
       bool('TextScaled', p.TextScaled),

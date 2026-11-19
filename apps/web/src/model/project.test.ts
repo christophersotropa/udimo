@@ -146,6 +146,15 @@ describe('parseProject rejects', () => {
     expectRejected(badSize, 'invalid Size')
   })
 
+  it('a font Udimo does not know', () => {
+    const text = brokenFile((data, { label }) => {
+      data.document.nodes[label].props = {
+        FontFace: { family: 'ComicSans', weight: 'Regular' },
+      }
+    })
+    expectRejected(text, 'invalid FontFace')
+  })
+
   it('a modifier with the wrong kind of value', () => {
     const text = brokenFile((data, { frame }) => {
       data.document.nodes[frame].modifiers = {

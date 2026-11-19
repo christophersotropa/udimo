@@ -12,6 +12,8 @@ import modifierReference from '../../../../docs/reference/corner-stroke.rbxmx?ra
 import layoutModifierReference from '../../../../docs/reference/gradient-padding-aspect.rbxmx?raw'
 // ScreenGui > Frame > UIListLayout, and Frame > UIGridLayout.
 import layoutReference from '../../../../docs/reference/list-grid-layouts.rbxmx?raw'
+// ScreenGui > TextLabels named after their fonts.
+import fontReference from '../../../../docs/reference/fonts.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -96,6 +98,30 @@ function layoutDocument() {
   return store.getState().document
 }
 
+// Like propertiesOf, but for the <Item> whose Name is `name`.
+function propertiesOfNamed(xml: string, name: string): Map<string, string> {
+  for (const [, body] of xml.matchAll(
+    /<Item class="\w+"[^>]*>\s*<Properties>([\s\S]*?)<\/Properties>/g,
+  )) {
+    if (body.includes(`<string name="Name">${name}</string>`)) {
+      return propertiesOf(
+        `<Item class="X"><Properties>${body}</Properties>`,
+        'X',
+      )
+    }
+  }
+  throw new Error(`No item named ${name} in file`)
+}
+
+// The labels in fonts.rbxmx: name -> font.
+const FONT_LABELS = {
+  BuilderSans: 'BuilderSans',
+  FredokaOne: 'FredokaOne',
+  LuckiestGuy: 'LuckiestGuy',
+  Roboto: 'Roboto',
+  Arial: 'Arial',
+} as const
+
 // The golden test: for each class, every property we write must match, value
 // for value, what Studio wrote in the reference file.
 function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
@@ -141,6 +167,41 @@ describe('documentToRbxmx', () => {
     'UIListLayout',
     'UIGridLayout',
   ])
+
+  describe.each(Object.entries(FONT_LABELS))(
+    'matches the Studio reference file for a TextLabel in %s',
+    (name, family) => {
+      const store = createDocumentStore()
+      const { addNode, renameNode } = store.getState()
+      const id = addNode(store.getState().document.rootId, 'TextLabel', {
+        FontFace: { family, weight: 'Regular' },
+      })
+      renameNode(id, name)
+      const ours = propertiesOfNamed(
+        documentToRbxmx(store.getState().document),
+        name,
+      )
+      const studio = propertiesOfNamed(fontReference, name)
+
+      it.each([...ours])('%s', (prop, value) => {
+        expect(studio.get(prop)).toBe(value)
+      })
+    },
+  )
+
+  it('writes Bold as weight 700', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      FontFace: { family: 'Roboto', weight: 'Bold' },
+    })
+    const label = propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'TextLabel',
+    )
+    expect(label.get('FontFace')).toBe(
+      'Font:<Family><url>rbxasset://fonts/families/Roboto.json</url></Family><Weight>700</Weight><Style>Normal</Style>',
+    )
+  })
 
   it("writes UIStroke's ApplyStrokeMode as a number", () => {
     const store = createDocumentStore()

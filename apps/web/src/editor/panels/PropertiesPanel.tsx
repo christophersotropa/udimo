@@ -1,5 +1,7 @@
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
+import { enumNames, FONT_WEIGHT } from '../../model/enums.ts'
+import { FONT_IDS, FONTS } from '../../model/fonts.ts'
 import { isLaidOut } from '../../model/layout.ts'
 import type { NodeId, Props } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -9,12 +11,18 @@ import {
   NumberField,
   Row,
   Section,
+  SelectField,
   TextField,
   UDim2Rows,
 } from './fields.tsx'
 import { ModifiersSection } from './ModifiersSection.tsx'
 import { Panel } from './Panel.tsx'
 import { ResponsiveButtons } from './ResponsiveButtons.tsx'
+
+// The font dropdown shows names like "Fredoka One", not ids.
+const FONT_LABELS = Object.fromEntries(
+  FONT_IDS.map((id) => [id, FONTS[id].label]),
+)
 
 // Shows and edits the properties of the selected element.
 export function PropertiesPanel() {
@@ -167,6 +175,35 @@ function NodeProperties({ id }: { id: NodeId }) {
               onChange={(Text) => set({ Text })}
             />
           </Row>
+          <Row label="Font">
+            <SelectField
+              label="Font"
+              value={p.FontFace.family}
+              options={FONT_IDS}
+              labels={FONT_LABELS}
+              // A font without Bold falls back to Regular.
+              onChange={(family) =>
+                set({
+                  FontFace: {
+                    family,
+                    weight: FONTS[family].bold ? p.FontFace.weight : 'Regular',
+                  },
+                })
+              }
+            />
+          </Row>
+          {FONTS[p.FontFace.family].bold && (
+            <Row label="Weight">
+              <SelectField
+                label="Font weight"
+                value={p.FontFace.weight}
+                options={enumNames(FONT_WEIGHT)}
+                onChange={(weight) =>
+                  set({ FontFace: { ...p.FontFace, weight } })
+                }
+              />
+            </Row>
+          )}
           <Row label="TextColor3">
             <ColorField
               label="TextColor3"
@@ -192,6 +229,12 @@ function NodeProperties({ id }: { id: NodeId }) {
               onChange={(TextScaled) => set({ TextScaled })}
             />
           </Row>
+          {p.TextScaled && (
+            <p className="text-[11px] text-zinc-500">
+              TextScaled is on: the text grows or shrinks to fill its box (up to
+              100), so TextSize is ignored.
+            </p>
+          )}
         </Section>
       )}
 
