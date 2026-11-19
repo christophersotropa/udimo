@@ -3,6 +3,7 @@ import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
+  BORDER_MODE,
   FILL_DIRECTION,
   type FontWeight,
   HORIZONTAL_ALIGNMENT,
@@ -137,9 +138,13 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     vector2('AnchorPoint', p.AnchorPoint),
     color3('BackgroundColor3', p.BackgroundColor3),
     float('BackgroundTransparency', p.BackgroundTransparency),
-    int('BorderSizePixel', 0), // the canvas draws no borders yet
+    color3('BorderColor3', p.BorderColor3),
+    enumProp('BorderMode', BORDER_MODE, 'Outline'),
+    int('BorderSizePixel', p.BorderSizePixel),
+    bool('ClipsDescendants', p.ClipsDescendants),
     int('LayoutOrder', p.LayoutOrder),
     udim2('Position', p.Position),
+    float('Rotation', p.Rotation),
     udim2('Size', p.Size),
     bool('Visible', p.Visible),
     int('ZIndex', p.ZIndex),

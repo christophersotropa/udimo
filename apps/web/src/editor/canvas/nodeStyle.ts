@@ -78,10 +78,25 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
     stroke !== null &&
     isTextClass(node.className) &&
     stroke.ApplyStrokeMode === 'Contextual'
+  // Outlines are drawn as shadows with no blur, spread outwards: they sit
+  // outside the edges (like Roblox's) and follow rounded corners. The
+  // border comes first, so a UIStroke shows around it.
+  const shadows: string[] = []
+  if (p.BorderSizePixel > 0) {
+    shadows.push(`0 0 0 ${p.BorderSizePixel}px ${color3ToCss(p.BorderColor3)}`)
+  }
   if (stroke && stroke.Thickness > 0 && !strokeOnText) {
-    // A shadow with no blur, spread outwards, follows rounded corners too.
     const color = color3ToCss(stroke.Color, stroke.Transparency)
-    style.boxShadow = `0 0 0 ${stroke.Thickness}px ${color}`
+    shadows.push(`0 0 0 ${p.BorderSizePixel + stroke.Thickness}px ${color}`)
+  }
+  if (shadows.length > 0) style.boxShadow = shadows.join(', ')
+
+  // Rotation turns the element around its center, after the AnchorPoint
+  // shift (CSS transforms turn around the element's center by default).
+  if (p.Rotation !== 0) {
+    const before =
+      style.transform && style.transform !== 'none' ? `${style.transform} ` : ''
+    style.transform = `${before}rotate(${p.Rotation}deg)`
   }
 
   if (isTextClass(node.className)) {

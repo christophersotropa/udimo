@@ -10,6 +10,10 @@ export const VERTICAL_ALIGNMENT = { Center: 0, Top: 1, Bottom: 2 } as const
 // "Custom" is an old option Roblox keeps for compatibility; Udimo treats it
 // like the tree order.
 export const SORT_ORDER = { Name: 0, Custom: 1, LayoutOrder: 2 } as const
+// Where Roblox's border sits: outside the edges, on them, or inside.
+// Udimo always uses Outline, Roblox's default.
+export const BORDER_MODE = { Outline: 0, Middle: 1, Inset: 2 } as const
+
 // How thick a font is. (Roblox has more weights; Udimo offers these two.)
 export const FONT_WEIGHT = { Regular: 400, Bold: 700 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.

@@ -19,6 +19,10 @@ const BASE_DEFAULTS: Required<Props> = {
   Visible: true,
   ZIndex: 1,
   LayoutOrder: 0,
+  Rotation: 0,
+  ClipsDescendants: false,
+  BorderSizePixel: 0,
+  BorderColor3: { r: 0, g: 0, b: 0 }, // black
   Text: 'Label',
   FontFace: { family: 'SourceSansPro', weight: 'Regular' },
   TextColor3: { r: 0, g: 0, b: 0 }, // black
@@ -43,6 +47,8 @@ const CLASS_DEFAULTS: Partial<Record<ClassName, Props>> = {
   TextLabel: { Size: TEXT_SIZE },
   TextButton: { Size: TEXT_SIZE, Text: 'Button' },
   TextBox: { Size: TEXT_SIZE, Text: 'TextBox' },
+  // A ScrollingFrame clips its contents by default.
+  ScrollingFrame: { ClipsDescendants: true },
 }
 
 // Every supported property's default for one class.
