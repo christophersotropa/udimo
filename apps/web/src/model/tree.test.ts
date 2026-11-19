@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { ancestorIds, isInside, topLevelNodes } from './tree.ts'
+import { ancestorIds, inTreeOrder, isInside, topLevelNodes } from './tree.ts'
 
 // ScreenGui > frame > button, plus a separate coins label.
 function setup() {
@@ -49,5 +49,16 @@ describe('ancestorIds', () => {
   it('is empty for the root', () => {
     const { doc, rootId } = setup()
     expect(ancestorIds(doc, rootId)).toEqual([])
+  })
+})
+
+describe('inTreeOrder', () => {
+  it('sorts ids top to bottom, as the Explorer lists them', () => {
+    const { doc, frame, button, coins } = setup()
+    expect(inTreeOrder(doc, [coins, button, frame])).toEqual([
+      frame,
+      button,
+      coins,
+    ])
   })
 })

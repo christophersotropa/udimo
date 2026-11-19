@@ -1,4 +1,5 @@
 import {
+  type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useEffect,
@@ -6,9 +7,19 @@ import {
   useState,
 } from 'react'
 import { resolveProps } from '../../model/defaults.ts'
+import {
+  canDrop,
+  canHoldChildren,
+  type DropPlace,
+  dropPlaceAt,
+} from '../../model/drop.ts'
 import { ancestorIds } from '../../model/tree.ts'
 import type { NodeId } from '../../model/types.ts'
-import { toggleLocked, toggleVisible } from '../../store/commands.ts'
+import {
+  moveNodesTo,
+  toggleLocked,
+  toggleVisible,
+} from '../../store/commands.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
   ChevronIcon,
@@ -22,14 +33,35 @@ import { Panel } from './Panel.tsx'
 // How far each level of the tree is indented, in pixels.
 const INDENT = 12
 
+type DropTarget = { id: NodeId; place: DropPlace }
+
+// What every row needs from the panel: folding, and dragging rows around.
+// Bundled into one object so it can be handed down the tree as one prop.
+type TreeControls = {
+  collapsed: ReadonlySet<NodeId>
+  toggleOpen: (id: NodeId) => void
+  // Where the dragged rows would land right now, to draw the marker.
+  dropTarget: DropTarget | null
+  startDrag: (ids: NodeId[]) => void
+  // Returns whether the dragged rows may be dropped there.
+  dragOver: (target: DropTarget) => boolean
+  drop: (target: DropTarget) => void
+  endDrag: () => void
+}
+
 // The instance tree, like Roblox Studio's Explorer: ScreenGui > Frame > ...
 // Children are listed in document order, the same order as the export.
+// Drag rows to reorder them or move them into another Frame.
 export function ExplorerPanel() {
   const rootId = useDocumentStore((state) => state.document.rootId)
   const selection = useDocumentStore((state) => state.selection)
   // Ids of the rows you've folded shut. Only this panel cares about it, so
   // it's React state here, not in the store (and it's never undone or saved).
   const [collapsed, setCollapsed] = useState<ReadonlySet<NodeId>>(new Set())
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null)
+  // The rows being dragged. A ref, because changing it shouldn't redraw
+  // anything: only the drop marker (dropTarget) is drawn.
+  const dragIds = useRef<NodeId[]>([])
 
   // When the selection changes (say, a click on the canvas) and a selected
   // element sits inside a folded row, unfold its parents so you can see it.
@@ -55,16 +87,65 @@ export function ExplorerPanel() {
     })
   }
 
+  const tree: TreeControls = {
+    collapsed,
+    toggleOpen,
+    dropTarget,
+
+    startDrag: (ids) => {
+      dragIds.current = ids
+    },
+
+    dragOver: (target) => {
+      const doc = useDocumentStore.getState().document
+      const allowed = canDrop(doc, dragIds.current, target.id, target.place)
+      const next = allowed ? target : null
+      // dragover fires many times a second while the pointer moves. Keeping
+      // the old object when nothing changed means React skips the redraw.
+      setDropTarget((previous) =>
+        previous?.id === next?.id && previous?.place === next?.place
+          ? previous
+          : next,
+      )
+      return allowed
+    },
+
+    drop: (target) => {
+      const moved = moveNodesTo(
+        useDocumentStore,
+        dragIds.current,
+        target.id,
+        target.place,
+      )
+      // Unfold the row you dropped into, so you can see where things went.
+      if (moved && target.place === 'inside') {
+        setCollapsed((previous) =>
+          previous.has(target.id)
+            ? new Set([...previous].filter((id) => id !== target.id))
+            : previous,
+        )
+      }
+      tree.endDrag()
+    },
+
+    endDrag: () => {
+      dragIds.current = []
+      setDropTarget(null)
+    },
+  }
+
+  // Leaving the whole tree (not just moving from one row to the next)
+  // removes the marker. relatedTarget is where the pointer went.
+  function onDragLeave(event: ReactDragEvent) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setDropTarget(null)
+    }
+  }
+
   return (
     <Panel title="Explorer" side="left">
-      <ul>
-        <TreeRow
-          id={rootId}
-          depth={0}
-          parentHidden={false}
-          collapsed={collapsed}
-          onToggleOpen={toggleOpen}
-        />
+      <ul onDragLeave={onDragLeave}>
+        <TreeRow id={rootId} depth={0} parentHidden={false} tree={tree} />
       </ul>
     </Panel>
   )
@@ -75,19 +156,12 @@ type TreeRowProps = {
   depth: number
   // True if some element above this one is hidden, which hides this one too.
   parentHidden: boolean
-  collapsed: ReadonlySet<NodeId>
-  onToggleOpen: (id: NodeId) => void
+  tree: TreeControls
 }
 
 // One row, then the rows of its children inside it: recursive, like the
 // canvas's NodeView. Each row reads only its own node from the store.
-function TreeRow({
-  id,
-  depth,
-  parentHidden,
-  collapsed,
-  onToggleOpen,
-}: TreeRowProps) {
+function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const isSelected = useDocumentStore((state) => state.selection.includes(id))
   const [renaming, setRenaming] = useState(false)
@@ -105,7 +179,8 @@ function TreeRow({
   const ownHidden = !resolveProps(node).Visible
   const hidden = parentHidden || ownHidden
   const hasChildren = node.children.length > 0
-  const open = !collapsed.has(id)
+  const open = !tree.collapsed.has(id)
+  const dropPlace = tree.dropTarget?.id === id ? tree.dropTarget.place : null
 
   function onSelect(event: ReactMouseEvent) {
     const store = useDocumentStore.getState()
@@ -123,20 +198,78 @@ function TreeRow({
     }
   }
 
+  // ---- Dragging. These are the browser's built-in drag-and-drop events:
+  // dragstart on the row you pick up, dragover on each row you pass over,
+  // drop on the row you let go on, dragend on the picked-up row at the end.
+
+  function onDragStart(event: ReactDragEvent) {
+    const store = useDocumentStore.getState()
+    // Dragging a selected row drags the whole selection. Dragging any other
+    // row selects it first, so it's clear what's moving.
+    if (!store.selection.includes(id)) store.select(id)
+    event.dataTransfer.effectAllowed = 'move'
+    // Some browsers (Firefox) only start a drag if some data is attached.
+    event.dataTransfer.setData('text/plain', node.name)
+    tree.startDrag(useDocumentStore.getState().selection)
+  }
+
+  // Which place the pointer means: above, inside or below this row.
+  function targetAt(event: ReactDragEvent): DropTarget {
+    if (isRoot) return { id, place: 'inside' }
+    const box = event.currentTarget.getBoundingClientRect()
+    const fraction = (event.clientY - box.top) / box.height
+    const doc = useDocumentStore.getState().document
+    return { id, place: dropPlaceAt(fraction, canHoldChildren(doc, id)) }
+  }
+
+  function onDragOver(event: ReactDragEvent) {
+    // By default the browser refuses drops. preventDefault() says "you may
+    // drop here", so we only call it when the drop is allowed.
+    if (tree.dragOver(targetAt(event))) {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+    }
+  }
+
+  function onDrop(event: ReactDragEvent) {
+    event.preventDefault()
+    tree.drop(targetAt(event))
+  }
+
   return (
     <li>
       <div
         ref={rowRef}
+        draggable={!isRoot && !renaming}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onDragEnd={tree.endDrag}
         style={{ paddingLeft: depth * INDENT }}
-        className={`group flex items-center gap-1 rounded pr-1 ${
-          isSelected ? 'bg-blue-600/30' : 'hover:bg-zinc-800'
+        className={`group relative flex items-center gap-1 rounded pr-1 ${
+          dropPlace === 'inside'
+            ? 'bg-blue-500/20 ring-1 ring-blue-500'
+            : isSelected
+              ? 'bg-blue-600/30'
+              : 'hover:bg-zinc-800'
         }`}
       >
+        {/* The marker line for "drop above" or "drop below" this row,
+            indented to show which level the rows will land on. */}
+        {(dropPlace === 'before' || dropPlace === 'after') && (
+          <span
+            className={`pointer-events-none absolute right-0 h-0.5 rounded bg-blue-500 ${
+              dropPlace === 'before' ? '-top-px' : '-bottom-px'
+            }`}
+            style={{ left: depth * INDENT }}
+          />
+        )}
+
         {hasChildren ? (
           <button
             type="button"
             aria-label={open ? 'Collapse' : 'Expand'}
-            onClick={() => onToggleOpen(id)}
+            onClick={() => tree.toggleOpen(id)}
             className="shrink-0 rounded text-zinc-500 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-blue-500"
           >
             <ChevronIcon className={open ? 'rotate-90' : undefined} />
@@ -152,7 +285,7 @@ function TreeRow({
             type="button"
             onClick={onSelect}
             onDoubleClick={() => setRenaming(true)}
-            title="Double-click to rename"
+            title="Double-click to rename, drag to move"
             className={`flex min-w-0 flex-1 items-baseline gap-1.5 py-1 text-left text-sm focus-visible:outline-2 focus-visible:outline-blue-500 ${
               hidden ? 'text-zinc-500' : 'text-zinc-100'
             }`}
@@ -193,8 +326,7 @@ function TreeRow({
               id={childId}
               depth={depth + 1}
               parentHidden={hidden}
-              collapsed={collapsed}
-              onToggleOpen={onToggleOpen}
+              tree={tree}
             />
           ))}
         </ul>

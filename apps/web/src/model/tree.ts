@@ -35,3 +35,16 @@ export function topLevelNodes(doc: UiDocument, ids: NodeId[]): NodeId[] {
     (id) => !ids.some((other) => other !== id && isInside(doc, id, other)),
   )
 }
+
+// `ids` sorted in the order their rows appear in the Explorer (top to
+// bottom), which is also the order they're exported in.
+export function inTreeOrder(doc: UiDocument, ids: NodeId[]): NodeId[] {
+  const order: NodeId[] = []
+  // Visit a node, then each child in turn, all the way down.
+  function visit(id: NodeId) {
+    order.push(id)
+    for (const childId of doc.nodes[id].children) visit(childId)
+  }
+  visit(doc.rootId)
+  return order.filter((id) => ids.includes(id))
+}

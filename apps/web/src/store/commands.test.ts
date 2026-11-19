@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   deleteSelection,
   duplicateSelection,
+  moveNodesTo,
   nudgeSelection,
   toggleLocked,
   toggleVisible,
@@ -159,5 +160,56 @@ describe('toggleLocked', () => {
 
     toggleLocked(store, panel)
     expect(doc().nodes[panel].locked).toBeUndefined()
+  })
+})
+
+describe('moveNodesTo', () => {
+  it('moves an element inside another, as its last child', () => {
+    const { store, doc, panel, button, coins } = setup()
+    expect(moveNodesTo(store, [coins], panel, 'inside')).toBe(true)
+    expect(doc().nodes[panel].children).toEqual([button, coins])
+    expect(doc().nodes[coins].parentId).toBe(panel)
+  })
+
+  it('reorders siblings, up and down', () => {
+    const { store, doc, rootId, panel, coins } = setup()
+    moveNodesTo(store, [coins], panel, 'before')
+    expect(doc().nodes[rootId].children).toEqual([coins, panel])
+
+    moveNodesTo(store, [coins], panel, 'after')
+    expect(doc().nodes[rootId].children).toEqual([panel, coins])
+  })
+
+  it('moves an element down past a sibling, with more after it', () => {
+    // Easy to get wrong: taking the element out shifts every later sibling
+    // up one place, so the drop position must be counted without it.
+    const { store, doc, rootId, panel, coins } = setup()
+    const badge = store.getState().addNode(rootId, 'Frame')
+    moveNodesTo(store, [panel], coins, 'after')
+    expect(doc().nodes[rootId].children).toEqual([coins, panel, badge])
+  })
+
+  it('moves an element out of its parent', () => {
+    const { store, doc, rootId, panel, button, coins } = setup()
+    moveNodesTo(store, [button], panel, 'after')
+    expect(doc().nodes[rootId].children).toEqual([panel, button, coins])
+    expect(doc().nodes[panel].children).toEqual([])
+  })
+
+  it('keeps several elements in tree order, as one undo step', () => {
+    const { store, doc, rootId, panel, button, coins } = setup()
+    const before = doc()
+    moveNodesTo(store, [coins, button], panel, 'before')
+    expect(doc().nodes[rootId].children).toEqual([button, coins, panel])
+
+    store.getState().undo()
+    expect(doc()).toBe(before)
+  })
+
+  it('refuses a drop that is not allowed, changing nothing', () => {
+    const { store, doc, panel, button } = setup()
+    const before = doc()
+    expect(moveNodesTo(store, [panel], button, 'after')).toBe(false)
+    expect(doc()).toBe(before)
   })
 })
