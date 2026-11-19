@@ -50,6 +50,21 @@ export function nudgeSelection(store: DocumentStore, dx: number, dy: number) {
   })
 }
 
+// Hides or shows one element. Hiding sets Visible = false: a real Roblox
+// property, so the element is hidden in the exported file too (handy for a
+// window that a script opens later). Visible is true by default, so showing
+// removes the property instead of writing `true`.
+export function toggleVisible(store: DocumentStore, id: NodeId) {
+  const { document, updateProps } = store.getState()
+  const visible = resolveProps(document.nodes[id]).Visible
+  updateProps(id, { Visible: visible ? false : undefined })
+}
+
+export function toggleLocked(store: DocumentStore, id: NodeId) {
+  const { document, setLocked } = store.getState()
+  setLocked(id, !document.nodes[id].locked)
+}
+
 // Copies a node and everything inside it under `parentId`, with new ids.
 // It reads from `sourceDoc`, a snapshot taken before copying began, so the
 // copies it makes along the way can never be copied again.

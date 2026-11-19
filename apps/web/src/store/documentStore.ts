@@ -47,6 +47,8 @@ export type DocumentState = {
     props?: Props,
   ) => NodeId
   renameNode: (id: NodeId, name: string) => void
+  // Locks or unlocks an element on the canvas (see UiNode.locked).
+  setLocked: (id: NodeId, locked: boolean) => void
   // Merges `props` into the node's props. A value of `undefined` removes
   // that property, so it goes back to Roblox's default.
   updateProps: (id: NodeId, props: Props) => void
@@ -211,6 +213,16 @@ export function createDocumentStore(
         renameNode: (id, name) => {
           change((doc) => {
             getNode(doc, id).name = name
+          })
+        },
+
+        setLocked: (id, locked) => {
+          change((doc) => {
+            const node = getNode(doc, id)
+            // Unlocked is the normal state, so unlocking removes the field
+            // instead of storing `false`.
+            if (locked) node.locked = true
+            else delete node.locked
           })
         },
 
