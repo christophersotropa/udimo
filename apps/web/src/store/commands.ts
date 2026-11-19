@@ -1,6 +1,7 @@
 import { addOffset } from '../lib/udim2.ts'
 import { resolveProps } from '../model/defaults.ts'
-import { topLevelNodes } from '../model/tree.ts'
+import { canDrop, type DropPlace } from '../model/drop.ts'
+import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import type { NodeId, UiDocument } from '../model/types.ts'
 import type { DocumentStore, ElementClassName } from './documentStore.ts'
 
@@ -118,4 +119,43 @@ export function duplicateSelection(store: DocumentStore) {
     const { select } = store.getState()
     copies.forEach((copyId, i) => select(copyId, i > 0))
   })
+}
+
+// Moves elements next to, or into, the element `targetId` (an Explorer drop).
+// They keep their order from the tree. Returns false, and changes nothing,
+// if the drop isn't allowed. Like Roblox Studio, Position and Size keep their
+// values, so an element can jump on screen when its parent changes.
+export function moveNodesTo(
+  store: DocumentStore,
+  ids: NodeId[],
+  targetId: NodeId,
+  place: DropPlace,
+): boolean {
+  const doc = store.getState().document
+  if (!canDrop(doc, ids, targetId, place)) return false
+  // Dragging a Frame and its child together: only the Frame moves.
+  const moving = inTreeOrder(doc, topLevelNodes(doc, ids))
+
+  asOneStep(store, () => {
+    const { moveNode } = store.getState()
+    if (place === 'inside') {
+      for (const id of moving) moveNode(id, targetId) // each goes last
+      return
+    }
+
+    const parentId = doc.nodes[targetId].parentId!
+    // Each element goes before the target, or after the one placed before it.
+    let anchor = targetId
+    for (const id of moving) {
+      // moveNode takes the element out before putting it back in, so count
+      // positions without it.
+      const siblings = store
+        .getState()
+        .document.nodes[parentId].children.filter((child) => child !== id)
+      const index = siblings.indexOf(anchor) + (place === 'after' ? 1 : 0)
+      moveNode(id, parentId, index)
+      if (place === 'after') anchor = id
+    }
+  })
+  return true
 }
