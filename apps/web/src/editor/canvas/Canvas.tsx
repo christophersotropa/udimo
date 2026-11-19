@@ -1,19 +1,92 @@
-import { type CSSProperties, useRef } from 'react'
-import { SCREEN } from '../../model/screen.ts'
+import { type CSSProperties, useLayoutEffect, useRef } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useDocumentStore } from '../../store/documentStore.ts'
+import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
+import { CanvasControls } from './CanvasControls.tsx'
 import { NodeView } from './NodeView.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
-import { useFitScale } from './useFitScale.ts'
 
-// The game screen (SCREEN) is laid out at its real size, so Offset pixels
-// mean the same thing as in Roblox. Then the whole screen is shrunk with a
-// CSS transform to fit the canvas area.
-
+// The game screen is laid out at its real size (the chosen device's), so
+// Offset pixels mean the same thing as in Roblox. Then the whole screen is
+// zoomed with a CSS transform and placed where the view says.
 export function Canvas() {
   const areaRef = useRef<HTMLElement>(null)
-  const scale = useFitScale(areaRef, SCREEN.width, SCREEN.height)
   const rootId = useDocumentStore((state) => state.document.rootId)
-  const pointerHandlers = useCanvasPointer(scale)
+  const screen = useViewStore(screenOf)
+  const view = useViewStore(useShallow(currentView))
+  const { handlers, cursor } = useCanvasPointer(view.zoom)
+
+  useLayoutEffect(() => {
+    const area = areaRef.current
+    if (!area) return
+    const { setArea, zoomBy, panBy } = useViewStore.getState()
+
+    // ResizeObserver calls us whenever the canvas area changes size (window
+    // resized, panels changed), so "fit" always fits.
+    const observer = new ResizeObserver(([entry]) => {
+      setArea({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      })
+    })
+    observer.observe(area)
+
+    // The mouse wheel (or two fingers on a trackpad) pans; with Cmd/Ctrl
+    // held, or a trackpad pinch (which browsers report as Ctrl + wheel), it
+    // zooms around the pointer. This listener is added by hand, not with
+    // React's onWheel, because React's wheel listeners aren't allowed to
+    // call preventDefault(), and without it Ctrl + wheel would zoom the
+    // whole web page instead.
+    function onWheel(event: WheelEvent) {
+      event.preventDefault()
+      // Some mice report lines instead of pixels (deltaMode 1).
+      const unit = event.deltaMode === 1 ? 16 : 1
+      if (event.ctrlKey || event.metaKey) {
+        const box = area!.getBoundingClientRect()
+        const point = {
+          x: event.clientX - box.left,
+          y: event.clientY - box.top,
+        }
+        zoomBy(Math.exp(-event.deltaY * unit * 0.01), point)
+      } else {
+        panBy(-event.deltaX * unit, -event.deltaY * unit)
+      }
+    }
+    area.addEventListener('wheel', onWheel, { passive: false })
+
+    // Safari reports a trackpad pinch as its own "gesture" events instead.
+    // `scale` is how far the fingers have spread since the pinch began, so
+    // each change zooms by how much it grew since the last one.
+    let lastScale = 1
+    function onGestureStart(event: Event) {
+      event.preventDefault()
+      lastScale = 1
+    }
+    function onGestureChange(event: Event) {
+      event.preventDefault()
+      const gesture = event as Event & {
+        scale: number
+        clientX: number
+        clientY: number
+      }
+      const box = area!.getBoundingClientRect()
+      const point = {
+        x: gesture.clientX - box.left,
+        y: gesture.clientY - box.top,
+      }
+      zoomBy(gesture.scale / lastScale, point)
+      lastScale = gesture.scale
+    }
+    area.addEventListener('gesturestart', onGestureStart)
+    area.addEventListener('gesturechange', onGestureChange)
+
+    return () => {
+      observer.disconnect()
+      area.removeEventListener('wheel', onWheel)
+      area.removeEventListener('gesturestart', onGestureStart)
+      area.removeEventListener('gesturechange', onGestureChange)
+    }
+  }, [])
 
   return (
     // The pointer handlers sit on the whole canvas area, so clicking the dark
@@ -22,25 +95,31 @@ export function Canvas() {
     // stops touch screens from scrolling instead of dragging.
     <main
       ref={areaRef}
-      {...pointerHandlers}
-      className="relative flex min-h-0 min-w-0 touch-none items-center justify-center overflow-hidden bg-zinc-950 select-none"
+      {...handlers}
+      style={{ cursor }}
+      className="relative min-h-0 min-w-0 touch-none overflow-hidden bg-zinc-950 select-none"
     >
-      {/* This box takes the shrunk size, so flexbox can center it. */}
+      {/* This box takes the zoomed size, at the view's position. */}
       <div
-        className="shrink-0 ring-1 ring-zinc-700"
-        style={{ width: SCREEN.width * scale, height: SCREEN.height * scale }}
+        className="absolute ring-1 ring-zinc-700"
+        style={{
+          left: view.x,
+          top: view.y,
+          width: screen.width * view.zoom,
+          height: screen.height * view.zoom,
+        }}
       >
         <div
           className="relative overflow-hidden bg-zinc-800"
           style={
             {
-              width: SCREEN.width,
-              height: SCREEN.height,
-              transform: `scale(${scale})`,
+              width: screen.width,
+              height: screen.height,
+              transform: `scale(${view.zoom})`,
               transformOrigin: 'top left',
-              // A CSS variable, so the selection outline can undo the shrink
+              // A CSS variable, so the selection outline can undo the zoom
               // and stay 2 screen pixels thick at any zoom.
-              '--canvas-scale': scale,
+              '--canvas-scale': view.zoom,
             } as CSSProperties
           }
         >
@@ -48,9 +127,7 @@ export function Canvas() {
         </div>
       </div>
 
-      <p className="absolute bottom-2 left-3 text-xs text-zinc-500">
-        {SCREEN.width} × {SCREEN.height} · {Math.round(scale * 100)}%
-      </p>
+      <CanvasControls />
     </main>
   )
 }

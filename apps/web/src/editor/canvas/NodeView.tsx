@@ -11,9 +11,9 @@ import {
   visibleFraction,
 } from '../../model/layout.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
-import { SCREEN } from '../../model/screen.ts'
 import type { NodeId, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
+import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { nodeStyle } from './nodeStyle.ts'
 import { ResizeHandles } from './ResizeHandles.tsx'
 
@@ -22,6 +22,9 @@ import { ResizeHandles } from './ResizeHandles.tsx'
 // Each NodeView reads only its own node from the store, so changing one
 // element re-renders just that element.
 export function NodeView({ id }: { id: NodeId }) {
+  // The device screen everything is laid out on (its size feeds the pixel
+  // maths below).
+  const screen = useViewStore(screenOf)
   const node = useDocumentStore((state) => state.document.nodes[id])
   const isSelected = useDocumentStore((state) => state.selection.includes(id))
   // Resize handles only when this is the one and only selected element,
@@ -35,7 +38,7 @@ export function NodeView({ id }: { id: NodeId }) {
   // A plain number, so this only re-renders when the radius really changes.
   const cornerRadius = useDocumentStore((state) =>
     state.document.nodes[id]?.modifiers?.UICorner
-      ? cornerRadiusPixels(state.document, id, SCREEN)
+      ? cornerRadiusPixels(state.document, id, screen)
       : 0,
   )
   // The size a UIAspectRatioConstraint forces, and the box a parent's
@@ -48,12 +51,12 @@ export function NodeView({ id }: { id: NodeId }) {
       if (!state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint) {
         return null
       }
-      const { width, height } = absoluteBox(state.document, id, SCREEN)
+      const { width, height } = absoluteBox(state.document, id, screen)
       return { width, height }
     }),
   )
   const slot = useDocumentStore(
-    useShallow((state) => layoutSlot(state.document, id, SCREEN)),
+    useShallow((state) => layoutSlot(state.document, id, screen)),
   )
   if (!node) return null
 
@@ -181,14 +184,15 @@ function ScrollingContent({
   node: UiNode
   children: ReactNode
 }) {
+  const screen = useViewStore(screenOf)
   const { CanvasSize, ScrollBarThickness } = resolveProps(node)
   // Each returns a plain number, so the component only re-renders when the
   // scroll bar length actually changes.
   const shownX = useDocumentStore((state) =>
-    visibleFraction(state.document, node.id, SCREEN, 'x'),
+    visibleFraction(state.document, node.id, screen, 'x'),
   )
   const shownY = useDocumentStore((state) =>
-    visibleFraction(state.document, node.id, SCREEN, 'y'),
+    visibleFraction(state.document, node.id, screen, 'y'),
   )
   const bar = { position: 'absolute', backgroundColor: 'black' } as const
 

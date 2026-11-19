@@ -1,4 +1,9 @@
-import { type PointerEvent as ReactPointerEvent, useRef } from 'react'
+import {
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   type Handle,
   type HandleSide,
@@ -11,12 +16,13 @@ import { isLaidOut } from '../../model/layout.ts'
 import { topLevelNodes } from '../../model/tree.ts'
 import type { NodeId, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
+import { useViewStore } from '../../store/viewStore.ts'
 
 // How far (in screen pixels) the pointer must move before a click becomes a
 // drag, so a slightly shaky click doesn't nudge anything.
 const DRAG_THRESHOLD = 3
 
-// What a drag does: move the selection, or resize one element.
+// What a drag does: move the selection, resize one element, or pan the view.
 // The `kind` field tells them apart: this is called a "discriminated union".
 type DragAction =
   | {
@@ -30,6 +36,13 @@ type DragAction =
       handle: Handle
       start: ResizeStart
     }
+  | {
+      kind: 'pan'
+      // Where the pointer was at the last move. Panning isn't undone and
+      // isn't rounded, so it can simply follow each move.
+      lastX: number
+      lastY: number
+    }
 
 // A drag in progress: where the pointer started, plus what it's doing.
 type Drag = DragAction & {
@@ -39,12 +52,52 @@ type Drag = DragAction & {
   started: boolean
 }
 
-// Click, Shift-click, drag to move, and drag a handle to resize. "Pointer"
-// events cover mouse, pen and touch with one API. `scale` is how much the
-// screen is shrunk on the canvas, used to turn screen pixels into game pixels.
+// Click, Shift-click, drag to move, drag a handle to resize, and pan with
+// the middle button or Space + drag. "Pointer" events cover mouse, pen and
+// touch with one API. `scale` is the canvas zoom, used to turn screen pixels
+// into game pixels. Also returns the cursor to show.
 export function useCanvasPointer(scale: number) {
   // A ref holds the drag in progress without re-rendering on every move.
   const drag = useRef<Drag | null>(null)
+  // Space held down (for Space + drag panning), and whether the pointer is
+  // over the canvas. Refs, so the event handlers always see the latest.
+  const spaceHeld = useRef(false)
+  const overCanvas = useRef(false)
+  // The same two facts as state, just to pick the cursor.
+  const [spaceDown, setSpaceDown] = useState(false)
+  const [panning, setPanning] = useState(false)
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.code !== 'Space') return
+      const target = event.target as HTMLElement
+      if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+        return // typing a space
+      }
+      // Over the canvas, Space means "pan", not "press the focused button".
+      if (overCanvas.current) event.preventDefault()
+      spaceHeld.current = true
+      setSpaceDown(true)
+    }
+    function onKeyUp(event: KeyboardEvent) {
+      if (event.code !== 'Space') return
+      spaceHeld.current = false
+      setSpaceDown(false)
+    }
+    // Switching windows while holding Space never sends the keyup.
+    function onBlur() {
+      spaceHeld.current = false
+      setSpaceDown(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
 
   function beginDrag(
     event: ReactPointerEvent<HTMLElement>,
@@ -63,7 +116,18 @@ export function useCanvasPointer(scale: number) {
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLElement>) {
-    if (event.button !== 0) return // left button only
+    // ---- Pan: the middle button, or the left button with Space held.
+    if (event.button === 1 || (event.button === 0 && spaceHeld.current)) {
+      event.preventDefault() // stops the browser's middle-click scrolling
+      beginDrag(event, {
+        kind: 'pan',
+        lastX: event.clientX,
+        lastY: event.clientY,
+      })
+      setPanning(true)
+      return
+    }
+    if (event.button !== 0) return // otherwise, left button only
     const clicked = event.target as Element
 
     // If a Properties box is mid-edit, finish it now: blurring it saves the
@@ -134,6 +198,15 @@ export function useCanvasPointer(scale: number) {
     const current = drag.current
     if (!current || event.pointerId !== current.pointerId || scale === 0) return
 
+    if (current.kind === 'pan') {
+      useViewStore
+        .getState()
+        .panBy(event.clientX - current.lastX, event.clientY - current.lastY)
+      current.lastX = event.clientX
+      current.lastY = event.clientY
+      return
+    }
+
     const screenDx = event.clientX - current.startX
     const screenDy = event.clientY - current.startY
     if (!current.started && Math.hypot(screenDx, screenDy) < DRAG_THRESHOLD) {
@@ -169,13 +242,24 @@ export function useCanvasPointer(scale: number) {
   function endDrag(event: ReactPointerEvent<HTMLElement>) {
     if (drag.current?.pointerId !== event.pointerId) return
     if (drag.current.started) useDocumentStore.getState().endGroup()
+    if (drag.current.kind === 'pan') setPanning(false)
     drag.current = null
   }
 
   return {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp: endDrag,
-    onPointerCancel: endDrag,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: endDrag,
+      onPointerCancel: endDrag,
+      onPointerEnter: () => {
+        overCanvas.current = true
+      },
+      onPointerLeave: () => {
+        overCanvas.current = false
+      },
+    },
+    // A hand while Space is held, a closed hand while panning.
+    cursor: panning ? 'grabbing' : spaceDown ? 'grab' : undefined,
   }
 }
