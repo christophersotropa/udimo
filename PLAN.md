@@ -36,7 +36,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 - [x] Explorer tree: drag to reparent or reorder, rename, hide, lock
 - [ ] Properties: Position and Size as UDim2 (Scale + Offset), AnchorPoint, colors with transparency, text, font, TextScaled, ZIndex, LayoutOrder, Visible, image asset ID
-- [ ] "Make responsive" button: convert Offset to Scale (and back)
+- [x] "Make responsive" button: convert Offset to Scale (and back)
 
 **Editing basics**
 

@@ -8,11 +8,14 @@ export const VERTICAL_ALIGNMENT = { Center: 0, Top: 1, Bottom: 2 } as const
 // "Custom" is an old option Roblox keeps for compatibility; Udimo treats it
 // like the tree order.
 export const SORT_ORDER = { Name: 0, Custom: 1, LayoutOrder: 2 } as const
+// UIStroke on a text element: outline the text (Contextual) or the box.
+export const APPLY_STROKE_MODE = { Contextual: 0, Border: 1 } as const
 
 export type FillDirection = keyof typeof FILL_DIRECTION
 export type HorizontalAlignment = keyof typeof HORIZONTAL_ALIGNMENT
 export type VerticalAlignment = keyof typeof VERTICAL_ALIGNMENT
 export type SortOrder = keyof typeof SORT_ORDER
+export type ApplyStrokeMode = keyof typeof APPLY_STROKE_MODE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

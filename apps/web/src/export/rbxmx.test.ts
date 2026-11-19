@@ -142,6 +142,19 @@ describe('documentToRbxmx', () => {
     'UIGridLayout',
   ])
 
+  it("writes UIStroke's ApplyStrokeMode as a number", () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const label = addNode(store.getState().document.rootId, 'TextLabel')
+    addModifier(label, 'UIStroke')
+    updateModifier(label, 'UIStroke', { ApplyStrokeMode: 'Border' })
+    const stroke = propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'UIStroke',
+    )
+    expect(stroke.get('ApplyStrokeMode')).toBe('token:1')
+  })
+
   it('writes layout options as enum numbers', () => {
     const store = createDocumentStore()
     const { addNode, addModifier, updateModifier } = store.getState()

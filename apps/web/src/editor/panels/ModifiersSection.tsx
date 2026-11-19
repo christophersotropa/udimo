@@ -1,5 +1,7 @@
 import { withEnd } from '../../lib/sequence.ts'
+import { isTextClass } from '../../model/classes.ts'
 import {
+  APPLY_STROKE_MODE,
   enumNames,
   FILL_DIRECTION,
   HORIZONTAL_ALIGNMENT,
@@ -82,6 +84,19 @@ export function ModifiersSection({ id }: { id: NodeId }) {
               onChange={(Thickness) => update(id, 'UIStroke', { Thickness })}
             />
           </Row>
+          {/* Only text elements have a choice; others always get a border. */}
+          {isTextClass(node.className) && (
+            <Row label="Apply to">
+              <SelectField
+                label="UIStroke ApplyStrokeMode"
+                value={stroke.ApplyStrokeMode}
+                options={enumNames(APPLY_STROKE_MODE)}
+                onChange={(ApplyStrokeMode) =>
+                  update(id, 'UIStroke', { ApplyStrokeMode })
+                }
+              />
+            </Row>
+          )}
           <Row label="Transparency">
             <NumberField
               label="UIStroke Transparency"

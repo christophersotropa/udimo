@@ -1,4 +1,5 @@
 import type {
+  ApplyStrokeMode,
   FillDirection,
   HorizontalAlignment,
   SortOrder,
@@ -106,6 +107,9 @@ export type ModifierProps = {
     Color?: Color3
     Thickness?: number // pixels
     Transparency?: number
+    // On a text element: outline the text (Contextual) or the box (Border).
+    // Other elements always get a box outline.
+    ApplyStrokeMode?: ApplyStrokeMode
   }
   UIGradient: {
     // Multiplies the element's colors and transparency, changing across it.

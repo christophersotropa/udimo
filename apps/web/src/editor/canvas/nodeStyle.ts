@@ -69,9 +69,13 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
   }
 
   // UIStroke draws an outline outside the element's edge. On a text element
-  // it outlines the text instead (Roblox's default "Contextual" mode).
+  // in Roblox's default "Contextual" mode it outlines the text instead;
+  // "Border" mode outlines the box like on any other element.
   const stroke = resolveModifier(node, 'UIStroke')
-  const strokeOnText = stroke !== null && isTextClass(node.className)
+  const strokeOnText =
+    stroke !== null &&
+    isTextClass(node.className) &&
+    stroke.ApplyStrokeMode === 'Contextual'
   if (stroke && stroke.Thickness > 0 && !strokeOnText) {
     // A shadow with no blur, spread outwards, follows rounded corners too.
     const color = color3ToCss(stroke.Color, stroke.Transparency)
