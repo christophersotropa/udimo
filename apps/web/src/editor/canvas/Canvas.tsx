@@ -2,6 +2,7 @@ import { type CSSProperties, useLayoutEffect, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
+import { canEditTextOnCanvas } from '../../model/classes.ts'
 import { openMenuFor } from '../menus/openMenu.ts'
 import { NodeView } from './NodeView.tsx'
 import { ZoomBar } from './ZoomBar.tsx'
@@ -104,6 +105,20 @@ export function Canvas() {
       // Right-click: the menu for the element under the pointer, or for
       // the ScreenGui on empty canvas. (Locked elements let the click
       // through, like a left click.)
+      // Double-click a text element to edit its text right there.
+      // The element is found from the pointer's position, not the event's
+      // target: pressing an element captures the pointer for dragging
+      // (see useCanvasPointer), and while it's captured the browser reports
+      // clicks as happening on the canvas itself.
+      onDoubleClick={(event) => {
+        const under = document.elementFromPoint(event.clientX, event.clientY)
+        const id = under?.closest<HTMLElement>('[data-node-id]')?.dataset.nodeId
+        const node = id && useDocumentStore.getState().document.nodes[id]
+        if (!id || !node || !canEditTextOnCanvas(node)) return
+        if (useViewStore.getState().tool !== 'select') return
+        useDocumentStore.getState().select(id)
+        useViewStore.getState().setEditingTextId(id)
+      }}
       onContextMenu={(event) => {
         event.preventDefault()
         const element = (event.target as Element).closest<HTMLElement>(

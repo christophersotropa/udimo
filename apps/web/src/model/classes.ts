@@ -1,4 +1,4 @@
-import type { ClassName } from './types.ts'
+import type { ClassName, UiNode } from './types.ts'
 
 // Facts about Roblox classes, kept in one place so the canvas, the Properties
 // panel and the exporter can't disagree.
@@ -21,4 +21,10 @@ export function isImageClass(className: ClassName): boolean {
 
 export function isContainerClass(className: ClassName): boolean {
   return CONTAINER_CLASSES.includes(className)
+}
+
+// True if the element's text can be edited right on the canvas (by double-
+// clicking it): a text element that isn't locked.
+export function canEditTextOnCanvas(node: UiNode): boolean {
+  return isTextClass(node.className) && !node.locked
 }

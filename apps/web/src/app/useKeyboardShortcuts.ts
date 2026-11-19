@@ -7,6 +7,7 @@ import {
   wrapSelectionInFrame,
 } from '../store/commands.ts'
 import { actions } from '../editor/actions.ts'
+import { canEditTextOnCanvas } from '../model/classes.ts'
 import { pickProjectFile, saveProject } from '../editor/topbar/projectFiles.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
 import { screenOf, type Tool, useViewStore } from '../store/viewStore.ts'
@@ -33,6 +34,7 @@ const NUDGE_BIG = 10
 //   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
 //   Paste Into     Cmd+Shift+V: inside the one selected element
 //   Rename         F2
+//   Edit text      Enter (or double-click it on the canvas)
 //   Filter         Cmd+Shift+X: the Explorer's filter box
 //   Files          Cmd+S save, Cmd+O open, Cmd+E export
 //   Select all     Cmd+A
@@ -145,6 +147,15 @@ export function useKeyboardShortcuts() {
         nudgeSelection(store, x * step, y * step)
       } else if (!command && !event.shiftKey && Object.hasOwn(TOOL_KEYS, key)) {
         useViewStore.getState().setTool(TOOL_KEYS[key])
+      } else if (!command && key === 'enter') {
+        // Enter on a selected text element edits its text on the canvas.
+        const { selection, document } = store.getState()
+        const node =
+          selection.length === 1 ? document.nodes[selection[0]] : null
+        if (node && canEditTextOnCanvas(node)) {
+          event.preventDefault()
+          useViewStore.getState().setEditingTextId(node.id)
+        }
       } else if (key === 'f2') {
         const { selection } = store.getState()
         if (selection.length === 1) {

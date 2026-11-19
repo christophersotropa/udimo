@@ -62,6 +62,13 @@ describe('view store', () => {
     expect(store.getState().snapping).toBe(false)
   })
 
+  it('remembers which text is being edited on the canvas', () => {
+    const { store } = setup()
+    expect(store.getState().editingTextId).toBeNull()
+    store.getState().setEditingTextId('abc')
+    expect(store.getState().editingTextId).toBe('abc')
+  })
+
   it('zoomTo sets an exact zoom', () => {
     const { store, view } = setup()
     store.getState().zoomTo(1)

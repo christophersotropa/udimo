@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { toContentUri } from '../../lib/assets.ts'
 import { color3ToCss } from '../../lib/color.ts'
 import {
@@ -171,6 +171,7 @@ function NodeText({ id }: { id: NodeId }) {
     }),
   )
   useFontsLoaded()
+  const editing = useViewStore((state) => state.editingTextId === id)
   if (!node) return null
 
   const p = resolveProps(node)
@@ -195,6 +196,19 @@ function NodeText({ id }: { id: NodeId }) {
     )
   }
 
+  // Being edited (double-click or Enter): the text becomes a text box, in
+  // the same place, font and size.
+  if (editing) {
+    return (
+      <CanvasTextEditor
+        id={id}
+        text={p.Text}
+        placeholder={node.className === 'TextBox' ? p.PlaceholderText : ''}
+        fontSize={fontSize}
+      />
+    )
+  }
+
   return (
     <span
       style={{
@@ -204,6 +218,70 @@ function NodeText({ id }: { id: NodeId }) {
     >
       {text}
     </span>
+  )
+}
+
+// The text box for editing an element's text right on the canvas. It looks
+// like the text itself (it takes the font, size and colour from around it)
+// and grows a line at a time, so nothing jumps while you type.
+//   Enter: save   Shift+Enter: new line   Escape: cancel   click away: save
+// Saving is a single change, so it's one undo step.
+function CanvasTextEditor({
+  id,
+  text,
+  placeholder,
+  fontSize,
+}: {
+  id: NodeId
+  text: string
+  placeholder: string
+  fontSize: number | undefined
+}) {
+  const [draft, setDraft] = useState(text)
+  // A ref, not state: it must be readable in onBlur straight away.
+  const cancelled = useRef(false)
+
+  function finish() {
+    useViewStore.getState().setEditingTextId(null)
+    if (!cancelled.current && draft !== text) {
+      useDocumentStore.getState().updateProps(id, { Text: draft })
+    }
+  }
+
+  return (
+    <textarea
+      // useCanvasPointer leaves clicks inside this alone (it finds it by
+      // this attribute), so they place the caret instead of dragging.
+      data-text-editor
+      autoFocus // it only appears because you asked to edit
+      aria-label="Text"
+      spellCheck={false}
+      rows={draft.split('\n').length}
+      value={draft}
+      placeholder={placeholder}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={(event) => event.target.select()} // ready to type over
+      onBlur={finish}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault() // Enter saves; Shift+Enter makes a new line
+          event.currentTarget.blur()
+        } else if (event.key === 'Escape') {
+          cancelled.current = true
+          event.currentTarget.blur()
+        }
+      }}
+      className="block w-full resize-none overflow-hidden bg-transparent p-0 text-center outline-none"
+      style={{
+        font: 'inherit',
+        fontSize,
+        color: 'inherit',
+        lineHeight: 1,
+        whiteSpace: 'pre',
+        // A thin dashed line around the box, 1 screen pixel at any zoom.
+        outline: 'calc(1px / var(--canvas-scale)) dashed var(--color-accent)',
+      }}
+    />
   )
 }
 
