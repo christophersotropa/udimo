@@ -27,7 +27,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 - [x] Instance tree model with a ScreenGui root
 - [x] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
 - [x] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
-- [ ] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
+- [x] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
 - [x] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
 - [ ] Snapping and alignment guides against siblings and the parent
 - [ ] Insert palette (click or drag onto the canvas)

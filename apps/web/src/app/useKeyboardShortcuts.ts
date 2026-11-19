@@ -10,6 +10,7 @@ import {
   wrapSelectionInFrame,
 } from '../store/commands.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
+import { screenOf, useViewStore } from '../store/viewStore.ts'
 
 // What Copy or Cut last took. It lives here, in memory, not in the store:
 // it isn't part of the document and isn't undone. It's lost on refresh,
@@ -34,6 +35,7 @@ const NUDGE_BIG = 10
 //   Duplicate      Cmd+D / Ctrl+D
 //   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
 //   Wrap in Frame  Cmd+G / Ctrl+G
+//   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
 //   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
 //   Deselect       Escape
@@ -78,7 +80,15 @@ export function useKeyboardShortcuts() {
       } else if (command && key === 'g') {
         // Cmd+G is the browser's "find next"; here it wraps in a Frame.
         event.preventDefault()
-        wrapSelectionInFrame(store)
+        // Wrap keeps things in place on the screen you're looking at.
+        wrapSelectionInFrame(store, screenOf(useViewStore.getState()))
+      } else if (command && (key === '=' || key === '+' || key === '-')) {
+        // Without preventDefault these would zoom the whole web page.
+        event.preventDefault()
+        useViewStore.getState().zoomBy(key === '-' ? 1 / 1.25 : 1.25)
+      } else if (command && key === '0') {
+        event.preventDefault()
+        useViewStore.getState().fit()
       } else if (!command && (key === 'delete' || key === 'backspace')) {
         event.preventDefault()
         deleteSelection(store)
