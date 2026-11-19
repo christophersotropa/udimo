@@ -338,6 +338,24 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
               : 'text-muted hover:bg-hover'
         }`}
       >
+        {/* Faint lines down each level the row sits inside, so you can see
+            what's inside what. */}
+        {Array.from({ length: depth }, (_, level) => (
+          <span
+            key={level}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 w-px bg-line"
+            style={{ left: level * INDENT + 10 }}
+          />
+        ))}
+        {/* An amber bar on the selected row's edge. */}
+        {isSelected && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0.5 left-0 w-0.5 rounded-full bg-accent"
+          />
+        )}
+
         {/* The marker line for "drop above" or "drop below" this row,
             indented to show which level the rows will land on. */}
         {(dropPlace === 'before' || dropPlace === 'after') && (
@@ -377,6 +395,12 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           >
             {node.name}
           </button>
+        )}
+        {/* Folded rows say how much is inside, so nothing is out of mind. */}
+        {hasChildren && !open && !renaming && (
+          <span className="shrink-0 rounded-sm bg-raised px-1 font-mono text-[10px] text-faint">
+            {node.children.length + modifiers.length}
+          </span>
         )}
 
         {/* Insert a child: shows while the row is hovered. */}

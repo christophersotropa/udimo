@@ -102,6 +102,16 @@ export function NodeView({ id }: { id: NodeId }) {
       {isImageClass(node.className) && <ImagePlaceholder node={node} />}
       {node.className === 'ScrollingFrame' ? (
         <ScrollingContent node={node}>{content}</ScrollingContent>
+      ) : resolveProps(node).ClipsDescendants ? (
+        // ClipsDescendants: children are cut off at the element's edges
+        // (rounded too, with a UICorner). A separate box, so the resize
+        // handles, which stick out, aren't cut off.
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ borderRadius: 'inherit' }}
+        >
+          {content}
+        </div>
       ) : (
         content
       )}

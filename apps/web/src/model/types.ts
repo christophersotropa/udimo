@@ -75,6 +75,14 @@ export type Props = {
   Visible?: boolean
   ZIndex?: number
   LayoutOrder?: number
+  // Turns the element around its center, in degrees, clockwise.
+  Rotation?: number
+  // Cuts off children where they stick out past this element's edges.
+  ClipsDescendants?: boolean
+  // Roblox's built-in border: how thick (0 = none) and what colour. It's
+  // drawn outside the edges (BorderMode Outline). Most UIs use UIStroke.
+  BorderSizePixel?: number
+  BorderColor3?: Color3
   // Text classes (TextLabel, TextButton, TextBox)
   Text?: string
   // Which font, and how thick (see model/fonts.ts)

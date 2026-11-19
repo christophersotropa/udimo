@@ -2,9 +2,9 @@ import type { ReactNode } from 'react'
 import type { ClassName, ModifierClass } from '../../model/types.ts'
 
 // A small outline icon for each kind of object, in the Explorer and the
-// Insert list, so you can tell kinds apart at a glance. Buttons are tinted
-// amber (they're what players press); everything else takes the text
-// colour around it, so a selected row's icon turns amber with its name.
+// Insert list, coloured by family so you can tell kinds apart at a glance:
+// containers blue, text green, buttons amber (they're what players press),
+// images violet, modifiers grey, and the screen itself in the accent.
 const SHAPES: Record<ClassName | 'Modifier', ReactNode> = {
   // A monitor: the whole screen.
   ScreenGui: (
@@ -47,15 +47,24 @@ const SHAPES: Record<ClassName | 'Modifier', ReactNode> = {
   Modifier: <path d="M8 3l5 5-5 5-5-5z" />,
 }
 
-const BUTTONS: string[] = ['TextButton', 'ImageButton']
+const COLORS: Record<ClassName | 'Modifier', string> = {
+  ScreenGui: 'text-accent',
+  Frame: 'text-sky-400',
+  ScrollingFrame: 'text-sky-400',
+  TextLabel: 'text-emerald-400',
+  TextBox: 'text-emerald-400',
+  TextButton: 'text-accent',
+  ImageButton: 'text-accent',
+  ImageLabel: 'text-violet-400',
+  Modifier: 'text-faint',
+}
 
 export function ClassIcon({
   className,
 }: {
   className: ClassName | ModifierClass
 }) {
-  const shape =
-    className in SHAPES ? SHAPES[className as ClassName] : SHAPES.Modifier
+  const kind = className in SHAPES ? (className as ClassName) : 'Modifier'
   return (
     <svg
       viewBox="0 0 16 16"
@@ -67,9 +76,9 @@ export function ClassIcon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={`shrink-0 ${BUTTONS.includes(className) ? 'text-accent' : ''}`}
+      className={`shrink-0 ${COLORS[kind]}`}
     >
-      {shape}
+      {SHAPES[kind]}
     </svg>
   )
 }

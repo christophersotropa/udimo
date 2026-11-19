@@ -1,11 +1,22 @@
-import { type ReactNode, useState } from 'react'
-import { color3ToHex, hexToColor3, parseHexColor } from '../../lib/color.ts'
+import { type ReactNode, useContext, useState } from 'react'
+import { color3ToHex, hexToColor3 } from '../../lib/color.ts'
 import { clamp, formatNumber, parseNumberInput } from '../../lib/numbers.ts'
-import type { Color3, UDim2 } from '../../model/types.ts'
+import {
+  formatColor3,
+  formatUDim,
+  formatUDim2,
+  parseColor3,
+  parseUDim,
+  parseUDim2,
+} from '../../lib/robloxText.ts'
+import type { Color3, UDim, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
-import { Switch } from '../ui/Switch.tsx'
+import { useViewStore } from '../../store/viewStore.ts'
+import { ChevronIcon } from './icons.tsx'
+import { PropertyFilter } from './propertyFilter.ts'
 
-// Small building blocks for the Properties panel.
+// The building blocks of the Properties panel, in Studio's style: a column
+// of property names, values in monospace, typed the way Studio shows them.
 
 // Boxes that save on every keystroke (text) or every color-picker drag would
 // otherwise make one undo step per tiny change. Focus starts an undo group
@@ -16,52 +27,103 @@ const undoGroupWhileFocused = {
 }
 
 const inputClass =
-  'h-8 w-full min-w-0 rounded-md bg-app px-2.5 text-sm text-ink ring-1 ring-line outline-none hover:ring-hover focus:ring-accent'
+  'h-6 w-full min-w-0 rounded-sm bg-app px-1.5 font-mono text-xs text-ink ring-1 ring-line outline-none hover:ring-hover focus:ring-accent'
 
-// A titled group of rows, e.g. "Layout", separated by a line.
+// ---------- Filtering ----------
+
+function matches(query: string, ...names: (string | undefined)[]): boolean {
+  const q = query.trim().toLowerCase()
+  return q === '' || names.some((name) => name?.toLowerCase().includes(q))
+}
+
+// ---------- Layout ----------
+
+// A titled group of rows that folds shut when its title is clicked. It
+// stays shut as you select other elements (the view store remembers), but
+// opens while you're filtering so matches can show. `action` sits on the
+// right of the title, like "Convert to Scale".
 export function Section({
   title,
+  action,
   children,
 }: {
   title: string
+  action?: ReactNode
   children: ReactNode
 }) {
+  const closed = useViewStore((state) => state.closedSections.includes(title))
+  const toggle = useViewStore((state) => state.toggleSection)
+  const filtering = useContext(PropertyFilter).trim() !== ''
+  const open = filtering || !closed
   return (
-    <section className="space-y-2 border-b border-line px-3.5 py-3.5">
-      <h3 className="pb-0.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
-        {title}
-      </h3>
-      {children}
+    <section className="border-b border-line">
+      <div className="flex h-8 items-center justify-between pr-3 pl-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => toggle(title)}
+          className="flex items-center gap-1 rounded text-[13px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <ChevronIcon
+            className={`text-faint transition-transform ${open ? 'rotate-90' : ''}`}
+          />
+          {title}
+        </button>
+        {action}
+      </div>
+      {open && <div className="space-y-1 px-3 pb-2.5">{children}</div>}
     </section>
   )
 }
 
-// One property: its name on the left, its input(s) on the right.
-export function Row({
-  label,
+// A small amber text button on the right of a section title.
+export function SectionAction({
+  onClick,
+  title,
   children,
 }: {
-  label: string
+  onClick: () => void
+  title?: string
   children: ReactNode
 }) {
   return (
-    <div className="grid grid-cols-[84px_1fr] items-center gap-2">
-      <span className="truncate text-sm text-muted" title={label}>
-        {label}
-      </span>
-      <div className="flex min-w-0 gap-1.5">{children}</div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="text-xs text-accent hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-accent"
+    >
+      {children}
+    </button>
   )
 }
 
-// The "Scale | Offset px" headings over a block of UDim rows.
-export function ColumnHeads({ left, right }: { left: string; right: string }) {
+// One property: its name on the left, its value on the right. `name` is
+// the Roblox property it edits, if the label is shortened ("Transparency"
+// for BackgroundTransparency); both count for the filter and the tooltip.
+export function Row({
+  label,
+  name,
+  indent = false,
+  children,
+}: {
+  label: string
+  name?: string
+  indent?: boolean // a sub-row, like X and Y under Size
+  children: ReactNode
+}) {
+  const query = useContext(PropertyFilter)
+  if (!matches(query, label, name)) return null
   return (
-    <p className="grid grid-cols-[84px_1fr_1fr] gap-1.5 text-[11px] text-faint">
-      <span />
-      <span className="pl-1">{left}</span>
-      <span className="pl-1">{right}</span>
-    </p>
+    <div className="grid min-h-6 grid-cols-[100px_1fr] items-center gap-2">
+      <span
+        className={`truncate text-xs text-muted ${indent ? 'pl-3' : ''}`}
+        title={name ?? label}
+      >
+        {label}
+      </span>
+      <div className="flex min-w-0 items-center gap-1.5">{children}</div>
+    </div>
   )
 }
 
@@ -74,50 +136,47 @@ export function Hint({
   warn?: boolean
 }) {
   return (
-    <p className={`text-xs ${warn ? 'text-warn' : 'text-faint'}`}>{children}</p>
+    <p className={`py-0.5 text-[11px] ${warn ? 'text-warn' : 'text-faint'}`}>
+      {children}
+    </p>
   )
 }
 
-type NumberFieldProps = {
-  label: string // read out by screen readers, since the box has no visible label
-  value: number
-  onChange: (value: number) => void
-  min?: number
-  max?: number
-  integer?: boolean // round to a whole number (pixels, ZIndex...)
-}
+// ---------- Value boxes ----------
 
-// A number box that saves on Enter or when you click away, not on every
-// keystroke, so half-typed text like "-" or "0." isn't rejected while typing.
-// Escape throws the draft away. Bad input (like "abc") goes back to the old value.
-export function NumberField({
+// A box showing a value as text (`format`) that you can type into. What
+// you type is read with `parse` when you press Enter or click away; if it
+// can't be read, the box goes back to the old value. Escape cancels.
+export function TextValueField<T>({
   label,
   value,
+  format,
+  parse,
   onChange,
-  min = -Infinity,
-  max = Infinity,
-  integer = false,
-}: NumberFieldProps) {
-  // null = not editing, so the box shows the stored value. While typing,
-  // the draft holds exactly what's in the box.
+}: {
+  label: string // for screen readers
+  value: T
+  format: (value: T) => string
+  parse: (text: string) => T | null
+  onChange: (value: T) => void
+}) {
+  // null = not editing, so the box shows the stored value.
   const [draft, setDraft] = useState<string | null>(null)
 
   function commit() {
     if (draft === null) return
-    const parsed = parseNumberInput(draft)
-    if (parsed !== null) {
-      onChange(clamp(integer ? Math.round(parsed) : parsed, min, max))
-    }
+    const parsed = parse(draft)
+    if (parsed !== null) onChange(parsed)
     setDraft(null)
   }
 
   return (
     <input
       type="text"
-      inputMode="decimal" // number keyboard on phones and tablets
       aria-label={label}
-      className={`${inputClass} tabular-nums`}
-      value={draft ?? formatNumber(value)}
+      spellCheck={false}
+      className={inputClass}
+      value={draft ?? format(value)}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
@@ -128,7 +187,40 @@ export function NumberField({
   )
 }
 
-// A text box that saves on every keystroke, so the canvas updates as you type.
+// A number box. Half-typed text like "-" or "0." is fine while typing;
+// it's read on Enter or click away, and kept between `min` and `max`.
+export function NumberField({
+  label,
+  value,
+  onChange,
+  min = -Infinity,
+  max = Infinity,
+  integer = false,
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  integer?: boolean // round to a whole number (pixels, ZIndex...)
+}) {
+  return (
+    <TextValueField
+      label={label}
+      value={value}
+      format={formatNumber}
+      parse={(text) => {
+        const parsed = parseNumberInput(text)
+        if (parsed === null) return null
+        return clamp(integer ? Math.round(parsed) : parsed, min, max)
+      }}
+      onChange={onChange}
+    />
+  )
+}
+
+// A text box that saves on every keystroke, so the canvas updates as you
+// type (Text, PlaceholderText...).
 export function TextField({
   label,
   value,
@@ -142,7 +234,7 @@ export function TextField({
     <input
       type="text"
       aria-label={label}
-      className={inputClass}
+      className={`${inputClass} font-sans`}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       {...undoGroupWhileFocused}
@@ -150,7 +242,7 @@ export function TextField({
   )
 }
 
-// An on/off property, shown as a switch.
+// An on/off property, as an amber checkbox like Studio's.
 export function ToggleField({
   label,
   value,
@@ -160,11 +252,20 @@ export function ToggleField({
   value: boolean
   onChange: (value: boolean) => void
 }) {
-  return <Switch label={label} checked={value} onChange={onChange} />
+  return (
+    <input
+      type="checkbox"
+      aria-label={label}
+      checked={value}
+      onChange={(event) => onChange(event.target.checked)}
+      className="size-3.5 cursor-pointer accent-accent"
+    />
+  )
 }
 
-// A color: a swatch that opens the browser's color picker, and the hex code
-// next to it, which you can also type into (saved on Enter or click away).
+// A colour: a swatch that opens the browser's colour picker, and the colour
+// as "42, 55, 87" (0–255, like Studio) that you can type into. A hex code
+// like #2A3757 works too.
 export function ColorField({
   label,
   value,
@@ -174,41 +275,24 @@ export function ColorField({
   value: Color3
   onChange: (value: Color3) => void
 }) {
-  const hex = color3ToHex(value).toUpperCase()
-  const [draft, setDraft] = useState<string | null>(null)
-
-  function commit() {
-    if (draft === null) return
-    const typed = parseHexColor(draft)
-    if (typed) onChange(typed) // anything else goes back to the old color
-    setDraft(null)
-  }
-
   return (
-    <div className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md bg-app pl-1.5 ring-1 ring-line focus-within:ring-accent">
-      {/* The swatch is a real color input, made to look like a square. */}
+    <>
       <input
         type="color"
         aria-label={`${label} picker`}
-        className="size-5 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
-        value={hex.toLowerCase()}
+        className="size-5 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 ring-1 ring-line [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
+        value={color3ToHex(value)}
         onChange={(event) => onChange(hexToColor3(event.target.value))}
         {...undoGroupWhileFocused}
       />
-      <input
-        type="text"
-        aria-label={label}
-        spellCheck={false}
-        className="h-full min-w-0 flex-1 bg-transparent font-mono text-sm text-ink outline-none"
-        value={draft ?? hex}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur()
-          if (event.key === 'Escape') setDraft(null)
-        }}
+      <TextValueField
+        label={label}
+        value={value}
+        format={formatColor3}
+        parse={parseColor3}
+        onChange={onChange}
       />
-    </div>
+    </>
   )
 }
 
@@ -232,7 +316,7 @@ export function SelectField<T extends string>({
       aria-label={label}
       value={value}
       onChange={(event) => onChange(event.target.value as T)}
-      className={`${inputClass} pr-1`}
+      className={`${inputClass} pr-1 font-sans`}
     >
       {options.map((option) => (
         <option key={option} value={option}>
@@ -243,48 +327,96 @@ export function SelectField<T extends string>({
   )
 }
 
-// A UDim2 (like Position or Size) as two rows, X then Y, each with Scale
-// and Offset, like Studio shows them. `name` is the property, for screen
-// readers; `short` is the visible label ("Pos" shows "Pos X", "Pos Y").
-export function UDim2Rows({
+// A UDim ("{0, 14}") on one row.
+export function UDimRow({
+  label,
   name,
-  short = name,
   value,
   onChange,
 }: {
-  name: string
-  short?: string
-  value: UDim2
-  onChange: (value: UDim2) => void
+  label: string
+  name?: string
+  value: UDim
+  onChange: (value: UDim) => void
 }) {
   return (
+    <Row label={label} name={name}>
+      <TextValueField
+        label={name ?? label}
+        value={value}
+        format={formatUDim}
+        parse={parseUDim}
+        onChange={onChange}
+      />
+    </Row>
+  )
+}
+
+// A UDim2 (Position, Size...) as Studio shows it, "{0.34, 0}, {0, 0}".
+// The arrow by its name opens X and Y rows with separate Scale and Offset
+// boxes, for when that's easier than typing the whole thing.
+export function UDim2Row({
+  label,
+  value,
+  onChange,
+  startOpen = false,
+}: {
+  label: string // the Roblox property name, e.g. Size
+  value: UDim2
+  onChange: (value: UDim2) => void
+  startOpen?: boolean
+}) {
+  const [open, setOpen] = useState(startOpen)
+  const query = useContext(PropertyFilter)
+  if (!matches(query, label)) return null
+
+  const axis = (name: 'X' | 'Y', scale: 'xs' | 'ys', offset: 'xo' | 'yo') => (
+    <Row label={name} indent>
+      <span className="text-[11px] text-faint">Scale</span>
+      <NumberField
+        label={`${label} ${name} Scale`}
+        value={value[scale]}
+        onChange={(v) => onChange({ ...value, [scale]: v })}
+      />
+      <span className="text-[11px] text-faint">Offset</span>
+      <NumberField
+        label={`${label} ${name} Offset`}
+        integer
+        value={value[offset]}
+        onChange={(v) => onChange({ ...value, [offset]: v })}
+      />
+    </Row>
+  )
+
+  return (
     <>
-      <Row label={`${short} X`}>
-        <NumberField
-          label={`${name} X Scale`}
-          value={value.xs}
-          onChange={(xs) => onChange({ ...value, xs })}
+      <div className="grid min-h-6 grid-cols-[100px_1fr] items-center gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          title={`${label}: show X and Y separately`}
+          className="flex items-center gap-0.5 truncate text-left text-xs text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <ChevronIcon
+            className={`-ml-0.5 shrink-0 text-faint transition-transform ${open ? 'rotate-90' : ''}`}
+          />
+          {label}
+        </button>
+        <TextValueField
+          label={label}
+          value={value}
+          format={formatUDim2}
+          parse={parseUDim2}
+          onChange={onChange}
         />
-        <NumberField
-          label={`${name} X Offset`}
-          integer
-          value={value.xo}
-          onChange={(xo) => onChange({ ...value, xo })}
-        />
-      </Row>
-      <Row label={`${short} Y`}>
-        <NumberField
-          label={`${name} Y Scale`}
-          value={value.ys}
-          onChange={(ys) => onChange({ ...value, ys })}
-        />
-        <NumberField
-          label={`${name} Y Offset`}
-          integer
-          value={value.yo}
-          onChange={(yo) => onChange({ ...value, yo })}
-        />
-      </Row>
+      </div>
+      {open && (
+        <>
+          {axis('X', 'xs', 'xo')}
+          {axis('Y', 'ys', 'yo')}
+        </>
+      )}
     </>
   )
 }

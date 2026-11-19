@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { withEnd } from '../../lib/sequence.ts'
+import { formatUDim } from '../../lib/robloxText.ts'
 import { isTextClass } from '../../model/classes.ts'
 import {
   APPLY_STROKE_MODE,
@@ -16,132 +17,151 @@ import {
   modifierSummary,
   resolveModifier,
 } from '../../model/modifiers.ts'
-import type { ModifierClass, NodeId, UDim } from '../../model/types.ts'
+import type { ModifierClass, NodeId, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { MenuItem, Popover } from '../ui/Popover.tsx'
-import { Switch } from '../ui/Switch.tsx'
 import {
   ColorField,
   NumberField,
   Row,
   Section,
   SelectField,
-  UDim2Rows,
+  UDim2Row,
+  UDimRow,
 } from './fields.tsx'
-import { ChevronIcon, PlusIcon } from './icons.tsx'
+import { ChevronIcon, CloseIcon } from './icons.tsx'
 
-// The modifiers listed even while they're off, so they're one switch away:
-// the ones most UIs use. Others are added with "+ Add modifier".
-const COMMON: ModifierClass[] = [
-  'UICorner',
-  'UIStroke',
-  'UIGradient',
-  'UIPadding',
-]
+// A modifier's value in a few characters, the way Studio would show its
+// main property: UICorner "{0, 14}", UIPadding "12, 12, 12, 12". Others
+// use their summary ("Vertical, 8 px gap").
+function shortValue(node: UiNode, modifier: ModifierClass): string {
+  const corner = modifier === 'UICorner' && resolveModifier(node, 'UICorner')
+  if (corner) return formatUDim(corner.CornerRadius)
 
-// The Modifiers part of the Properties panel: a card per modifier, with an
-// on/off switch and a summary ("UICorner · 14 px"). Clicking a card that's
-// on opens its fields.
+  const padding = modifier === 'UIPadding' && resolveModifier(node, 'UIPadding')
+  if (padding) {
+    // Top, right, bottom, left, like CSS. Plain pixels when there's no Scale.
+    const sides = [
+      padding.PaddingTop,
+      padding.PaddingRight,
+      padding.PaddingBottom,
+      padding.PaddingLeft,
+    ]
+    return sides.every((side) => side.s === 0)
+      ? sides.map((side) => side.o).join(', ')
+      : sides.map(formatUDim).join(' ')
+  }
+  return modifierSummary(modifier, resolveModifier(node, modifier)!)
+}
+
+// The Modifiers section: a row per modifier the element has, with its
+// value. Click a row to open its fields; hover for × to remove it. "Add"
+// (on the title) adds one of the others.
 export function ModifiersSection({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const { addModifier, removeModifier } = useDocumentStore.getState()
-  // Which cards are open. Only this panel cares, so it's React state.
-  const [expanded, setExpanded] = useState<ReadonlySet<ModifierClass>>(
-    new Set(),
-  )
+  // Which rows are open. Only this panel cares, so it's React state.
+  const [open, setOpen] = useState<ReadonlySet<ModifierClass>>(new Set())
   if (!node) return null
 
-  const isOn = (m: ModifierClass) => Boolean(node.modifiers?.[m])
-  const listed = MODIFIER_CLASSES.filter((m) => COMMON.includes(m) || isOn(m))
-  const addable = MODIFIER_CLASSES.filter((m) => !listed.includes(m))
-
-  const setOpen = (m: ModifierClass, open: boolean) =>
-    setExpanded((previous) => {
+  const on = MODIFIER_CLASSES.filter((m) => node.modifiers?.[m])
+  const addable = MODIFIER_CLASSES.filter((m) => !on.includes(m))
+  const toggle = (m: ModifierClass, isOpen: boolean) =>
+    setOpen((previous) => {
       const next = new Set(previous)
-      if (open) next.add(m)
+      if (isOpen) next.add(m)
       else next.delete(m)
       return next
     })
 
-  // Turning a modifier on opens its card, ready to adjust.
-  function turnOn(m: ModifierClass) {
-    addModifier(id, m)
-    setOpen(m, true)
-  }
-
   return (
-    <Section title="Modifiers">
-      {listed.map((m) => {
-        const props = resolveModifier(node, m)
-        return (
-          <div key={m} className="rounded-lg bg-raised ring-1 ring-line">
-            <div className="flex items-center gap-2 py-1.5 pr-2.5 pl-2">
+    <Section
+      title="Modifiers"
+      action={
+        addable.length > 0 && (
+          <Popover
+            align="right"
+            width="w-56"
+            trigger={({ open: menuOpen, toggle: toggleMenu }) => (
               <button
                 type="button"
-                disabled={!props}
-                aria-expanded={props ? expanded.has(m) : undefined}
-                onClick={() => setOpen(m, !expanded.has(m))}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-0.5 text-left text-sm focus-visible:outline-2 focus-visible:outline-accent"
+                onClick={toggleMenu}
+                aria-expanded={menuOpen}
+                className="text-xs text-accent hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                Add
+              </button>
+            )}
+          >
+            {(close) =>
+              addable.map((m) => (
+                <MenuItem
+                  key={m}
+                  onClick={() => {
+                    close()
+                    addModifier(id, m)
+                    toggle(m, true) // open it, ready to adjust
+                  }}
+                >
+                  {m}
+                </MenuItem>
+              ))
+            }
+          </Popover>
+        )
+      }
+    >
+      {on.length === 0 && (
+        <p className="py-0.5 text-xs text-faint">
+          None yet. Add rounded corners, an outline, a layout...
+        </p>
+      )}
+      {on.map((m) => {
+        const isOpen = open.has(m)
+        return (
+          <div key={m}>
+            <div className="group grid min-h-6 grid-cols-[100px_1fr_auto] items-center gap-2">
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => toggle(m, !isOpen)}
+                className="flex items-center gap-0.5 truncate text-left text-xs text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <ChevronIcon
-                  className={`shrink-0 text-faint transition-transform ${
-                    props ? '' : 'opacity-0'
-                  } ${expanded.has(m) ? 'rotate-90' : ''}`}
+                  className={`-ml-0.5 shrink-0 text-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
                 />
-                <span className="truncate text-ink">{m}</span>
-                <span className="truncate text-muted">
-                  · {props ? modifierSummary(m, props) : 'off'}
-                </span>
+                {m}
               </button>
-              <Switch
-                label={m}
-                checked={props !== null}
-                onChange={(on) => (on ? turnOn(m) : removeModifier(id, m))}
-              />
+              <button
+                type="button"
+                onClick={() => toggle(m, !isOpen)}
+                className="h-6 min-w-0 truncate rounded-sm bg-app px-1.5 text-left font-mono text-xs text-ink ring-1 ring-line hover:ring-hover"
+              >
+                {shortValue(node, m)}
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove ${m}`}
+                title={`Remove ${m}`}
+                onClick={() => removeModifier(id, m)}
+                className="rounded p-0.5 text-faint opacity-0 group-hover:opacity-100 hover:text-danger focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <CloseIcon size={12} />
+              </button>
             </div>
-            {props && expanded.has(m) && (
-              <div className="space-y-2 border-t border-line px-2.5 py-2.5">
+            {isOpen && (
+              <div className="my-1 space-y-1 border-l border-line pl-2">
                 <ModifierFields id={id} modifier={m} />
               </div>
             )}
           </div>
         )
       })}
-
-      {addable.length > 0 && (
-        <Popover
-          width="w-full"
-          trigger={({ open, toggle }) => (
-            <button
-              type="button"
-              onClick={toggle}
-              aria-expanded={open}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-sm text-muted ring-1 ring-line ring-dashed hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              <PlusIcon /> Add modifier
-            </button>
-          )}
-        >
-          {(close) =>
-            addable.map((m) => (
-              <MenuItem
-                key={m}
-                onClick={() => {
-                  close()
-                  turnOn(m)
-                }}
-              >
-                {m}
-              </MenuItem>
-            ))
-          }
-        </Popover>
-      )}
     </Section>
   )
 }
 
-// One modifier's fields, shown inside its card. Cards only show fields for
+// One modifier's fields, shown when its row is opened. Rows only exist for
 // modifiers that are on, which is why each resolveModifier(...)! is safe.
 function ModifierFields({
   id,
@@ -341,13 +361,13 @@ function ModifierFields({
       const grid = resolveModifier(node, 'UIGridLayout')!
       return (
         <>
-          <UDim2Rows
-            name="CellSize"
+          <UDim2Row
+            label="CellSize"
             value={grid.CellSize}
             onChange={(CellSize) => update(id, 'UIGridLayout', { CellSize })}
           />
-          <UDim2Rows
-            name="CellPadding"
+          <UDim2Row
+            label="CellPadding"
             value={grid.CellPadding}
             onChange={(CellPadding) =>
               update(id, 'UIGridLayout', { CellPadding })
@@ -428,32 +448,5 @@ function AlignmentRows({
         />
       </Row>
     </>
-  )
-}
-
-// A UDim (Scale + Offset) on one row.
-function UDimRow({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: UDim
-  onChange: (value: UDim) => void
-}) {
-  return (
-    <Row label={label}>
-      <NumberField
-        label={`${label} Scale`}
-        value={value.s}
-        onChange={(s) => onChange({ ...value, s })}
-      />
-      <NumberField
-        label={`${label} Offset`}
-        integer
-        value={value.o}
-        onChange={(o) => onChange({ ...value, o })}
-      />
-    </Row>
   )
 }

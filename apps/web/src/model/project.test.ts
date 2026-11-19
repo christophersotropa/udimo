@@ -219,7 +219,7 @@ describe('parseProject skips', () => {
 
   it('properties and fields it does not know', () => {
     const text = brokenFile((data, { frame }) => {
-      data.document.nodes[frame].props = { Rotation: 45, Visible: false }
+      data.document.nodes[frame].props = { Draggable: true, Visible: false }
       data.document.nodes[frame].comment = 'from the future'
     })
     const doc = parseProject(text)

@@ -36,6 +36,9 @@ export type ViewState = {
   snapping: boolean
   // The export dialog is open (from the Export button, File menu or ⌘E).
   exportOpen: boolean
+  // Properties sections you've folded shut, by title ("Appearance"), so
+  // they stay shut as you click from element to element.
+  closedSections: string[]
   tool: Tool
   // Autosave's status, or 'off' when the browser blocks storage.
   saveStatus: SaveStatus | 'off'
@@ -56,6 +59,7 @@ export type ViewState = {
   setTool: (tool: Tool) => void
   setSnapping: (on: boolean) => void
   setExportOpen: (open: boolean) => void
+  toggleSection: (title: string) => void
   setSaveStatus: (status: SaveStatus | 'off') => void
   openContextMenu: (menu: ContextMenuState) => void
   closeContextMenu: () => void
@@ -82,6 +86,7 @@ export function createViewStore() {
     guides: [],
     snapping: true,
     exportOpen: false,
+    closedSections: [],
     tool: 'select',
     saveStatus: 'saved',
     contextMenu: null,
@@ -113,6 +118,12 @@ export function createViewStore() {
     setTool: (tool) => set({ tool }),
     setSnapping: (snapping) => set({ snapping }),
     setExportOpen: (exportOpen) => set({ exportOpen }),
+    toggleSection: (title) =>
+      set({
+        closedSections: get().closedSections.includes(title)
+          ? get().closedSections.filter((t) => t !== title)
+          : [...get().closedSections, title],
+      }),
     setSaveStatus: (saveStatus) => set({ saveStatus }),
     openContextMenu: (contextMenu) => set({ contextMenu }),
     closeContextMenu: () => set({ contextMenu: null }),
