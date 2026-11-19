@@ -61,6 +61,18 @@ body {
   background-color: var(--color-app);
 }
 
+/* An Explorer row (and everything inside it) while it's dragged: raised
+   above the rows it slides over, with a soft shadow (useExplorerDrag). */
+.explorer-lifted {
+  position: relative;
+  z-index: 10;
+  border-radius: 4px;
+  background-color: var(--color-raised);
+  box-shadow:
+    0 0 0 1px rgb(229 162 60 / 0.45),
+    0 8px 20px rgb(0 0 0 / 0.45);
+}
+
 /* Native <dialog>: the dimmed layer behind it. */
 dialog::backdrop {
   background: rgb(0 0 0 / 0.6);

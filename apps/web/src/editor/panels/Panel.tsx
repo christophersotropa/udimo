@@ -62,6 +62,7 @@ export function Panel({
       </div>
       {/* overflow-x-hidden: only up and down scrolling in a panel. */}
       <div
+        data-scroll-area // a drag near its edge scrolls it (useExplorerDrag)
         className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto ${padded ? 'px-2.5 pb-3' : ''}`}
       >
         {children}

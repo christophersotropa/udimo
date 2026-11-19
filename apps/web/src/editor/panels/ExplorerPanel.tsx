@@ -1,6 +1,6 @@
 import {
-  type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
   useMemo,
@@ -8,12 +8,6 @@ import {
   useState,
 } from 'react'
 import { resolveProps } from '../../model/defaults.ts'
-import {
-  canDrop,
-  canHoldChildren,
-  type DropPlace,
-  dropPlaceAt,
-} from '../../model/drop.ts'
 import { ancestorIds, filterTree } from '../../model/tree.ts'
 import { MODIFIER_CLASSES } from '../../model/modifiers.ts'
 import type { ModifierClass, NodeId } from '../../model/types.ts'
@@ -35,11 +29,10 @@ import {
   PlusIcon,
 } from './icons.tsx'
 import { Panel } from './Panel.tsx'
+import { type DropTarget, useExplorerDrag } from './useExplorerDrag.ts'
 
 // How far each level of the tree is indented, in pixels.
-const INDENT = 12
-
-type DropTarget = { id: NodeId; place: DropPlace }
+const INDENT = 12 // (useExplorerDrag uses the same)
 
 // What every row needs from the panel: folding, filtering, and dragging
 // rows around. Bundled into one object so it's handed down as one prop.
@@ -49,13 +42,12 @@ type TreeControls = {
   // unfolded. null when not filtering.
   filter: Set<NodeId> | null
   toggleOpen: (id: NodeId) => void
-  // Where the dragged rows would land right now, to draw the marker.
+  // While dragging (useExplorerDrag): the row you grabbed and how many move
+  // with it, the other selected rows moving along, and where they'd land.
+  lifted: { id: NodeId; count: number } | null
+  dragIds: ReadonlySet<NodeId>
   dropTarget: DropTarget | null
-  startDrag: (ids: NodeId[]) => void
-  // Returns whether the dragged rows may be dropped there.
-  dragOver: (target: DropTarget) => boolean
-  drop: (target: DropTarget) => void
-  endDrag: () => void
+  onRowPointerDown: (event: ReactPointerEvent<HTMLElement>, id: NodeId) => void
 }
 
 // The instance tree, like Roblox Studio's Explorer: ScreenGui > Frame > ...
@@ -67,7 +59,6 @@ export function ExplorerPanel() {
   // Ids of the rows you've folded shut. Only this panel cares about it, so
   // it's React state here, not in the store (and it's never undone or saved).
   const [collapsed, setCollapsed] = useState<ReadonlySet<NodeId>>(new Set())
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null)
   const [query, setQuery] = useState('')
   // Only read the whole document while filtering: otherwise every edit
   // would redraw the whole tree.
@@ -76,9 +67,24 @@ export function ExplorerPanel() {
     () => (filterDoc ? filterTree(filterDoc, query) : null),
     [filterDoc, query],
   )
-  // The rows being dragged. A ref, because changing it shouldn't redraw
-  // anything: only the drop marker (dropTarget) is drawn.
-  const dragIds = useRef<NodeId[]>([])
+  // Dragging rows to move them: see useExplorerDrag.
+  const { listRef, lifted, dragIds, dropTarget, onRowPointerDown } =
+    useExplorerDrag((target) => {
+      const moved = moveNodesTo(
+        useDocumentStore,
+        useDocumentStore.getState().selection,
+        target.id,
+        target.place,
+      )
+      // Unfold the row you dropped into, so you can see where things went.
+      if (moved && target.place === 'inside') {
+        setCollapsed((previous) =>
+          previous.has(target.id)
+            ? new Set([...previous].filter((id) => id !== target.id))
+            : previous,
+        )
+      }
+    })
 
   // When the selection changes (say, a click on the canvas) and a selected
   // element sits inside a folded row, unfold its parents so you can see it.
@@ -108,56 +114,10 @@ export function ExplorerPanel() {
     collapsed,
     filter,
     toggleOpen,
+    lifted,
+    dragIds,
     dropTarget,
-
-    startDrag: (ids) => {
-      dragIds.current = ids
-    },
-
-    dragOver: (target) => {
-      const doc = useDocumentStore.getState().document
-      const allowed = canDrop(doc, dragIds.current, target.id, target.place)
-      const next = allowed ? target : null
-      // dragover fires many times a second while the pointer moves. Keeping
-      // the old object when nothing changed means React skips the redraw.
-      setDropTarget((previous) =>
-        previous?.id === next?.id && previous?.place === next?.place
-          ? previous
-          : next,
-      )
-      return allowed
-    },
-
-    drop: (target) => {
-      const moved = moveNodesTo(
-        useDocumentStore,
-        dragIds.current,
-        target.id,
-        target.place,
-      )
-      // Unfold the row you dropped into, so you can see where things went.
-      if (moved && target.place === 'inside') {
-        setCollapsed((previous) =>
-          previous.has(target.id)
-            ? new Set([...previous].filter((id) => id !== target.id))
-            : previous,
-        )
-      }
-      tree.endDrag()
-    },
-
-    endDrag: () => {
-      dragIds.current = []
-      setDropTarget(null)
-    },
-  }
-
-  // Leaving the whole tree (not just moving from one row to the next)
-  // removes the marker. relatedTarget is where the pointer went.
-  function onDragLeave(event: ReactDragEvent) {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setDropTarget(null)
-    }
+    onRowPointerDown,
   }
 
   // Folds every row shut except the ScreenGui, so you see the top level.
@@ -216,7 +176,7 @@ export function ExplorerPanel() {
       {filter?.size === 0 && (
         <p className="px-1 text-sm text-muted">Nothing called “{query}”.</p>
       )}
-      <ul onDragLeave={onDragLeave}>
+      <ul ref={listRef}>
         <TreeRow id={rootId} depth={0} parentHidden={false} tree={tree} />
       </ul>
     </Panel>
@@ -277,60 +237,32 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
     }
   }
 
-  // ---- Dragging. These are the browser's built-in drag-and-drop events:
-  // dragstart on the row you pick up, dragover on each row you pass over,
-  // drop on the row you let go on, dragend on the picked-up row at the end.
-
-  function onDragStart(event: ReactDragEvent) {
-    const store = useDocumentStore.getState()
-    // Dragging a selected row drags the whole selection. Dragging any other
-    // row selects it first, so it's clear what's moving.
-    if (!store.selection.includes(id)) store.select(id)
-    event.dataTransfer.effectAllowed = 'move'
-    // Some browsers (Firefox) only start a drag if some data is attached.
-    event.dataTransfer.setData('text/plain', node.name)
-    tree.startDrag(useDocumentStore.getState().selection)
-  }
-
-  // Which place the pointer means: above, inside or below this row.
-  function targetAt(event: ReactDragEvent): DropTarget {
-    if (isRoot) return { id, place: 'inside' }
-    const box = event.currentTarget.getBoundingClientRect()
-    const fraction = (event.clientY - box.top) / box.height
-    const doc = useDocumentStore.getState().document
-    return { id, place: dropPlaceAt(fraction, canHoldChildren(doc, id)) }
-  }
-
-  function onDragOver(event: ReactDragEvent) {
-    // By default the browser refuses drops. preventDefault() says "you may
-    // drop here", so we only call it when the drop is allowed.
-    if (tree.dragOver(targetAt(event))) {
-      event.preventDefault()
-      event.dataTransfer.dropEffect = 'move'
-    }
-  }
-
-  function onDrop(event: ReactDragEvent) {
-    event.preventDefault()
-    tree.drop(targetAt(event))
-  }
-
   return (
-    <li>
+    // Other selected rows being moved along dim in place (the grabbed one
+    // is lifted and follows the pointer instead).
+    <li
+      className={`transition-opacity duration-150 ${
+        tree.dragIds.has(id) ? 'opacity-40' : ''
+      }`}
+    >
       <div
         ref={rowRef}
-        draggable={!isRoot && !renaming}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onDragEnd={tree.endDrag}
+        // For the drag: one line of the tree, which row, and how deep.
+        data-tree-line
+        data-row-id={id}
+        data-depth={depth}
+        onPointerDown={
+          isRoot || renaming
+            ? undefined
+            : (event) => tree.onRowPointerDown(event, id)
+        }
         onContextMenu={(event) => {
           event.preventDefault() // not the browser's own menu
           openMenuFor(id, event.clientX, event.clientY)
         }}
         style={{ paddingLeft: depth * INDENT + 4 }}
         title={node.className}
-        className={`group relative flex h-6 items-center gap-1.5 rounded-sm pr-1 ${
+        className={`group relative flex h-6 items-center gap-1.5 rounded-sm pr-1 transition-colors duration-100 ${
           dropPlace === 'inside'
             ? 'bg-accent-soft ring-1 ring-accent'
             : isSelected
@@ -356,20 +288,10 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           />
         )}
 
-        {/* The marker line for "drop above" or "drop below" this row,
-            indented to show which level the rows will land on. */}
-        {(dropPlace === 'before' || dropPlace === 'after') && (
-          <span
-            className={`pointer-events-none absolute right-0 h-0.5 rounded bg-accent ${
-              dropPlace === 'before' ? '-top-px' : '-bottom-px'
-            }`}
-            style={{ left: depth * INDENT }}
-          />
-        )}
-
         {hasChildren ? (
           <button
             type="button"
+            data-no-drag // pressing it folds, never drags
             aria-label={open ? 'Collapse' : 'Expand'}
             onClick={() => tree.toggleOpen(id)}
             className="shrink-0 rounded text-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
@@ -395,6 +317,12 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           >
             {node.name}
           </button>
+        )}
+        {/* Dragging several rows: the grabbed one says how many more. */}
+        {tree.lifted?.id === id && tree.lifted.count > 1 && (
+          <span className="shrink-0 rounded-sm bg-accent px-1 font-mono text-[10px] font-semibold text-accent-ink">
+            +{tree.lifted.count - 1}
+          </span>
         )}
         {/* Folded rows say how much is inside, so nothing is out of mind. */}
         {hasChildren && !open && !renaming && (
@@ -440,6 +368,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           {modifiers.map((modifier) => (
             <ModifierRow
               key={modifier}
+              ownerId={id}
               modifier={modifier}
               depth={depth + 1}
               onSelect={() => useDocumentStore.getState().select(id)}
@@ -465,11 +394,13 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
 // Udimo (and become real children in the export), so clicking one selects
 // the element, where the Properties panel shows the modifier's fields.
 function ModifierRow({
+  ownerId,
   modifier,
   depth,
   onSelect,
   onMenu,
 }: {
+  ownerId: NodeId // the element it's on
   modifier: ModifierClass
   depth: number
   onSelect: () => void
@@ -479,6 +410,10 @@ function ModifierRow({
     <li>
       <button
         type="button"
+        // A line of the tree, for the drag to measure and slide aside.
+        data-tree-line
+        data-owner-id={ownerId}
+        data-depth={depth}
         onClick={onSelect}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -511,6 +446,7 @@ function RowButton({
   return (
     <button
       type="button"
+      data-no-drag
       aria-label={label}
       title={label}
       onClick={onClick}
@@ -539,6 +475,7 @@ function RenameInput({
 
   return (
     <input
+      data-no-drag
       autoFocus // it only appears because you asked to rename
       aria-label="Name"
       value={draft}
