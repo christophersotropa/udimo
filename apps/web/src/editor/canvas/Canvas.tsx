@@ -4,6 +4,7 @@ import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
 import { CanvasControls } from './CanvasControls.tsx'
 import { NodeView } from './NodeView.tsx'
+import { SnapGuides } from './SnapGuides.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
 
 // The game screen is laid out at its real size (the chosen device's), so
@@ -124,6 +125,10 @@ export function Canvas() {
           }
         >
           <NodeView id={rootId} />
+          {/* Drawn last, so it sits above every element. */}
+          <div className="absolute inset-0 z-[1000000] pointer-events-none">
+            <SnapGuides />
+          </div>
         </div>
       </div>
 
