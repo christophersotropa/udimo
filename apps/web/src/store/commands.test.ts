@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  copySelection,
+  cutSelection,
   deleteSelection,
   duplicateSelection,
   moveNodesTo,
   nudgeSelection,
+  pasteFragment,
   toggleLocked,
   toggleVisible,
 } from './commands.ts'
@@ -211,5 +214,81 @@ describe('moveNodesTo', () => {
     const before = doc()
     expect(moveNodesTo(store, [panel], button, 'after')).toBe(false)
     expect(doc()).toBe(before)
+  })
+})
+
+describe('copy, cut and paste', () => {
+  it('copy changes nothing; paste adds copies with new ids, selected', () => {
+    const { store, doc, selection, rootId, panel } = setup()
+    store.getState().select(panel)
+    const before = doc()
+    const fragment = copySelection(store)!
+    expect(doc()).toBe(before)
+
+    store.getState().clearSelection()
+    pasteFragment(store, fragment)
+    const [copy] = selection()
+    expect(copy).not.toBe(panel)
+    expect(doc().nodes[copy].name).toBe('Window')
+    expect(doc().nodes[copy].parentId).toBe(rootId)
+    expect(doc().nodes[copy].children).toHaveLength(1)
+  })
+
+  it('pastes beside the original and earlier copies, shifted off them', () => {
+    const { store, doc, selection, rootId, panel } = setup()
+    store.getState().select(panel)
+    const fragment = copySelection(store)!
+
+    // The original is still selected, but it's a copied Frame: the paste goes
+    // beside it, shifted off it.
+    const first = pasteFragment(store, fragment)
+    expect(doc().nodes[first[0]].parentId).toBe(rootId)
+    expect(doc().nodes[first[0]].props.Position).toEqual({
+      xs: 0,
+      xo: 120,
+      ys: 0,
+      yo: 120,
+    })
+    // Again, with the first copy selected: beside it too, a step further.
+    const second = pasteFragment(store, fragment, first)
+    expect(doc().nodes[second[0]].parentId).toBe(rootId)
+    expect(doc().nodes[second[0]].props.Position?.xo).toBe(140)
+    expect(selection()).toEqual(second)
+  })
+
+  it('pastes into a selected Frame without shifting', () => {
+    const { store, doc, selection, panel, coins } = setup()
+    store.getState().select(coins)
+    const fragment = copySelection(store)!
+
+    store.getState().select(panel)
+    pasteFragment(store, fragment)
+    const [copy] = selection()
+    expect(doc().nodes[copy].parentId).toBe(panel)
+    expect(doc().nodes[copy].props.Position?.xo).toBe(10)
+  })
+
+  it('paste is one undo step', () => {
+    const { store, doc, panel } = setup()
+    store.getState().select(panel)
+    const fragment = copySelection(store)!
+    const before = doc()
+    pasteFragment(store, fragment)
+    store.getState().undo()
+    expect(doc()).toBe(before)
+  })
+
+  it('cut removes the elements, and paste brings them back', () => {
+    const { store, doc, rootId, coins } = setup()
+    store.getState().select(coins)
+    const fragment = cutSelection(store)!
+    expect(doc().nodes[coins]).toBeUndefined()
+
+    pasteFragment(store, fragment)
+    expect(doc().nodes[rootId].children).toHaveLength(2)
+  })
+
+  it('copy with nothing selected gives null', () => {
+    expect(copySelection(setup().store)).toBeNull()
   })
 })

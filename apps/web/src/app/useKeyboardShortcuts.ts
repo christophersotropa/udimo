@@ -1,10 +1,22 @@
 import { useEffect } from 'react'
+import type { NodeId, UiDocument } from '../model/types.ts'
 import {
+  copySelection,
+  cutSelection,
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
+  pasteFragment,
+  wrapSelectionInFrame,
 } from '../store/commands.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
+
+// What Copy or Cut last took. It lives here, in memory, not in the store:
+// it isn't part of the document and isn't undone. It's lost on refresh,
+// and it doesn't reach other tabs or apps.
+let clipboard: UiDocument | null = null
+// The copies the last paste made, so pasting again goes beside them.
+let lastPasted: NodeId[] = []
 
 // Arrow key -> direction. Shift makes each step bigger.
 const ARROWS: Record<string, [number, number]> = {
@@ -20,6 +32,8 @@ const NUDGE_BIG = 10
 //   Undo           Cmd+Z / Ctrl+Z
 //   Redo           Cmd+Shift+Z / Ctrl+Shift+Z / Ctrl+Y
 //   Duplicate      Cmd+D / Ctrl+D
+//   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
+//   Wrap in Frame  Cmd+G / Ctrl+G
 //   Delete         Delete or Backspace
 //   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
 //   Deselect       Escape
@@ -47,6 +61,24 @@ export function useKeyboardShortcuts() {
       } else if (command && key === 'd') {
         event.preventDefault()
         duplicateSelection(store)
+      } else if (command && (key === 'c' || key === 'x')) {
+        // With nothing selected, leave the key to the browser (and keep
+        // whatever was copied before).
+        const fragment =
+          key === 'c' ? copySelection(store) : cutSelection(store)
+        if (fragment) {
+          event.preventDefault()
+          clipboard = fragment
+          lastPasted = []
+        }
+      } else if (command && key === 'v') {
+        if (!clipboard) return
+        event.preventDefault()
+        lastPasted = pasteFragment(store, clipboard, lastPasted)
+      } else if (command && key === 'g') {
+        // Cmd+G is the browser's "find next"; here it wraps in a Frame.
+        event.preventDefault()
+        wrapSelectionInFrame(store)
       } else if (!command && (key === 'delete' || key === 'backspace')) {
         event.preventDefault()
         deleteSelection(store)

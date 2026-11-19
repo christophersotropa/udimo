@@ -40,7 +40,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 **Editing basics**
 
-- [ ] Undo and redo, copy and paste, duplicate, delete, wrap selection in a Frame
+- [x] Undo and redo, copy and paste, duplicate, delete, wrap selection in a Frame
 - [x] Autosave in the browser; open and save a project `.json` file
 
 **Export**

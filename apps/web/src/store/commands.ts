@@ -1,7 +1,11 @@
 import { addOffset } from '../lib/udim2.ts'
 import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
+import { extractSubtrees, pasteParent } from '../model/fragment.ts'
+import { cascadeShift } from '../model/insert.ts'
+import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
+import { planWrap } from '../model/wrap.ts'
 import type { NodeId, UiDocument } from '../model/types.ts'
 import type { DocumentStore, ElementClassName } from './documentStore.ts'
 
@@ -156,6 +160,87 @@ export function moveNodesTo(
       moveNode(id, parentId, index)
       if (place === 'after') anchor = id
     }
+  })
+  return true
+}
+
+// ---------- Copy, cut, paste ----------
+
+// The selected elements (with everything inside them) as a fragment, ready
+// to keep on a clipboard. null if nothing is selected. Changes nothing.
+export function copySelection(store: DocumentStore): UiDocument | null {
+  const ids = selectedTopLevel(store)
+  if (ids.length === 0) return null
+  return extractSubtrees(store.getState().document, ids)
+}
+
+// Copy, then delete what was copied.
+export function cutSelection(store: DocumentStore): UiDocument | null {
+  const fragment = copySelection(store)
+  if (fragment) deleteSelection(store)
+  return fragment
+}
+
+// Adds copies of a fragment's elements (new ids), selects them, and returns
+// their ids. They keep their Position, shifted 20px at a time only if they'd
+// land exactly on a sibling (say, pasting right next to the originals).
+// `pastedBefore`: what the previous paste returned (see pasteParent).
+export function pasteFragment(
+  store: DocumentStore,
+  fragment: UiDocument,
+  pastedBefore: NodeId[] = [],
+): NodeId[] {
+  const tops = fragment.nodes[fragment.rootId].children
+  if (tops.length === 0) return []
+  const { document, selection } = store.getState()
+  const parentId = pasteParent(document, selection, fragment, pastedBefore)
+
+  const positions = tops.map((id) => resolveProps(fragment.nodes[id]).Position)
+  const taken = document.nodes[parentId].children.map(
+    (id) => resolveProps(document.nodes[id]).Position,
+  )
+  const shift = cascadeShift(taken, positions)
+
+  let copies: NodeId[] = []
+  asOneStep(store, () => {
+    copies = tops.map((id, i) => {
+      const copyId = copySubtree(store, fragment, id, parentId)
+      if (shift !== 0) {
+        store.getState().updateProps(copyId, {
+          Position: addOffset(positions[i], shift, shift),
+        })
+      }
+      return copyId
+    })
+    const { select } = store.getState()
+    copies.forEach((copyId, i) => select(copyId, i > 0))
+  })
+  return copies
+}
+
+// ---------- Wrap in Frame ----------
+
+// Puts the selected elements inside a new invisible Frame that fits around
+// them, without anything moving on screen (see model/wrap.ts), then selects
+// the Frame. Returns false, changing nothing, if they can't be wrapped
+// (nothing selected, or they have different parents).
+export function wrapSelectionInFrame(
+  store: DocumentStore,
+  screen: ScreenSize = SCREEN,
+): boolean {
+  const { document, selection } = store.getState()
+  const plan = planWrap(document, selection, screen)
+  if (!plan) return false
+
+  asOneStep(store, () => {
+    const { addNode, moveNode, updateProps, select } = store.getState()
+    const frameId = addNode(plan.parentId, 'Frame', plan.frameProps)
+    moveNode(frameId, plan.parentId, plan.index)
+    for (const child of plan.children) {
+      moveNode(child.id, frameId) // each goes last, so the order is kept
+      updateProps(child.id, child.props)
+    }
+    select(frameId)
   })
   return true
 }
