@@ -6,6 +6,7 @@ import { CursorIcon, HandIcon } from '../panels/icons.tsx'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { SegmentedControl } from '../ui/SegmentedControl.tsx'
 import { MenuBar } from './MenuBar.tsx'
+import { Logo } from './Logo.tsx'
 
 // The bar across the top, in three parts: logo, design name and menus on
 // the left; the tools in the middle; the device and Export on the right.
@@ -36,18 +37,17 @@ export function TopBar() {
   )
 }
 
-// The logo, then "Udimo / <ScreenGui name>".
+// The logo (Logo.tsx), then "Udimo / <ScreenGui name>".
 function Breadcrumb() {
   const name = useDocumentStore(
     (state) => state.document.nodes[state.document.rootId].name,
   )
   return (
     <p className="flex min-w-0 items-center gap-2 text-[13px]">
-      <span
-        aria-hidden="true"
-        className="flex size-6 shrink-0 items-center justify-center rounded bg-accent text-sm font-bold text-accent-ink"
-      >
-        U
+      {/* flex, not inline: an inline SVG sits on the text baseline with
+          room for letter tails below it, which pushes it off-center. */}
+      <span className="ml-1.5 flex text-ink">
+        <Logo size={20} />
       </span>
       <span className="font-semibold text-ink">Udimo</span>
       <span className="text-faint">/</span>

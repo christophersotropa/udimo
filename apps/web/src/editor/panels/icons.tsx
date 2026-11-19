@@ -127,16 +127,6 @@ export function ChevronDownIcon(props: IconProps) {
   )
 }
 
-// Udimo's logo mark: a screen with a UI panel on it.
-export function LogoIcon(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <rect x="2" y="3" width="12" height="9" rx="2" />
-      <path d="M5 14h6M5.5 6.5h5M5.5 9h3" />
-    </Icon>
-  )
-}
-
 export function PlusIcon(props: IconProps) {
   return (
     <Icon {...props}>

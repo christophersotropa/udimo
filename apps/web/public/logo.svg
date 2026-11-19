@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Udimo's logo (same drawing as src/editor/topbar/Logo.tsx). The
+       outline is white on dark browser tabs and near-black on light ones. -->
+  <style>
+    .outline { stroke: #1a1a1a; }
+    @media (prefers-color-scheme: dark) { .outline { stroke: #ffffff; } }
+  </style>
+  <rect class="outline" x="2.5" y="2.5" width="22" height="22" fill="none" stroke-width="3"/>
+  <rect x="11" y="11" width="20" height="20" fill="#f0a93b"/>
+</svg>
