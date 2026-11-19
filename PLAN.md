@@ -47,7 +47,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 - [x] Download `.rbxmx`
 - [x] Copy a Luau builder script for the Command Bar
-- [ ] Export warnings (an image with no asset ID, text likely to overflow on phones)
+- [x] Export warnings (an image with no asset ID, text likely to overflow on phones)
 
 ### Phase 2 — Polish and round trip
 

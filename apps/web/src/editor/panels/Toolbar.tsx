@@ -1,5 +1,6 @@
 import { type ChangeEvent, useRef, useState } from 'react'
 import { documentToLuau } from '../../export/luau.ts'
+import { ExportWarnings } from './ExportWarnings.tsx'
 import { documentToRbxmx } from '../../export/rbxmx.ts'
 import { downloadTextFile } from '../../lib/download.ts'
 import { createEmptyDocument } from '../../model/document.ts'
@@ -171,8 +172,10 @@ export function Toolbar() {
           </button>
         </div>
       </div>
-      {/* The two ways into Studio: a script for the Command Bar, or a file. */}
+      {/* The two ways into Studio: a script for the Command Bar, or a file.
+          The warnings come first, so they're seen before exporting. */}
       <div className="flex items-center gap-2">
+        <ExportWarnings />
         <button
           type="button"
           onClick={copyLuau}
