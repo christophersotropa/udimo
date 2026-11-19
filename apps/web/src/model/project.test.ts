@@ -7,6 +7,7 @@ import {
   parseProject,
   serializeProject,
 } from './project.ts'
+import { PICTURE } from './testPictures.ts'
 
 // The parsed shape of a project file, loosely typed so tests can break it.
 type FileData = {
@@ -258,5 +259,42 @@ describe('parseProject skips', () => {
     const frame = Object.values(doc.nodes).find((n) => n.className === 'Frame')!
     expect(frame.props).toEqual({ Visible: false })
     expect('comment' in frame).toBe(false)
+  })
+})
+
+describe('preview pictures in project files', () => {
+  function withPicture() {
+    const store = createDocumentStore()
+    const root = store.getState().document.rootId
+    const id = store.getState().addNode(root, 'ImageLabel')
+    store.getState().setPreviewImage(id, { key: 'pet', image: PICTURE })
+    return { doc: store.getState().document, id }
+  }
+
+  it('are kept when saving and opening', () => {
+    const { doc } = withPicture()
+    expect(parseProject(serializeProject(doc))).toEqual(doc)
+  })
+
+  it('refuse a picture that is a link, not written out in the file', () => {
+    const { doc } = withPicture()
+    const data = JSON.parse(serializeProject(doc))
+    data.document.images.pet.dataUrl = 'https://example.com/track.png'
+    expectRejected(JSON.stringify(data), 'image that can’t be read')
+  })
+
+  it('drop a preview whose picture is missing', () => {
+    const { doc, id } = withPicture()
+    const data = JSON.parse(serializeProject(doc))
+    delete data.document.images
+    const opened = parseProject(JSON.stringify(data))
+    expect(opened.nodes[id].previewImage).toBeUndefined()
+  })
+
+  it('refuse a preview key with odd characters', () => {
+    const { doc, id } = withPicture()
+    const data = JSON.parse(serializeProject(doc))
+    data.document.nodes[id].previewImage = '../../etc'
+    expectRejected(JSON.stringify(data), 'invalid preview image')
   })
 })

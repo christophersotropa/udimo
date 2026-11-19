@@ -20,6 +20,7 @@ import {
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { MenuItem, MenuSeparator, Popover } from '../ui/Popover.tsx'
+import { chooseImageFile, previewFromFile } from '../previewImage.ts'
 import { IconButton } from '../ui/Button.tsx'
 import { ClassIcon } from './ClassIcon.tsx'
 import {
@@ -35,6 +36,7 @@ import {
   ToggleField,
   UDim2Row,
 } from './fields.tsx'
+import { CloseIcon } from './icons.tsx'
 import { ModifiersSection } from './ModifiersSection.tsx'
 import { Panel } from './Panel.tsx'
 import { PropertyFilter } from './propertyFilter.ts'
@@ -505,9 +507,9 @@ function NodeProperties({
             />
           </Row>
           <Hint>
-            Paste an image ID or its Roblox link. Upload the image to Roblox
-            first; the canvas shows a placeholder.
+            Paste the image’s Roblox asset ID or link: that’s what exports.
           </Hint>
+          <PreviewRow id={id} previewKey={node.previewImage} />
         </Section>
       )}
 
@@ -530,5 +532,72 @@ function NodeProperties({
         </Section>
       )}
     </div>
+  )
+}
+
+// A picture from your computer to see on the canvas while the real one
+// isn't on Roblox yet (UiNode.previewImage). Preview only: never exported.
+function PreviewRow({
+  id,
+  previewKey,
+}: {
+  id: NodeId
+  previewKey: string | undefined
+}) {
+  const preview = useDocumentStore((state) =>
+    previewKey ? state.document.images?.[previewKey] : undefined,
+  )
+  const setPreviewImage = useDocumentStore((state) => state.setPreviewImage)
+  // Why the last file couldn't be used, if it couldn't.
+  const [error, setError] = useState<string | null>(null)
+  const choose = () =>
+    chooseImageFile(async (file) => setError(await previewFromFile(id, file)))
+
+  return (
+    <>
+      <Row label="Preview">
+        {preview ? (
+          <>
+            <img
+              src={preview.dataUrl}
+              alt=""
+              className="size-6 shrink-0 rounded-sm bg-app object-contain ring-1 ring-line"
+            />
+            <button
+              type="button"
+              onClick={choose}
+              title={`${preview.name} (${preview.width} × ${preview.height}) · click to change`}
+              className="min-w-0 flex-1 truncate text-left text-xs text-ink hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              {preview.name}
+            </button>
+            <IconButton
+              label="Remove the preview"
+              onClick={() => setPreviewImage(id, null)}
+              className="size-6"
+            >
+              <CloseIcon size={12} />
+            </IconButton>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={choose}
+            className="h-6 rounded-sm bg-app px-2 text-xs text-ink ring-1 ring-line hover:ring-hover focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            Choose image…
+          </button>
+        )}
+      </Row>
+      {error ? (
+        <Hint warn>{error}</Hint>
+      ) : (
+        <Hint>
+          {preview
+            ? 'Preview only, not exported. Upload this file to Roblox and paste its ID above.'
+            : 'Pick the file from your computer to see it on the canvas (or drop it on the element).'}
+        </Hint>
+      )}
+    </>
   )
 }

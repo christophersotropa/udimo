@@ -98,7 +98,7 @@ export function NodeView({ id }: { id: NodeId }) {
 
   return (
     <div style={style} data-node-id={node.id} title={node.name}>
-      {isImageClass(node.className) && <ImagePlaceholder node={node} />}
+      {isImageClass(node.className) && <ImageContent node={node} />}
       {node.className === 'ScrollingFrame' ? (
         <ScrollingContent node={node}>{content}</ScrollingContent>
       ) : resolveProps(node).ClipsDescendants ? (
@@ -295,15 +295,36 @@ function useFontsLoaded() {
   }, [])
 }
 
-// What an image element shows. An empty Image shows nothing, like in game.
-//
+// What an image element shows. A preview picture from your computer (see
+// UiNode.previewImage) shows as it is. Otherwise: an empty Image shows
+// nothing, like in game, and anything else a placeholder (below).
+function ImageContent({ node }: { node: UiNode }) {
+  const preview = useDocumentStore((state) =>
+    node.previewImage ? state.document.images?.[node.previewImage] : undefined,
+  )
+  if (!preview) return <ImagePlaceholder node={node} />
+  return (
+    // Stretched to fill the element (Roblox's default ScaleType, Stretch),
+    // over the background, rounded with the element's corners. draggable
+    // false: dragging it moves the element, not the picture.
+    <img
+      src={preview.dataUrl}
+      alt=""
+      draggable={false}
+      className="pointer-events-none absolute inset-0 size-full object-fill select-none"
+      style={{ borderRadius: 'inherit' }}
+    />
+  )
+}
+
 // Studio's placeholder is itself a picture: a white square with a grey
 // picture icon. Like any image it fills the whole element and covers its
 // background (a red button with the placeholder looks white in Studio), so
 // it's drawn the same way, rounded with the element's corners.
 //
-// Real images can't be shown (the browser can't load them from Roblox's
-// servers), so those get just the grey icon, over the background.
+// Other Roblox images can't be shown (the browser can't load them from
+// Roblox's servers), so those get just the grey icon, over the background.
+// Pick a preview picture to see the real thing.
 function ImagePlaceholder({ node }: { node: UiNode }) {
   const uri = toContentUri(resolveProps(node).Image)
   if (uri === '') return null

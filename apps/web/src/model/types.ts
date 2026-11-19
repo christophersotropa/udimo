@@ -184,6 +184,20 @@ export type UiNode = {
   // Editor-only: a locked element can't be clicked or dragged on the canvas.
   // Roblox GUI objects have no such property, so it's never exported.
   locked?: boolean
+  // Editor-only: a picture from your computer that an image element shows
+  // on the canvas, as a key into UiDocument.images. Never exported: in
+  // Roblox the Image property (an uploaded asset ID) is what counts.
+  previewImage?: string
+}
+
+// A picture picked from your computer to preview an image element. Kept
+// in the project as a data URL (the image's bytes written out as text, so
+// it needs no server), shrunk to at most 1024 px, Roblox's own limit.
+export type PreviewImage = {
+  name: string // the file's name, to remind you what to upload
+  dataUrl: string // "data:image/png;base64,..."
+  width: number
+  height: number
 }
 
 // The whole document: every node in one lookup table keyed by id,
@@ -192,4 +206,7 @@ export type UiNode = {
 export type UiDocument = {
   rootId: NodeId
   nodes: Record<NodeId, UiNode>
+  // Editor-only: preview pictures, by key (UiNode.previewImage). One
+  // picture used by six elements is stored once.
+  images?: Record<string, PreviewImage>
 }

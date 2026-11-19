@@ -20,6 +20,7 @@ export function StatusBar() {
   const snapping = useViewStore((state) => state.snapping)
   const zoom = useViewStore(useShallow((state) => currentView(state).zoom))
   const status = useViewStore((state) => state.saveStatus)
+  const notice = useViewStore((state) => state.notice)
   const { setSnapping, fit } = useViewStore.getState()
   const note = SAVE_NOTES[status]
 
@@ -63,7 +64,16 @@ export function StatusBar() {
           </>
         ) : null}
       </p>
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
+        {/* A passing message (useViewStore's showNotice), in amber. */}
+        {notice && (
+          <>
+            <span role="status" className="truncate text-warn">
+              {notice}
+            </span>
+            <Divider />
+          </>
+        )}
         <button
           type="button"
           onClick={() => setSnapping(!snapping)}

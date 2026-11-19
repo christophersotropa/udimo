@@ -2,6 +2,7 @@ import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from './classes.ts'
 import { PLACEHOLDER_IMAGE, resolveProps } from './defaults.ts'
 import { absoluteBox, contentArea } from './layout.ts'
+import { previewOf } from './previewImages.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from './screen.ts'
 import type { NodeId, Props, UiDocument } from './types.ts'
 
@@ -88,6 +89,14 @@ function imageWarnings(doc: UiDocument, id: NodeId): Warning[] {
     },
   ]
 
+  // A picture previewed from your computer isn't on Roblox yet: say so,
+  // naming the file to upload.
+  const preview = previewOf(doc, node)
+  if (preview && (uri === PLACEHOLDER_IMAGE || uri === '')) {
+    return say(
+      `Previews “${preview.name}”, which isn’t on Roblox yet; upload it and paste its asset ID`,
+    )
+  }
   if (uri === PLACEHOLDER_IMAGE) {
     return say('Still shows Studio’s placeholder image; paste an asset ID')
   }

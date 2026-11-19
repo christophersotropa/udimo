@@ -72,6 +72,9 @@ export type ViewState = {
   // Which panels are docked on which side, and the sizes (panelLayout.ts).
   panels: PanelLayout
   panelDrag: PanelDrag | null
+  // A short message in the status bar (say, why a dropped file couldn't
+  // be used), or null. It clears itself after a few seconds.
+  notice: string | null
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -99,6 +102,7 @@ export type ViewState = {
   // Back to the starting layout: Explorer left, Properties right.
   resetPanels: () => void
   setPanelDrag: (drag: PanelDrag | null) => void
+  showNotice: (text: string) => void
 }
 
 // The screen size for a device.
@@ -112,6 +116,10 @@ export function currentView(
 ): View {
   return state.custom ?? fitView(state.area, screenOf(state))
 }
+
+// How long a status bar notice stays, in ms.
+const NOTICE_MS = 5000
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
 
 export function createViewStore() {
   return create<ViewState>()((set, get) => ({
@@ -129,6 +137,7 @@ export function createViewStore() {
     renamingId: null,
     panels: DEFAULT_PANEL_LAYOUT,
     panelDrag: null,
+    notice: null,
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -182,6 +191,11 @@ export function createViewStore() {
     swapPanels: () => set({ panels: mirrored(get().panels) }),
     resetPanels: () => set({ panels: DEFAULT_PANEL_LAYOUT }),
     setPanelDrag: (panelDrag) => set({ panelDrag }),
+    showNotice: (text) => {
+      set({ notice: text })
+      clearTimeout(noticeTimer)
+      noticeTimer = setTimeout(() => set({ notice: null }), NOTICE_MS)
+    },
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.

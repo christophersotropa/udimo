@@ -1,5 +1,6 @@
 import { createEmptyDocument } from './document.ts'
 import { insertParent } from './insert.ts'
+import { imagesUsedBy } from './previewImages.ts'
 import { inTreeOrder, topLevelNodes } from './tree.ts'
 import type { NodeId, UiDocument } from './types.ts'
 
@@ -26,6 +27,10 @@ export function extractSubtrees(doc: UiDocument, ids: NodeId[]): UiDocument {
     add(id, fragment.rootId)
     root.children.push(id)
   }
+  // The preview pictures they use go too, so a paste into another
+  // document (after File > New) still shows them.
+  const images = imagesUsedBy(doc, Object.values(fragment.nodes))
+  if (Object.keys(images).length > 0) fragment.images = images
   return fragment
 }
 

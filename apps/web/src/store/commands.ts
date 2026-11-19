@@ -1,3 +1,4 @@
+import { previewOf } from '../model/previewImages.ts'
 import { addOffset } from '../lib/udim2.ts'
 import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
@@ -10,7 +11,12 @@ import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import { planUnitConversion, type Units } from '../model/responsive.ts'
 import { planWrap } from '../model/wrap.ts'
 import { MODIFIER_CLASSES } from '../model/modifiers.ts'
-import type { NodeId, UiDocument, UiNode } from '../model/types.ts'
+import type {
+  NodeId,
+  PreviewImage,
+  UiDocument,
+  UiNode,
+} from '../model/types.ts'
 import type { DocumentStore, ElementClassName } from './documentStore.ts'
 
 // Editor commands: actions on "whatever is selected" that may take several
@@ -106,6 +112,12 @@ function copySubtree(
   )
   renameNode(copyId, source.name) // Roblox keeps the name on a duplicate
   copyModifiers(store, source, copyId)
+  const preview = previewOf(sourceDoc, source)
+  if (preview) {
+    store
+      .getState()
+      .setPreviewImage(copyId, { key: source.previewImage!, image: preview })
+  }
   for (const childId of source.children) {
     copySubtree(store, sourceDoc, childId, copyId)
   }
@@ -393,4 +405,53 @@ export function selectChildren(store: DocumentStore, id: NodeId) {
   const { document, select } = store.getState()
   const children = document.nodes[id]?.children ?? []
   children.forEach((childId, i) => select(childId, i > 0))
+}
+
+// A new ImageLabel showing a preview picture (see UiNode.previewImage),
+// centred on `point` (game pixels from the screen's top-left) and kept on
+// the screen: what dropping an image file on empty canvas does. It's as big
+// as the picture, but no more than half the screen each way, and has no
+// background, so transparent parts of the picture show what's behind.
+// One undo step. Returns the new element's id.
+export function insertImageAt(
+  store: DocumentStore,
+  point: { x: number; y: number },
+  screen: ScreenSize,
+  preview: { key: string; image: PreviewImage },
+): NodeId {
+  const { width, height } = preview.image
+  const scale = Math.min(
+    1,
+    (screen.width * 0.5) / width,
+    (screen.height * 0.5) / height,
+  )
+  const w = Math.round(width * scale)
+  const h = Math.round(height * scale)
+  const clamp = (value: number, max: number) =>
+    Math.round(Math.min(Math.max(0, value), Math.max(0, max)))
+  let id = ''
+  asOneStep(store, () => {
+    const { document, addNode, renameNode, setPreviewImage, select } =
+      store.getState()
+    id = addNode(document.rootId, 'ImageLabel', {
+      Position: {
+        xs: 0,
+        xo: clamp(point.x - w / 2, screen.width - w),
+        ys: 0,
+        yo: clamp(point.y - h / 2, screen.height - h),
+      },
+      Size: { xs: 0, xo: w, ys: 0, yo: h },
+      BackgroundTransparency: 1,
+    })
+    // Named after the file, the way Roblox names an uploaded image.
+    renameNode(id, imageName(preview.image.name))
+    setPreviewImage(id, preview)
+    select(id)
+  })
+  return id
+}
+
+// "pet icon.png" -> "pet icon": the file's name without its extension.
+export function imageName(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/, '').trim() || 'ImageLabel'
 }

@@ -180,6 +180,27 @@ describe('exportWarnings', () => {
   })
 })
 
+describe('a previewed picture', () => {
+  it('says which file still needs uploading', () => {
+    const { store, id, warnings } = setup('ImageLabel')
+    store.getState().setPreviewImage(id, {
+      key: 'pet',
+      image: {
+        name: 'pet.png',
+        dataUrl: 'data:image/png;base64,iVBORw0KGgo=',
+        width: 64,
+        height: 32,
+      },
+    })
+    expect(warnings().map((w) => w.message)).toContain(
+      'Previews “pet.png”, which isn’t on Roblox yet; upload it and paste its asset ID',
+    )
+    // With an asset ID pasted, it's ready.
+    store.getState().updateProps(id, { Image: 'rbxassetid://123' })
+    expect(warnings().some((w) => w.message.includes('pet.png'))).toBe(false)
+  })
+})
+
 describe('pathOf', () => {
   it('names an element the way a script reaches it', () => {
     const store = createDocumentStore()
