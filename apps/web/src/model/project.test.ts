@@ -155,6 +155,22 @@ describe('parseProject rejects', () => {
     expectRejected(text, 'invalid UIStroke Thickness')
   })
 
+  it('a gradient whose keypoint times are out of order', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].modifiers = {
+        UIGradient: {
+          Transparency: [
+            { time: 0, value: 0 },
+            { time: 0.8, value: 1 },
+            { time: 0.2, value: 0 },
+            { time: 1, value: 0 },
+          ],
+        },
+      }
+    })
+    expectRejected(text, 'invalid UIGradient Transparency')
+  })
+
   it('modifiers on the ScreenGui', () => {
     const text = brokenFile((data, { rootId }) => {
       data.document.nodes[rootId].modifiers = { UICorner: {} }

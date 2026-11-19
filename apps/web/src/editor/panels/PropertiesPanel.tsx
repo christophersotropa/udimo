@@ -1,6 +1,5 @@
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import { resolveModifier } from '../../model/modifiers.ts'
 import type { NodeId, Props, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
@@ -11,6 +10,7 @@ import {
   Section,
   TextField,
 } from './fields.tsx'
+import { ModifiersSection } from './ModifiersSection.tsx'
 import { Panel } from './Panel.tsx'
 
 // Shows and edits the properties of the selected element.
@@ -82,16 +82,11 @@ function NodeProperties({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const renameNode = useDocumentStore((state) => state.renameNode)
   const updateProps = useDocumentStore((state) => state.updateProps)
-  const addModifier = useDocumentStore((state) => state.addModifier)
-  const removeModifier = useDocumentStore((state) => state.removeModifier)
-  const updateModifier = useDocumentStore((state) => state.updateModifier)
   if (!node) return null
 
   // Unset properties show their Roblox defaults. Editing one saves it.
   const p = resolveProps(node)
   const set = (props: Props) => updateProps(id, props)
-  const corner = resolveModifier(node, 'UICorner')
-  const stroke = resolveModifier(node, 'UIStroke')
 
   return (
     <div className="space-y-3">
@@ -182,83 +177,7 @@ function NodeProperties({ id }: { id: NodeId }) {
         </Row>
       </Section>
 
-      <Section title="Modifiers">
-        <Row label="UICorner">
-          <CheckboxField
-            label="UICorner"
-            value={corner !== null}
-            onChange={(on) =>
-              on ? addModifier(id, 'UICorner') : removeModifier(id, 'UICorner')
-            }
-          />
-        </Row>
-        {corner && (
-          <Row label="Corner radius">
-            <NumberField
-              label="CornerRadius Scale"
-              min={0}
-              value={corner.CornerRadius.s}
-              onChange={(s) =>
-                updateModifier(id, 'UICorner', {
-                  CornerRadius: { ...corner.CornerRadius, s },
-                })
-              }
-            />
-            <NumberField
-              label="CornerRadius Offset"
-              integer
-              min={0}
-              value={corner.CornerRadius.o}
-              onChange={(o) =>
-                updateModifier(id, 'UICorner', {
-                  CornerRadius: { ...corner.CornerRadius, o },
-                })
-              }
-            />
-          </Row>
-        )}
-        <Row label="UIStroke">
-          <CheckboxField
-            label="UIStroke"
-            value={stroke !== null}
-            onChange={(on) =>
-              on ? addModifier(id, 'UIStroke') : removeModifier(id, 'UIStroke')
-            }
-          />
-        </Row>
-        {stroke && (
-          <>
-            <Row label="Stroke color">
-              <ColorField
-                label="UIStroke Color"
-                value={stroke.Color}
-                onChange={(Color) => updateModifier(id, 'UIStroke', { Color })}
-              />
-            </Row>
-            <Row label="Thickness">
-              <NumberField
-                label="UIStroke Thickness"
-                min={0}
-                value={stroke.Thickness}
-                onChange={(Thickness) =>
-                  updateModifier(id, 'UIStroke', { Thickness })
-                }
-              />
-            </Row>
-            <Row label="Transparency">
-              <NumberField
-                label="UIStroke Transparency"
-                min={0}
-                max={1}
-                value={stroke.Transparency}
-                onChange={(Transparency) =>
-                  updateModifier(id, 'UIStroke', { Transparency })
-                }
-              />
-            </Row>
-          </>
-        )}
-      </Section>
+      <ModifiersSection id={id} />
 
       {isTextClass(node.className) && (
         <Section title="Text">

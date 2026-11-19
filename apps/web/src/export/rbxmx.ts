@@ -1,10 +1,14 @@
 import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
-import { resolveModifier } from '../model/modifiers.ts'
+import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
 import type {
   Color3,
+  ColorKeypoint,
+  ModifierClass,
+  ModifierProps,
   NodeId,
+  NumberKeypoint,
   UDim,
   UDim2,
   UiDocument,
@@ -55,6 +59,18 @@ const vector2 = (name: string, v: Vector2) =>
   `<Vector2 name="${name}"><X>${v.x}</X><Y>${v.y}</Y></Vector2>`
 const color3 = (name: string, c: Color3) =>
   `<Color3 name="${name}"><R>${c.r}</R><G>${c.g}</G><B>${c.b}</B></Color3>`
+// Sequences are written as plain numbers, a group per keypoint, the way
+// Studio does: "time R G B 0" for colors, "time value 0" for numbers. The
+// trailing 0 is the "envelope", a random spread Roblox only uses for
+// particles.
+const colorSequence = (name: string, keypoints: ColorKeypoint[]) =>
+  `<ColorSequence name="${name}">${keypoints
+    .map(({ time, color }) => `${time} ${color.r} ${color.g} ${color.b} 0 `)
+    .join('')}</ColorSequence>`
+const numberSequence = (name: string, keypoints: NumberKeypoint[]) =>
+  `<NumberSequence name="${name}">${keypoints
+    .map(({ time, value }) => `${time} ${value} 0 `)
+    .join('')}</NumberSequence>`
 // An image like "rbxassetid://123", or <null> when there is none. Studio
 // now saves images as <uri> inside a *Content property (ImageContent), not
 // the older Image property with <url>: see docs/reference/image-classes.rbxmx.
@@ -128,41 +144,53 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
   return tags
 }
 
+// How each modifier is written: its property tags, from its props with the
+// defaults filled in. Typed so every modifier must have an entry here.
+const MODIFIER_TAGS: {
+  [K in ModifierClass]: (props: Required<ModifierProps[K]>) => string[]
+} = {
+  // Studio now saves a radius per corner. Udimo has one radius for all four.
+  UICorner: ({ CornerRadius }) => [
+    udim('BottomLeftRadius', CornerRadius),
+    udim('BottomRightRadius', CornerRadius),
+    udim('TopLeftRadius', CornerRadius),
+    udim('TopRightRadius', CornerRadius),
+  ],
+  UIStroke: ({ Color, Thickness, Transparency }) => [
+    color3('Color', Color),
+    float('Thickness', Thickness),
+    float('Transparency', Transparency),
+  ],
+  UIGradient: ({ Color, Transparency, Rotation }) => [
+    colorSequence('Color', Color),
+    numberSequence('Transparency', Transparency),
+    float('Rotation', Rotation),
+  ],
+  UIPadding: (padding) => [
+    udim('PaddingBottom', padding.PaddingBottom),
+    udim('PaddingLeft', padding.PaddingLeft),
+    udim('PaddingRight', padding.PaddingRight),
+    udim('PaddingTop', padding.PaddingTop),
+  ],
+  UIAspectRatioConstraint: ({ AspectRatio }) => [
+    float('AspectRatio', AspectRatio),
+  ],
+}
+
 // An element's modifiers, as the child instances Roblox expects.
 function modifierItems(node: UiNode): { className: string; tags: string[] }[] {
   const items: { className: string; tags: string[] }[] = []
-
-  const corner = resolveModifier(node, 'UICorner')
-  if (corner) {
-    // Studio now saves a radius per corner. Udimo has one radius for all four.
-    const corners = [
-      'BottomLeftRadius',
-      'BottomRightRadius',
-      'TopLeftRadius',
-      'TopRightRadius',
-    ]
+  for (const modifier of MODIFIER_CLASSES) {
+    const props = resolveModifier(node, modifier)
+    if (!props) continue
+    // TypeScript can't follow that `props` belongs to this same `modifier`
+    // inside a loop, so the lookup is widened by hand.
+    const tagsFor = MODIFIER_TAGS[modifier] as (p: typeof props) => string[]
     items.push({
-      className: 'UICorner',
-      tags: [
-        string('Name', 'UICorner'),
-        ...corners.map((name) => udim(name, corner.CornerRadius)),
-      ],
+      className: modifier,
+      tags: [string('Name', modifier), ...tagsFor(props)],
     })
   }
-
-  const stroke = resolveModifier(node, 'UIStroke')
-  if (stroke) {
-    items.push({
-      className: 'UIStroke',
-      tags: [
-        string('Name', 'UIStroke'),
-        color3('Color', stroke.Color),
-        float('Thickness', stroke.Thickness),
-        float('Transparency', stroke.Transparency),
-      ],
-    })
-  }
-
   return items
 }
 
