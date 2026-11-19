@@ -120,7 +120,7 @@ export function ModifiersSection({ id }: { id: NodeId }) {
         const isOpen = open.has(m)
         return (
           <div key={m}>
-            <div className="group grid min-h-6 grid-cols-[100px_1fr_auto] items-center gap-2">
+            <div className="group grid min-h-6 grid-cols-[minmax(100px,calc(40cqw_-_var(--indent,0px)))_minmax(0,1fr)_auto] items-center gap-2">
               <button
                 type="button"
                 aria-expanded={isOpen}
@@ -150,7 +150,9 @@ export function ModifiersSection({ id }: { id: NodeId }) {
               </button>
             </div>
             {isOpen && (
-              <div className="my-1 space-y-1 border-l border-line pl-2">
+              // Indented 9 px (1 px line + 8 px padding): its rows' label
+              // columns are that much narrower, so values stay lined up.
+              <div className="my-1 space-y-1 border-l border-line pl-2 [--indent:9px]">
                 <ModifierFields id={id} modifier={m} />
               </div>
             )}

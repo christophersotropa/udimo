@@ -1,8 +1,27 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
+import { createPortal } from 'react-dom'
+
+// Keep this far from the window's edges, in pixels.
+const EDGE = 8
 
 // A button that opens a floating box below it (a menu, a list...), which
-// closes when you click elsewhere or press Escape. `trigger` draws the
-// button; `children` is the box's content, given a `close` function.
+// closes when you click elsewhere, press Escape, or scroll. `trigger` draws
+// the button; `children` is the box's content, given a `close` function.
+//
+// The box is drawn through a portal: React puts it straight into <body>,
+// on top of the whole page, rather than inside the button's panel. A panel
+// hides whatever pokes out past its edges, so a menu drawn inside it got
+// cut off. It's placed with position: fixed (in window pixels) below the
+// button, lined up with its left or right edge, and nudged back inside the
+// window if it would stick out (or opened above the button if there's no
+// room below).
 export function Popover({
   trigger,
   children,
@@ -15,37 +34,84 @@ export function Popover({
   width?: string
 }) {
   const [open, setOpen] = useState(false)
+  // Where the box goes, worked out once it's drawn and can be measured.
+  // Until then it's drawn invisibly.
+  const [place, setPlace] = useState<CSSProperties | null>(null)
+  const anchorRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
+
+  const close = () => {
+    setOpen(false)
+    setPlace(null)
+  }
+
+  // Measure the button and the box, then place the box. A layout effect
+  // runs after React draws but before the browser paints, so the box never
+  // shows in the wrong spot first.
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current || !boxRef.current) return
+    const anchor = anchorRef.current.getBoundingClientRect()
+    const box = boxRef.current.getBoundingClientRect()
+    const wanted = align === 'right' ? anchor.right - box.width : anchor.left
+    const left = Math.min(
+      Math.max(EDGE, wanted),
+      window.innerWidth - box.width - EDGE,
+    )
+    const below = anchor.bottom + 4
+    const top =
+      below + box.height > window.innerHeight - EDGE
+        ? Math.max(EDGE, anchor.top - 4 - box.height) // no room: above
+        : below
+    setPlace({ left, top })
+  }, [open, align])
 
   useEffect(() => {
     if (!open) return
     function onPointerDown(event: PointerEvent) {
-      if (!boxRef.current?.contains(event.target as Node)) setOpen(false)
+      const target = event.target as Node
+      const inside =
+        anchorRef.current?.contains(target) || boxRef.current?.contains(target)
+      if (!inside) close()
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') close()
+    }
+    // The box stays put on screen, so if what's under it scrolls or the
+    // window resizes, it would be left behind: close it instead. (Not for
+    // scrolling inside the box itself.)
+    function onScroll(event: Event) {
+      if (!boxRef.current?.contains(event.target as Node)) close()
     }
     window.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('scroll', onScroll, true) // true: any element
+    window.addEventListener('resize', close)
     return () => {
       window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', close)
     }
   }, [open])
 
   return (
-    <div ref={boxRef} className="relative">
-      {trigger({ open, toggle: () => setOpen(!open) })}
-      {open && (
-        <div
-          role="menu"
-          className={`absolute top-full z-50 mt-1 ${width} ${
-            align === 'right' ? 'right-0' : 'left-0'
-          } rounded bg-raised py-1 shadow-2xl shadow-black/50 ring-1 ring-line`}
-        >
-          {children(() => setOpen(false))}
-        </div>
-      )}
+    <div ref={anchorRef} className="relative">
+      {trigger({
+        open,
+        toggle: () => (open ? close() : setOpen(true)),
+      })}
+      {open &&
+        createPortal(
+          <div
+            ref={boxRef}
+            role="menu"
+            style={place ?? { left: 0, top: 0, visibility: 'hidden' }}
+            className={`fixed z-50 ${width} max-h-[calc(100vh-16px)] overflow-y-auto rounded bg-raised py-1 shadow-2xl shadow-black/50 ring-1 ring-line`}
+          >
+            {children(close)}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

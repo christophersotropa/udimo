@@ -115,15 +115,20 @@ export function Row({
   const query = useContext(PropertyFilter)
   if (!matches(query, label, name)) return null
   return (
-    // minmax(0, 1fr): the value column may shrink below its contents'
-    // natural width, so a narrow panel never gets a sideways scroll. A
+    // The label column is 40% of the panel's width (40cqw: "container query
+    // width", the Properties panel being the container), never under
+    // 100 px, so widening the panel shows long names in full. Rows in an
+    // indented box (an opened modifier) take off their indent (--indent),
+    // so their value boxes line up with every other row's. minmax(0, 1fr): the value column
+    // may shrink below its contents' natural width, so a narrow panel never
+    // gets a sideways scroll. A
     // sub-row's label is one letter (X, Y), so it gets a narrow column and
     // leaves the room to its boxes.
     <div
       className={`grid min-h-6 items-center gap-2 ${
         indent
           ? 'grid-cols-[28px_minmax(0,1fr)]'
-          : 'grid-cols-[100px_minmax(0,1fr)]'
+          : 'grid-cols-[minmax(100px,calc(40cqw_-_var(--indent,0px)))_minmax(0,1fr)]'
       }`}
     >
       <span
@@ -400,7 +405,7 @@ export function UDim2Row({
 
   return (
     <>
-      <div className="grid min-h-6 grid-cols-[100px_minmax(0,1fr)] items-center gap-2">
+      <div className="grid min-h-6 grid-cols-[minmax(100px,calc(40cqw_-_var(--indent,0px)))_minmax(0,1fr)] items-center gap-2">
         <button
           type="button"
           aria-expanded={open}

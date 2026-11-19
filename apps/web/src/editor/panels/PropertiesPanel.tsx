@@ -128,7 +128,10 @@ function NodeProperties({
   const hasBold = weights.includes('Bold')
 
   return (
-    <div>
+    // @container: the rows size their label column by this box's width
+    // (40cqw, see Row in fields.tsx), so every row, however deeply it's
+    // indented, gets the same share of the panel and they all line up.
+    <div className="@container">
       {/* The element: icon, name (click to edit), class, and a menu. */}
       <div className="flex items-center gap-2 border-b border-line px-3 py-2">
         <ClassIcon className={node.className} />
