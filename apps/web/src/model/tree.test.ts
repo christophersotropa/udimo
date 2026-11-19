@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { isInside, topLevelNodes } from './tree.ts'
+import { ancestorIds, isInside, topLevelNodes } from './tree.ts'
 
 // ScreenGui > frame > button, plus a separate coins label.
 function setup() {
@@ -37,5 +37,17 @@ describe('topLevelNodes', () => {
   it('keeps unrelated nodes', () => {
     const { doc, button, coins } = setup()
     expect(topLevelNodes(doc, [button, coins])).toEqual([button, coins])
+  })
+})
+
+describe('ancestorIds', () => {
+  it('lists the parent, then its parent, up to the root', () => {
+    const { doc, rootId, frame, button } = setup()
+    expect(ancestorIds(doc, button)).toEqual([frame, rootId])
+  })
+
+  it('is empty for the root', () => {
+    const { doc, rootId } = setup()
+    expect(ancestorIds(doc, rootId)).toEqual([])
   })
 })

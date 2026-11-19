@@ -16,6 +16,17 @@ export function isInside(
   return false
 }
 
+// The ids of a node's parent, grandparent and so on, up to the root.
+export function ancestorIds(doc: UiDocument, id: NodeId): NodeId[] {
+  const ancestors: NodeId[] = []
+  let current = doc.nodes[id]?.parentId ?? null
+  while (current !== null) {
+    ancestors.push(current)
+    current = doc.nodes[current]?.parentId ?? null
+  }
+  return ancestors
+}
+
 // Drops any id that sits inside another id in the list. When you drag a
 // Frame and one of its children together, only the Frame should move:
 // the child already moves with it, and moving it too would move it twice.

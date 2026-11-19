@@ -16,6 +16,10 @@ export function nodeStyle(node: UiNode): CSSProperties {
     // A CSS z-index does the same: it only competes with siblings.
     zIndex: p.ZIndex,
     display: p.Visible ? undefined : 'none',
+    // A locked element ignores the mouse: clicks pass through to whatever is
+    // underneath. 'auto' (not unset) matters, because pointer-events is
+    // inherited: without it, a locked Frame's children would ignore it too.
+    pointerEvents: node.locked ? 'none' : 'auto',
   }
 
   if (node.className === 'TextLabel') {

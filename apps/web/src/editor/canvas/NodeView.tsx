@@ -11,9 +11,13 @@ import { ResizeHandles } from './ResizeHandles.tsx'
 export function NodeView({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const isSelected = useDocumentStore((state) => state.selection.includes(id))
-  // Resize handles only when this is the one and only selected element.
+  // Resize handles only when this is the one and only selected element,
+  // and it isn't locked.
   const showHandles = useDocumentStore(
-    (state) => state.selection.length === 1 && state.selection[0] === id,
+    (state) =>
+      state.selection.length === 1 &&
+      state.selection[0] === id &&
+      !state.document.nodes[id]?.locked,
   )
   if (!node) return null
 

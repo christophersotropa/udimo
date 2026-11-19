@@ -77,6 +77,17 @@ describe('documentToRbxmx', () => {
     expect(props.get('Text')).toBe('string:Buy')
   })
 
+  it('ignores the editor-only locked flag', () => {
+    const store = createDocumentStore()
+    const id = store
+      .getState()
+      .addNode(store.getState().document.rootId, 'Frame')
+    const unlocked = documentToRbxmx(store.getState().document)
+
+    store.getState().setLocked(id, true)
+    expect(documentToRbxmx(store.getState().document)).toBe(unlocked)
+  })
+
   it('escapes names and text that contain XML characters', () => {
     const store = createDocumentStore()
     const { addNode, renameNode } = store.getState()

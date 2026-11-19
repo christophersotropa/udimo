@@ -73,6 +73,9 @@ export type UiNode = {
   parentId: NodeId | null // null only for the root ScreenGui
   children: NodeId[] // ids of child nodes, in order
   props: Props
+  // Editor-only: a locked element can't be clicked or dragged on the canvas.
+  // Roblox GUI objects have no such property, so it's never exported.
+  locked?: boolean
 }
 
 // The whole document: every node in one lookup table keyed by id,

@@ -3,6 +3,8 @@ import {
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
+  toggleLocked,
+  toggleVisible,
 } from './commands.ts'
 import { createDocumentStore } from './documentStore.ts'
 
@@ -135,5 +137,27 @@ describe('duplicateSelection', () => {
 
     store.getState().undo()
     expect(doc()).toBe(before)
+  })
+})
+
+describe('toggleVisible', () => {
+  it('sets Visible to false, then removes it again', () => {
+    const { store, doc, panel } = setup()
+    toggleVisible(store, panel)
+    expect(doc().nodes[panel].props.Visible).toBe(false)
+
+    toggleVisible(store, panel)
+    expect('Visible' in doc().nodes[panel].props).toBe(false)
+  })
+})
+
+describe('toggleLocked', () => {
+  it('locks, then unlocks', () => {
+    const { store, doc, panel } = setup()
+    toggleLocked(store, panel)
+    expect(doc().nodes[panel].locked).toBe(true)
+
+    toggleLocked(store, panel)
+    expect(doc().nodes[panel].locked).toBeUndefined()
   })
 })

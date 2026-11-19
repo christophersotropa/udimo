@@ -119,6 +119,8 @@ export function useCanvasPointer(scale: number) {
 
     const startPositions = new Map<NodeId, UDim2>()
     for (const nodeId of topLevelNodes(doc, selection)) {
+      // A locked element picked in the Explorer stays put when you drag others.
+      if (doc.nodes[nodeId].locked) continue
       startPositions.set(nodeId, resolveProps(doc.nodes[nodeId]).Position)
     }
     beginDrag(event, { kind: 'move', startPositions })

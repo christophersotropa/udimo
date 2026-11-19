@@ -146,6 +146,30 @@ describe('document store', () => {
     })
   })
 
+  describe('setLocked', () => {
+    it('locks, and unlocking removes the field', () => {
+      const { actions, doc, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+
+      actions.setLocked(frame, true)
+      expect(doc().nodes[frame].locked).toBe(true)
+
+      actions.setLocked(frame, false)
+      expect('locked' in doc().nodes[frame]).toBe(false)
+    })
+
+    it('is undoable, and unlocking an unlocked element saves no step', () => {
+      const { actions, doc, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+      const before = doc()
+
+      actions.setLocked(frame, false) // already unlocked: nothing to undo
+      actions.setLocked(frame, true)
+      actions.undo()
+      expect(doc()).toBe(before)
+    })
+  })
+
   describe('deleteNode', () => {
     it('deletes a node and everything inside it', () => {
       const { actions, doc, rootId } = setup()
