@@ -73,6 +73,34 @@ body {
     0 8px 20px rgb(0 0 0 / 0.45);
 }
 
+/* Checkboxes (Properties and the Export dialog): drawn by us, not the
+   browser, so they match the text boxes: the same dark background and thin
+   border, and when ticked the background stays dark with an amber tick.
+   (The browser's own checkbox fills the whole box with the colour.)
+   appearance: none turns off the browser's drawing. The tick is a small
+   SVG picture; its colour is the accent, #e5a23c, written out because a
+   picture can't read CSS variables. */
+.check-box {
+  appearance: none;
+  cursor: pointer;
+  border-radius: 3px;
+  background-color: var(--color-app);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+.check-box:hover {
+  box-shadow: inset 0 0 0 1px var(--color-hover);
+}
+.check-box:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23e5a23c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
+}
+.check-box:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* Native <dialog>: the dimmed layer behind it. */
 dialog::backdrop {
   background: rgb(0 0 0 / 0.6);

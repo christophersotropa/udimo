@@ -252,7 +252,7 @@ export function TextField({
   )
 }
 
-// An on/off property, as an amber checkbox like Studio's.
+// An on/off property: a dark box with an amber tick (.check-box, index.css).
 export function ToggleField({
   label,
   value,
@@ -268,7 +268,7 @@ export function ToggleField({
       aria-label={label}
       checked={value}
       onChange={(event) => onChange(event.target.checked)}
-      className="size-3.5 cursor-pointer accent-accent"
+      className="check-box size-3.5"
     />
   )
 }
