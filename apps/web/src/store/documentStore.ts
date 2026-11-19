@@ -6,6 +6,8 @@ import { createEmptyDocument } from '../model/document.ts'
 import { isInside } from '../model/tree.ts'
 import type {
   ClassName,
+  ModifierClass,
+  ModifierProps,
   NodeId,
   Props,
   UiDocument,
@@ -52,6 +54,16 @@ export type DocumentState = {
   // Merges `props` into the node's props. A value of `undefined` removes
   // that property, so it goes back to Roblox's default.
   updateProps: (id: NodeId, props: Props) => void
+  // Turns a modifier on (with its defaults) or off. Does nothing if it's
+  // already in that state.
+  addModifier: (id: NodeId, modifier: ModifierClass) => void
+  removeModifier: (id: NodeId, modifier: ModifierClass) => void
+  // Merges props into a modifier the element has, like updateProps.
+  updateModifier: <K extends ModifierClass>(
+    id: NodeId,
+    modifier: K,
+    props: ModifierProps[K],
+  ) => void
   // Moves a node under `newParentId` at position `index` (default: last).
   moveNode: (id: NodeId, newParentId: NodeId, index?: number) => void
   // Deletes a node and everything inside it.
@@ -238,6 +250,37 @@ export function createDocumentStore(
                 // object) lets Immer spot when nothing really changed.
                 Object.assign(node.props, { [key]: value })
               }
+            }
+          })
+        },
+
+        addModifier: (id, modifier) => {
+          change((doc) => {
+            assertNotRoot(doc, id, 'add a modifier to')
+            const node = getNode(doc, id)
+            node.modifiers ??= {} // ??= : set it only if it's missing
+            node.modifiers[modifier] ??= {}
+          })
+        },
+
+        removeModifier: (id, modifier) => {
+          change((doc) => {
+            const node = getNode(doc, id)
+            if (!node.modifiers?.[modifier]) return
+            delete node.modifiers[modifier]
+            // No modifiers left: drop the field, so the document stays tidy.
+            if (Object.keys(node.modifiers).length === 0) delete node.modifiers
+          })
+        },
+
+        updateModifier: (id, modifier, props) => {
+          change((doc) => {
+            const current = getNode(doc, id).modifiers?.[modifier] as
+              Record<string, unknown> | undefined
+            if (!current) throw new Error(`Node "${id}" has no ${modifier}`)
+            for (const [key, value] of Object.entries(props)) {
+              if (value === undefined) delete current[key]
+              else Object.assign(current, { [key]: value })
             }
           })
         },

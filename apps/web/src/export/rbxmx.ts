@@ -1,11 +1,14 @@
 import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
+import { resolveModifier } from '../model/modifiers.ts'
 import type {
   Color3,
   NodeId,
+  UDim,
   UDim2,
   UiDocument,
+  UiNode,
   Vector2,
 } from '../model/types.ts'
 
@@ -44,6 +47,8 @@ const float = (name: string, value: number) =>
   `<float name="${name}">${value}</float>`
 const token = (name: string, value: number) =>
   `<token name="${name}">${value}</token>`
+const udim = (name: string, v: UDim) =>
+  `<UDim name="${name}"><S>${v.s}</S><O>${Math.round(v.o)}</O></UDim>`
 const udim2 = (name: string, v: UDim2) =>
   `<UDim2 name="${name}"><XS>${v.xs}</XS><XO>${Math.round(v.xo)}</XO><YS>${v.ys}</YS><YO>${Math.round(v.yo)}</YO></UDim2>`
 const vector2 = (name: string, v: Vector2) =>
@@ -123,26 +128,79 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
   return tags
 }
 
+// An element's modifiers, as the child instances Roblox expects.
+function modifierItems(node: UiNode): { className: string; tags: string[] }[] {
+  const items: { className: string; tags: string[] }[] = []
+
+  const corner = resolveModifier(node, 'UICorner')
+  if (corner) {
+    // Studio now saves a radius per corner. Udimo has one radius for all four.
+    const corners = [
+      'BottomLeftRadius',
+      'BottomRightRadius',
+      'TopLeftRadius',
+      'TopRightRadius',
+    ]
+    items.push({
+      className: 'UICorner',
+      tags: [
+        string('Name', 'UICorner'),
+        ...corners.map((name) => udim(name, corner.CornerRadius)),
+      ],
+    })
+  }
+
+  const stroke = resolveModifier(node, 'UIStroke')
+  if (stroke) {
+    items.push({
+      className: 'UIStroke',
+      tags: [
+        string('Name', 'UIStroke'),
+        color3('Color', stroke.Color),
+        float('Thickness', stroke.Thickness),
+        float('Transparency', stroke.Transparency),
+      ],
+    })
+  }
+
+  return items
+}
+
 export function documentToRbxmx(doc: UiDocument): string {
   const lines: string[] = ['<roblox version="4">']
   let nextReferent = 0
 
-  // Writes one <Item>, then its children inside it. Tabs show the nesting.
-  function writeItem(id: NodeId, depth: number) {
-    const node = doc.nodes[id]
+  // Writes one <Item> with its properties, then whatever goes inside it.
+  // Tabs show the nesting.
+  function writeItem(
+    className: string,
+    tags: string[],
+    depth: number,
+    writeInside: () => void = () => {},
+  ) {
     const tab = '\t'.repeat(depth)
     // A referent is a unique label for each instance in the file.
     const referent = `RBX${nextReferent++}`
-
-    lines.push(`${tab}<Item class="${node.className}" referent="${referent}">`)
+    lines.push(`${tab}<Item class="${className}" referent="${referent}">`)
     lines.push(`${tab}\t<Properties>`)
-    for (const tag of propertyTags(doc, id)) lines.push(`${tab}\t\t${tag}`)
+    for (const tag of tags) lines.push(`${tab}\t\t${tag}`)
     lines.push(`${tab}\t</Properties>`)
-    for (const childId of node.children) writeItem(childId, depth + 1)
+    writeInside()
     lines.push(`${tab}</Item>`)
   }
 
-  writeItem(doc.rootId, 1)
+  // An element, then its modifiers and its children inside it.
+  function writeNode(id: NodeId, depth: number) {
+    const node = doc.nodes[id]
+    writeItem(node.className, propertyTags(doc, id), depth, () => {
+      for (const item of modifierItems(node)) {
+        writeItem(item.className, item.tags, depth + 1)
+      }
+      for (const childId of node.children) writeNode(childId, depth + 1)
+    })
+  }
+
+  writeNode(doc.rootId, 1)
   lines.push('</roblox>')
   return lines.join('\n') + '\n'
 }

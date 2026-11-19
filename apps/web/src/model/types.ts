@@ -28,6 +28,12 @@ export type Color3 = {
   b: number
 }
 
+// UDim: one axis of a UDim2, Scale + Offset. Used for UICorner's radius.
+export type UDim = {
+  s: number // scale
+  o: number // offset in pixels
+}
+
 // ---------- Instances ----------
 
 // The Roblox classes Udimo can create in Phase 1.
@@ -73,6 +79,26 @@ export type Props = {
   ScrollBarThickness?: number
 }
 
+// Modifiers: objects that sit inside an element in Roblox and change how it
+// looks (rounded corners, an outline...). Udimo keeps them on the element
+// itself, at most one of each, and the exporter writes them out as child
+// instances. Property names are spelled like Roblox's; all optional.
+export type ModifierProps = {
+  UICorner: {
+    // Every corner's radius. Scale is a fraction of the shorter side.
+    CornerRadius?: UDim
+  }
+  UIStroke: {
+    // An outline around the element, or around the text of a text element.
+    Color?: Color3
+    Thickness?: number // pixels
+    Transparency?: number
+  }
+}
+export type ModifierClass = keyof ModifierProps
+// An element's modifiers: a modifier is on when its key is present.
+export type Modifiers = { [K in ModifierClass]?: ModifierProps[K] }
+
 export type NodeId = string
 
 // One element in the document, e.g. a Frame called "Window".
@@ -84,6 +110,7 @@ export type UiNode = {
   parentId: NodeId | null // null only for the root ScreenGui
   children: NodeId[] // ids of child nodes, in order
   props: Props
+  modifiers?: Modifiers
   // Editor-only: a locked element can't be clicked or dragged on the canvas.
   // Roblox GUI objects have no such property, so it's never exported.
   locked?: boolean

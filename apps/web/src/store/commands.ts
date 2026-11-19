@@ -6,7 +6,8 @@ import { cascadeShift } from '../model/insert.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import { planWrap } from '../model/wrap.ts'
-import type { NodeId, UiDocument } from '../model/types.ts'
+import { MODIFIER_CLASSES } from '../model/modifiers.ts'
+import type { NodeId, UiDocument, UiNode } from '../model/types.ts'
 import type { DocumentStore, ElementClassName } from './documentStore.ts'
 
 // Editor commands: actions on "whatever is selected" that may take several
@@ -70,6 +71,17 @@ export function toggleLocked(store: DocumentStore, id: NodeId) {
   setLocked(id, !document.nodes[id].locked)
 }
 
+// Gives the element `targetId` the same modifiers as `source`.
+function copyModifiers(store: DocumentStore, source: UiNode, targetId: NodeId) {
+  const { addModifier, updateModifier } = store.getState()
+  for (const modifier of MODIFIER_CLASSES) {
+    const props = source.modifiers?.[modifier]
+    if (!props) continue
+    addModifier(targetId, modifier)
+    updateModifier(targetId, modifier, props)
+  }
+}
+
 // Copies a node and everything inside it under `parentId`, with new ids.
 // It reads from `sourceDoc`, a snapshot taken before copying began, so the
 // copies it makes along the way can never be copied again.
@@ -88,6 +100,7 @@ function copySubtree(
     source.props,
   )
   renameNode(copyId, source.name) // Roblox keeps the name on a duplicate
+  copyModifiers(store, source, copyId)
   for (const childId of source.children) {
     copySubtree(store, sourceDoc, childId, copyId)
   }

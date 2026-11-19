@@ -4,6 +4,7 @@ import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import { visibleFraction } from '../../model/layout.ts'
+import { cornerRadiusPixels } from '../../model/modifiers.ts'
 import { SCREEN } from '../../model/screen.ts'
 import type { NodeId, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -25,6 +26,12 @@ export function NodeView({ id }: { id: NodeId }) {
       state.selection[0] === id &&
       !state.document.nodes[id]?.locked,
   )
+  // A plain number, so this only re-renders when the radius really changes.
+  const cornerRadius = useDocumentStore((state) =>
+    state.document.nodes[id]?.modifiers?.UICorner
+      ? cornerRadiusPixels(state.document, id, SCREEN)
+      : 0,
+  )
   if (!node) return null
 
   const children = node.children.map((childId) => (
@@ -40,10 +47,10 @@ export function NodeView({ id }: { id: NodeId }) {
   // so selecting never shifts the layout.
   const style = isSelected
     ? {
-        ...nodeStyle(node),
+        ...nodeStyle(node, cornerRadius),
         outline: 'calc(2px / var(--canvas-scale)) solid rgb(59 130 246)',
       }
-    : nodeStyle(node)
+    : nodeStyle(node, cornerRadius)
 
   return (
     <div style={style} data-node-id={node.id} title={node.name}>
@@ -122,7 +129,11 @@ function ScrollingContent({
   const bar = { position: 'absolute', backgroundColor: 'black' } as const
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    // borderRadius 'inherit': with a UICorner, the clipping is rounded too.
+    <div
+      className="absolute inset-0 overflow-hidden"
+      style={{ borderRadius: 'inherit' }}
+    >
       <div
         className="absolute top-0 left-0"
         style={{

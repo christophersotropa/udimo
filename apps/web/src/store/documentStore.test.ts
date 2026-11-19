@@ -170,6 +170,50 @@ describe('document store', () => {
     })
   })
 
+  describe('modifiers', () => {
+    it('adds, updates and removes a modifier', () => {
+      const { actions, doc, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+
+      actions.addModifier(frame, 'UICorner')
+      expect(doc().nodes[frame].modifiers).toEqual({ UICorner: {} })
+
+      actions.updateModifier(frame, 'UICorner', {
+        CornerRadius: { s: 0, o: 12 },
+      })
+      expect(doc().nodes[frame].modifiers?.UICorner?.CornerRadius?.o).toBe(12)
+
+      actions.removeModifier(frame, 'UICorner')
+      expect('modifiers' in doc().nodes[frame]).toBe(false) // tidied away
+    })
+
+    it('saves no undo step for adding a modifier that is already on', () => {
+      const { actions, doc, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+      actions.addModifier(frame, 'UIStroke')
+      actions.updateModifier(frame, 'UIStroke', { Thickness: 4 })
+      const before = doc()
+
+      actions.addModifier(frame, 'UIStroke') // keeps Thickness 4
+      expect(doc()).toBe(before)
+      actions.undo()
+      expect(doc().nodes[frame].modifiers?.UIStroke).toEqual({})
+    })
+
+    it('refuses to update a modifier the element does not have', () => {
+      const { actions, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+      expect(() =>
+        actions.updateModifier(frame, 'UIStroke', { Thickness: 2 }),
+      ).toThrow('no UIStroke')
+    })
+
+    it('refuses modifiers on the ScreenGui', () => {
+      const { actions, rootId } = setup()
+      expect(() => actions.addModifier(rootId, 'UICorner')).toThrow('root')
+    })
+  })
+
   describe('deleteNode', () => {
     it('deletes a node and everything inside it', () => {
       const { actions, doc, rootId } = setup()
