@@ -1,8 +1,9 @@
 // Makes the browser download `text` as a file called `filename`, without a server.
 // A Blob is file-like data held in memory; an object URL is a temporary link to
 // it; clicking a hidden <a download> link saves it.
-export function downloadTextFile(filename: string, text: string) {
-  const blob = new Blob([text], { type: 'application/xml' })
+// `type` tells the browser what kind of file it is, e.g. 'application/json'.
+export function downloadTextFile(filename: string, text: string, type: string) {
+  const blob = new Blob([text], { type })
   const url = URL.createObjectURL(blob)
 
   const link = document.createElement('a')

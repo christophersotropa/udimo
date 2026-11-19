@@ -2,8 +2,8 @@ import { color3FromRgb } from '../lib/color.ts'
 import type { UiDocument } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 
-// A small starter layout so the canvas has something to show until you can
-// add elements yourself (build 12). Plain placeholder shapes, no game art.
+// A small starter layout, shown on your first visit (before there's any
+// autosave), so the canvas isn't empty. Plain placeholder shapes, no game art.
 // It's built with a throwaway store, so it follows the same rules as any edit.
 export function createSampleDocument(): UiDocument {
   const store = createDocumentStore()
