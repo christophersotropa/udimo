@@ -54,7 +54,7 @@ function luauValue(value: Value): string {
     case 'Color3':
       return luauColor(value.value)
     case 'Font':
-      return `Font.new(${luauString(value.family)}, Enum.FontWeight.${value.weight}, Enum.FontStyle.Normal)`
+      return `Font.new(${luauString(value.family)}, Enum.FontWeight.${value.weight}, Enum.FontStyle.${value.style})`
     case 'ColorSequence':
       return `ColorSequence.new({ ${value.value
         .map(

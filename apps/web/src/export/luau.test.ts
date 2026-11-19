@@ -87,6 +87,26 @@ describe('documentToLuau', () => {
     expect(luau).toContain('Image = "rbxassetid://123456",')
   })
 
+  it('writes font weights by name', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      FontFace: { family: 'Roboto', weight: 'Thin' },
+    })
+    expect(documentToLuau(store.getState().document)).toContain(
+      'Font.new("rbxasset://fonts/families/Roboto.json", Enum.FontWeight.Thin, Enum.FontStyle.Normal)',
+    )
+  })
+
+  it('writes italic text', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      FontFace: { family: 'Roboto', weight: 'Bold', style: 'Italic' },
+    })
+    expect(documentToLuau(store.getState().document)).toContain(
+      'Font.new("rbxasset://fonts/families/Roboto.json", Enum.FontWeight.Bold, Enum.FontStyle.Italic)',
+    )
+  })
+
   it('keeps working past 200 elements (Luau allows 200 local variables)', () => {
     const store = createDocumentStore()
     const { addNode } = store.getState()

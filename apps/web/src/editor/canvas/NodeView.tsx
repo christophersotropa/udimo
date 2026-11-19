@@ -10,8 +10,7 @@ import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { PLACEHOLDER_IMAGE, resolveProps } from '../../model/defaults.ts'
 import { useShallow } from 'zustand/react/shallow'
-import { FONT_WEIGHT } from '../../model/enums.ts'
-import { FONTS } from '../../model/fonts.ts'
+import { fontCss } from '../../model/fonts.ts'
 import {
   absoluteBox,
   contentArea,
@@ -182,8 +181,7 @@ function NodeText({ id }: { id: NodeId }) {
   // size that fits (see lib/text.ts).
   let fontSize: number | undefined
   if (scaledArea) {
-    const weight = FONT_WEIGHT[p.FontFace.weight]
-    const cssFont = `${weight} 100px ${FONTS[p.FontFace.family].css}`
+    const cssFont = fontCss(p.FontFace, 100)
     const lines = text.split('\n')
     const widest = Math.max(
       ...lines.map((line) => measureTextWidth(line, cssFont)),

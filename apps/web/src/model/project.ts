@@ -2,6 +2,7 @@ import { isValidTimeline } from '../lib/sequence.ts'
 import {
   APPLY_STROKE_MODE,
   FILL_DIRECTION,
+  FONT_STYLE,
   FONT_WEIGHT,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
@@ -115,12 +116,14 @@ const isWholeNumber = (v: unknown) => isNumber(v) && Number.isInteger(v)
 // One of an enum's names, like "Vertical".
 const isOneOf = (table: Record<string, number>) => (v: unknown) =>
   typeof v === 'string' && Object.hasOwn(table, v)
-// A font Udimo knows, with a weight it offers.
+// A font Udimo knows, with a Roblox weight, and (if given) a style. A
+// weight the font doesn't have is fine: it's drawn as the closest one.
 const isFontFace = (v: unknown) =>
   isRecord(v) &&
   typeof v.family === 'string' &&
   Object.hasOwn(FONTS, v.family) &&
-  isOneOf(FONT_WEIGHT)(v.weight)
+  isOneOf(FONT_WEIGHT)(v.weight) &&
+  (v.style === undefined || isOneOf(FONT_STYLE)(v.style))
 
 type Check = (value: unknown) => boolean
 

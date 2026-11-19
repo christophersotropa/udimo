@@ -71,6 +71,20 @@ describe('serializeProject and parseProject', () => {
     expect(parseProject(serializeProject(doc))).toEqual(doc)
   })
 
+  it('keep italic, and open fonts saved before italic existed', () => {
+    const store = createDocumentStore()
+    const { addNode } = store.getState()
+    const root = store.getState().document.rootId
+    addNode(root, 'TextLabel', {
+      FontFace: { family: 'Roboto', weight: 'Bold', style: 'Italic' },
+    })
+    addNode(root, 'TextLabel', {
+      FontFace: { family: 'Roboto', weight: 'Bold' }, // no style
+    })
+    const doc = store.getState().document
+    expect(parseProject(serializeProject(doc))).toEqual(doc)
+  })
+
   it('label the file with its format and version', () => {
     const data = JSON.parse(serializeProject(setup().doc)) as FileData
     expect(data.format).toBe('udimo')
@@ -144,6 +158,24 @@ describe('parseProject rejects', () => {
       }
     })
     expectRejected(badSize, 'invalid Size')
+  })
+
+  it('a font weight Roblox does not have', () => {
+    const text = brokenFile((data, { label }) => {
+      data.document.nodes[label].props = {
+        FontFace: { family: 'Roboto', weight: 'Chunky' },
+      }
+    })
+    expectRejected(text, 'invalid FontFace')
+  })
+
+  it('a font style Roblox does not have', () => {
+    const text = brokenFile((data, { label }) => {
+      data.document.nodes[label].props = {
+        FontFace: { family: 'Roboto', weight: 'Regular', style: 'Oblique' },
+      }
+    })
+    expectRejected(text, 'invalid FontFace')
   })
 
   it('a font Udimo does not know', () => {

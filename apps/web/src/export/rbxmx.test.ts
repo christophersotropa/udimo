@@ -203,6 +203,36 @@ describe('documentToRbxmx', () => {
     )
   })
 
+  it('writes every weight by its number', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      FontFace: { family: 'SourceSansPro', weight: 'SemiBold' },
+    })
+    const label = propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'TextLabel',
+    )
+    // Not the default (Regular), so no CachedFaceId either.
+    expect(label.get('FontFace')).toBe(
+      'Font:<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family><Weight>600</Weight><Style>Normal</Style>',
+    )
+  })
+
+  it('writes italic, and the weight the font really has', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      // Arimo has no Thin: Studio would only ever save Regular.
+      FontFace: { family: 'Arial', weight: 'Thin', style: 'Italic' },
+    })
+    const label = propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'TextLabel',
+    )
+    expect(label.get('FontFace')).toBe(
+      'Font:<Family><url>rbxasset://fonts/families/Arial.json</url></Family><Weight>400</Weight><Style>Italic</Style>',
+    )
+  })
+
   it("writes UIStroke's ApplyStrokeMode as a number", () => {
     const store = createDocumentStore()
     const { addNode, addModifier, updateModifier } = store.getState()

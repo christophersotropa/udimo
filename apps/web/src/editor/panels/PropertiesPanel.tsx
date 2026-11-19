@@ -2,9 +2,15 @@ import { useState } from 'react'
 import { formatVector2, parseVector2 } from '../../lib/robloxText.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import { enumNames, FONT_WEIGHT } from '../../model/enums.ts'
-import { FONT_IDS, FONTS } from '../../model/fonts.ts'
+import {
+  closestWeight,
+  FONT_IDS,
+  FONTS,
+  resolveFontFace,
+  WEIGHT_LABELS,
+} from '../../model/fonts.ts'
 import { isLaidOut } from '../../model/layout.ts'
+import type { FontWeight } from '../../model/enums.ts'
 import type { NodeId, Props } from '../../model/types.ts'
 import {
   convertUnits,
@@ -14,6 +20,7 @@ import {
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { MenuItem, MenuSeparator, Popover } from '../ui/Popover.tsx'
+import { IconButton } from '../ui/Button.tsx'
 import { ClassIcon } from './ClassIcon.tsx'
 import {
   ColorField,
@@ -115,6 +122,10 @@ function NodeProperties({
   // Unset properties show their Roblox defaults. Editing one saves it.
   const p = resolveProps(node)
   const set = (props: Props) => updateProps(id, props)
+  // The font as it really draws (a weight it has), and its weight list.
+  const face = resolveFontFace(p.FontFace)
+  const weights: readonly FontWeight[] = FONTS[face.family].weights
+  const hasBold = weights.includes('Bold')
 
   return (
     <div>
@@ -341,29 +352,72 @@ function NodeProperties({
               value={p.FontFace.family}
               options={FONT_IDS}
               labels={FONT_LABELS}
-              // A font without Bold falls back to Regular.
+              // Keeps the weight if the new font has it, else the closest.
               onChange={(family) =>
                 set({
                   FontFace: {
+                    ...p.FontFace,
                     family,
-                    weight: FONTS[family].bold ? p.FontFace.weight : 'Regular',
+                    weight: closestWeight(family, p.FontFace.weight),
                   },
                 })
               }
             />
           </Row>
-          {FONTS[p.FontFace.family].bold && (
-            <Row label="Weight" name="FontFace">
+          <Row label="Weight" name="FontFace">
+            {/* Only the weights this font has, named the way Studio names
+                them. A font with one weight just says so. */}
+            {weights.length === 1 ? (
+              <span className="px-1.5 text-xs text-muted">
+                {WEIGHT_LABELS[weights[0]]}
+              </span>
+            ) : (
               <SelectField
                 label="Font weight"
-                value={p.FontFace.weight}
-                options={enumNames(FONT_WEIGHT)}
+                value={face.weight}
+                options={weights}
+                labels={WEIGHT_LABELS}
                 onChange={(weight) =>
                   set({ FontFace: { ...p.FontFace, weight } })
                 }
               />
-            </Row>
-          )}
+            )}
+          </Row>
+          <Row label="Style" name="FontFace">
+            <div className="flex gap-1">
+              {/* Bold: switches between Bold and Regular. */}
+              <IconButton
+                label="Bold"
+                active={face.weight === 'Bold'}
+                disabled={!hasBold}
+                onClick={() =>
+                  set({
+                    FontFace: {
+                      ...p.FontFace,
+                      weight: face.weight === 'Bold' ? 'Regular' : 'Bold',
+                    },
+                  })
+                }
+              >
+                <span className="font-sans text-[13px] font-bold">B</span>
+              </IconButton>
+              {/* Italic: switches between Italic and Normal. */}
+              <IconButton
+                label="Italic"
+                active={face.style === 'Italic'}
+                onClick={() =>
+                  set({
+                    FontFace: {
+                      ...p.FontFace,
+                      style: face.style === 'Italic' ? 'Normal' : 'Italic',
+                    },
+                  })
+                }
+              >
+                <span className="font-serif text-[13px] italic">I</span>
+              </IconButton>
+            </div>
+          </Row>
           <Row label="TextColor3">
             <ColorField
               label="TextColor3"

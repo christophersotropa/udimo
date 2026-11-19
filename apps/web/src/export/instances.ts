@@ -5,13 +5,14 @@ import {
   APPLY_STROKE_MODE,
   BORDER_MODE,
   FILL_DIRECTION,
+  type FontStyle,
   type FontWeight,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
   VERTICAL_ALIGNMENT,
   Z_INDEX_BEHAVIOR,
 } from '../model/enums.ts'
-import { FONTS } from '../model/fonts.ts'
+import { FONTS, resolveFontFace } from '../model/fonts.ts'
 import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
 import { BUTTON_SCRIPT_NAME, buttonScriptSource } from './scripts.ts'
 import type {
@@ -57,6 +58,7 @@ export type Value =
       type: 'Font'
       family: string
       weight: FontWeight
+      style: FontStyle
       // The font file Studio caches for its default font (null otherwise).
       cachedFaceId: string | null
     }
@@ -112,12 +114,19 @@ function enumProp<T extends Record<string, number>>(
 // saves a CachedFaceId, the actual font file. It's only a cache Roblox fills
 // in itself, and Studio leaves it out for other fonts (see
 // docs/reference/fonts.rbxmx), so only the default gets one.
-function fontFace(face: Required<Props>['FontFace']): Property {
-  const isDefault = face.family === 'SourceSansPro' && face.weight === 'Regular'
+// The weight written is the one the font really draws (see closestWeight),
+// as Studio would only ever save one it offers.
+function fontFace(chosen: Required<Props>['FontFace']): Property {
+  const face = resolveFontFace(chosen)
+  const isDefault =
+    face.family === 'SourceSansPro' &&
+    face.weight === 'Regular' &&
+    face.style === 'Normal'
   return prop('FontFace', {
     type: 'Font',
     family: FONTS[face.family].family,
     weight: face.weight,
+    style: face.style,
     cachedFaceId: isDefault
       ? 'rbxasset://fonts/SourceSansPro-Regular.ttf'
       : null,

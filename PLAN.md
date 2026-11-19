@@ -272,7 +272,7 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 41  | Export dialog redesign; LocalScript stubs; checks listed by path                              | `feat(export): export dialog redesign and script stubs`    |
 | 42  | ~~Preview: play-test the UI~~ (dropped)                                                       | —                                                          |
 | 43  | Double-click a text element on the canvas to edit its text                                    | `feat(canvas): edit text in place`                         |
-| 44  | All nine font weights, where each font has them in Roblox                                     | `feat(model): more font weights`                           |
+| 44  | Font weights per font, named like Studio, plus italic (B and I toggles)                       | `feat(model): font weights and italic`                     |
 | 45  | Resizable side panels; drag a panel to the other side                                         | `feat(editor): resizable and swappable panels`             |
 | 46  | Real images on the canvas (research Roblox's rules first; a small Vercel function if allowed) | `feat(canvas): show real images`                           |
 

@@ -4,8 +4,7 @@ import { documentForExport } from '../../export/options.ts'
 import { documentToRbxmx } from '../../export/rbxmx.ts'
 import { downloadTextFile } from '../../lib/download.ts'
 import { measureTextWidth } from '../../lib/text.ts'
-import { FONT_WEIGHT } from '../../model/enums.ts'
-import { FONTS } from '../../model/fonts.ts'
+import { fontCss } from '../../model/fonts.ts'
 import {
   exportWarnings,
   type MeasureText,
@@ -24,10 +23,7 @@ type Format = 'rbxmx' | 'luau'
 // Measures text in the browser with the element's real font, so "won't
 // fit" checks are as accurate as the canvas.
 const measure: MeasureText = (text, font, size) =>
-  measureTextWidth(
-    text,
-    `${FONT_WEIGHT[font.weight]} ${size}px ${FONTS[font.family].css}`,
-  )
+  measureTextWidth(text, fontCss(font, size))
 
 // Characters that aren't allowed in file names on some computers.
 function safeFileName(name: string): string {
