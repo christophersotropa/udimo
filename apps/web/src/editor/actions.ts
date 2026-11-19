@@ -86,6 +86,8 @@ export const actions = {
   zoomTo100: () => view().zoomTo(1),
   fit: () => view().fit(),
   toggleSnapping: () => view().setSnapping(!view().snapping),
+  swapPanels: () => view().swapPanels(),
+  resetPanels: () => view().resetPanels(),
 
   openExport: () => view().setExportOpen(true),
 }

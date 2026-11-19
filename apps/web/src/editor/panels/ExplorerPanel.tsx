@@ -181,8 +181,8 @@ export function ExplorerPanel() {
 
   return (
     <Panel
+      id="explorer"
       title="Explorer"
-      side="left"
       actions={
         <div className="flex">
           <IconButton

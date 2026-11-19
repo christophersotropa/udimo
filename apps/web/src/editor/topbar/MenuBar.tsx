@@ -132,6 +132,9 @@ export function MenuBar() {
           run: actions.toggleSnapping,
           checked: () => view().snapping,
         },
+        'separator',
+        { label: 'Swap Panel Sides', run: actions.swapPanels },
+        { label: 'Reset Panel Layout', run: actions.resetPanels },
       ],
     },
     {

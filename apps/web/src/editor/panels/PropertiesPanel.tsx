@@ -61,7 +61,7 @@ export function PropertiesPanel() {
   const [query, setQuery] = useState('')
 
   return (
-    <Panel title="Properties" side="right" padded={false}>
+    <Panel id="properties" title="Properties" padded={false}>
       {selectedId ? (
         <PropertyFilter value={query}>
           {/* key: a different element gets fresh inputs, never leftover

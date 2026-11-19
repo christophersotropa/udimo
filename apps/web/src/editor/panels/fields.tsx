@@ -115,7 +115,17 @@ export function Row({
   const query = useContext(PropertyFilter)
   if (!matches(query, label, name)) return null
   return (
-    <div className="grid min-h-6 grid-cols-[100px_1fr] items-center gap-2">
+    // minmax(0, 1fr): the value column may shrink below its contents'
+    // natural width, so a narrow panel never gets a sideways scroll. A
+    // sub-row's label is one letter (X, Y), so it gets a narrow column and
+    // leaves the room to its boxes.
+    <div
+      className={`grid min-h-6 items-center gap-2 ${
+        indent
+          ? 'grid-cols-[28px_minmax(0,1fr)]'
+          : 'grid-cols-[100px_minmax(0,1fr)]'
+      }`}
+    >
       <span
         className={`truncate text-xs text-muted ${indent ? 'pl-3' : ''}`}
         title={name ?? label}
@@ -390,7 +400,7 @@ export function UDim2Row({
 
   return (
     <>
-      <div className="grid min-h-6 grid-cols-[100px_1fr] items-center gap-2">
+      <div className="grid min-h-6 grid-cols-[100px_minmax(0,1fr)] items-center gap-2">
         <button
           type="button"
           aria-expanded={open}
