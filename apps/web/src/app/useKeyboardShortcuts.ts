@@ -33,6 +33,7 @@ const NUDGE_BIG = 10
 //   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
 //   Paste Into     Cmd+Shift+V: inside the one selected element
 //   Rename         F2
+//   Filter         Cmd+Shift+X: the Explorer's filter box
 //   Files          Cmd+S save, Cmd+O open, Cmd+E export
 //   Select all     Cmd+A
 //   Arrange        Cmd+] / Cmd+[ forward / backward (Shift: front / back)
@@ -70,6 +71,10 @@ export function useKeyboardShortcuts() {
       } else if (command && key === 'd') {
         event.preventDefault()
         duplicateSelection(store)
+      } else if (command && event.shiftKey && key === 'x') {
+        // ⌘⇧X: jump to the Explorer's filter box.
+        event.preventDefault()
+        document.getElementById('explorer-filter')?.focus()
       } else if (command && (key === 'c' || key === 'x')) {
         // With nothing selected, leave the key to the browser (and keep
         // whatever was copied before).

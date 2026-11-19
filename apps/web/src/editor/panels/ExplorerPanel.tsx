@@ -26,8 +26,14 @@ import { useDocumentStore } from '../../store/documentStore.ts'
 import { useViewStore } from '../../store/viewStore.ts'
 import { openMenuFor } from '../menus/openMenu.ts'
 import { IconButton } from '../ui/Button.tsx'
-import { ClassBadge } from './ClassBadge.tsx'
-import { ChevronIcon, EyeOffIcon, LockIcon, PlusIcon } from './icons.tsx'
+import { ClassIcon } from './ClassIcon.tsx'
+import {
+  ChevronIcon,
+  CollapseIcon,
+  EyeOffIcon,
+  LockIcon,
+  PlusIcon,
+} from './icons.tsx'
 import { Panel } from './Panel.tsx'
 
 // How far each level of the tree is indented, in pixels.
@@ -154,6 +160,18 @@ export function ExplorerPanel() {
     }
   }
 
+  // Folds every row shut except the ScreenGui, so you see the top level.
+  function collapseAll() {
+    const doc = useDocumentStore.getState().document
+    setCollapsed(
+      new Set(
+        Object.values(doc.nodes)
+          .filter((node) => node.parentId !== null)
+          .map((node) => node.id),
+      ),
+    )
+  }
+
   // The header's "+": insert into the selected element, or the ScreenGui.
   function insertFromHeader(event: ReactMouseEvent<HTMLButtonElement>) {
     const box = event.currentTarget.getBoundingClientRect()
@@ -166,24 +184,33 @@ export function ExplorerPanel() {
       title="Explorer"
       side="left"
       actions={
-        <IconButton
-          label="Insert an object"
-          onClick={insertFromHeader}
-          className="size-6"
-        >
-          <PlusIcon />
-        </IconButton>
+        <div className="flex">
+          <IconButton
+            label="Insert an object"
+            onClick={insertFromHeader}
+            className="size-6"
+          >
+            <PlusIcon />
+          </IconButton>
+          <IconButton
+            label="Collapse all"
+            onClick={collapseAll}
+            className="size-6"
+          >
+            <CollapseIcon />
+          </IconButton>
+        </div>
       }
-      footer="Right-click any object, or hover and press +, to insert a child."
     >
-      <div className="mb-2">
+      <div className="mb-1.5">
         <input
+          id="explorer-filter" // ⌘⇧X focuses it (see useKeyboardShortcuts)
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Filter"
+          placeholder="Filter (⌘⇧X)"
           aria-label="Filter the Explorer"
-          className="w-full rounded-md bg-raised px-2.5 py-1.5 text-sm text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
+          className="h-7 w-full rounded bg-app px-2 text-[13px] text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
         />
       </div>
       {filter?.size === 0 && (
@@ -302,12 +329,13 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           openMenuFor(id, event.clientX, event.clientY)
         }}
         style={{ paddingLeft: depth * INDENT + 4 }}
-        className={`group relative flex h-7 items-center gap-1.5 rounded-md pr-1 ${
+        title={node.className}
+        className={`group relative flex h-6 items-center gap-1.5 rounded-sm pr-1 ${
           dropPlace === 'inside'
             ? 'bg-accent-soft ring-1 ring-accent'
             : isSelected
-              ? 'bg-accent-soft ring-1 ring-accent/40'
-              : 'hover:bg-hover'
+              ? 'bg-accent-soft text-accent'
+              : 'text-muted hover:bg-hover'
         }`}
       >
         {/* The marker line for "drop above" or "drop below" this row,
@@ -334,7 +362,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           <span className="w-3.5 shrink-0" /> // keeps names lined up
         )}
 
-        <ClassBadge className={node.className} />
+        <ClassIcon className={node.className} />
         {renaming ? (
           <RenameInput name={node.name} onDone={finishRename} />
         ) : (
@@ -342,15 +370,12 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             type="button"
             onClick={onSelect}
             onDoubleClick={() => setRenamingId(id)}
-            title="Double-click to rename, drag to move, right-click for more"
-            className={`flex min-w-0 flex-1 items-baseline gap-1.5 text-left text-sm focus-visible:outline-2 focus-visible:outline-accent ${
-              hidden ? 'text-faint' : 'text-ink'
+            title={`${node.className} · double-click to rename, drag to move, right-click for more`}
+            className={`min-w-0 flex-1 truncate text-left text-[13px] focus-visible:outline-2 focus-visible:outline-accent ${
+              hidden ? 'text-faint' : isSelected ? 'text-accent' : 'text-ink'
             }`}
           >
-            <span className="truncate">{node.name}</span>
-            <span className="shrink-0 truncate text-xs text-faint">
-              {node.className}
-            </span>
+            {node.name}
           </button>
         )}
 
@@ -437,9 +462,9 @@ function ModifierRow({
         }}
         title="A modifier: edit it in the element's Properties"
         style={{ paddingLeft: depth * INDENT + 4 + 18 }}
-        className="flex h-7 w-full items-center gap-1.5 rounded-md pr-1 text-left text-sm text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
+        className="flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-[13px] text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
       >
-        <ClassBadge className={modifier} />
+        <ClassIcon className={modifier} />
         {modifier}
       </button>
     </li>

@@ -31,10 +31,8 @@ export function Panel({
       className={`flex min-h-0 flex-col border-line bg-panel ${border}`}
     >
       {showTitle && (
-        <div className="flex items-center justify-between px-3.5 pt-3 pb-2">
-          <h2 className="text-[11px] font-semibold tracking-wider text-muted uppercase">
-            {title}
-          </h2>
+        <div className="flex h-9 items-center justify-between px-3">
+          <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
           {actions}
         </div>
       )}
