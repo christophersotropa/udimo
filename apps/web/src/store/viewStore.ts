@@ -4,6 +4,27 @@ import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
 import type { NodeId } from '../model/types.ts'
 import type { SaveStatus } from './autosave.ts'
+import {
+  clampPanelWidth,
+  clampSplit,
+  DEFAULT_PANEL_LAYOUT,
+  type DropSpot,
+  mirrored,
+  movePanel,
+  type PanelId,
+  type PanelLayout,
+  type Rect,
+  type Side,
+} from './panelLayout.ts'
+
+// A panel being dragged by its title bar: where it would dock if let go
+// (null: where it already is), and that spot's rectangle in the workspace,
+// for drawing it.
+export type PanelDrag = {
+  id: PanelId
+  spot: DropSpot | null
+  preview: Rect | null
+}
 
 // What a left-drag on the canvas does: select and move, or pan the view.
 export type Tool = 'select' | 'hand'
@@ -48,6 +69,9 @@ export type ViewState = {
   // An element whose name should switch to a rename box in the Explorer
   // (asked for by F2 or the menu), else null.
   renamingId: NodeId | null
+  // Which panels are docked on which side, and the sizes (panelLayout.ts).
+  panels: PanelLayout
+  panelDrag: PanelDrag | null
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -67,6 +91,14 @@ export type ViewState = {
   openContextMenu: (menu: ContextMenuState) => void
   closeContextMenu: () => void
   setRenamingId: (id: NodeId | null) => void
+  setSideWidth: (side: Side, width: number) => void
+  setPanelSplit: (split: number) => void
+  dockPanel: (id: PanelId, spot: DropSpot) => void
+  // Flips the panels left to right.
+  swapPanels: () => void
+  // Back to the starting layout: Explorer left, Properties right.
+  resetPanels: () => void
+  setPanelDrag: (drag: PanelDrag | null) => void
 }
 
 // The screen size for a device.
@@ -95,6 +127,8 @@ export function createViewStore() {
     saveStatus: 'saved',
     contextMenu: null,
     renamingId: null,
+    panels: DEFAULT_PANEL_LAYOUT,
+    panelDrag: null,
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -133,6 +167,21 @@ export function createViewStore() {
     openContextMenu: (contextMenu) => set({ contextMenu }),
     closeContextMenu: () => set({ contextMenu: null }),
     setRenamingId: (renamingId) => set({ renamingId }),
+
+    setSideWidth: (side, width) => {
+      const panels = get().panels
+      const clamped = clampPanelWidth(width)
+      if (panels.widths[side] === clamped) return // nothing to redraw
+      set({
+        panels: { ...panels, widths: { ...panels.widths, [side]: clamped } },
+      })
+    },
+    setPanelSplit: (split) =>
+      set({ panels: { ...get().panels, split: clampSplit(split) } }),
+    dockPanel: (id, spot) => set({ panels: movePanel(get().panels, id, spot) }),
+    swapPanels: () => set({ panels: mirrored(get().panels) }),
+    resetPanels: () => set({ panels: DEFAULT_PANEL_LAYOUT }),
+    setPanelDrag: (panelDrag) => set({ panelDrag }),
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.

@@ -49,6 +49,7 @@ import {
   startAutosave,
 } from './store/autosave.ts'
 import { useDocumentStore } from './store/documentStore.ts'
+import { loadPanelLayout, savePanelLayout } from './store/panelLayout.ts'
 import { useViewStore } from './store/viewStore.ts'
 
 // Before the first render: reopen your autosaved work, or show the starter
@@ -59,6 +60,14 @@ useDocumentStore.getState().loadDocument(saved ?? createSampleDocument())
 const { setSaveStatus } = useViewStore.getState()
 if (storage) startAutosave(useDocumentStore, storage, undefined, setSaveStatus)
 else setSaveStatus('off')
+
+// The panel layout you left: restore it, and save it whenever it changes.
+if (storage) {
+  useViewStore.setState({ panels: loadPanelLayout(storage) })
+  useViewStore.subscribe((state, before) => {
+    if (state.panels !== before.panels) savePanelLayout(storage, state.panels)
+  })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

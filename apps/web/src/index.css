@@ -54,7 +54,7 @@
 html,
 body {
   height: 100%;
-  overflow: hidden;
+  overflow: clip; /* clip: can't be scrolled, even by code */
   overscroll-behavior: none;
   background-color: var(--color-app);
 }

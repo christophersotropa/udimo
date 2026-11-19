@@ -273,7 +273,8 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 42  | ~~Preview: play-test the UI~~ (dropped)                                                       | —                                                          |
 | 43  | Double-click a text element on the canvas to edit its text                                    | `feat(canvas): edit text in place`                         |
 | 44  | Font weights per font, named like Studio, plus italic (B and I toggles)                       | `feat(model): font weights and italic`                     |
-| 45  | Resizable side panels; drag a panel to the other side                                         | `feat(editor): resizable and swappable panels`             |
+| 45  | Dockable side panels: resize, move to either side, or stack both on one side (like Studio)    | `feat(editor): dockable side panels`                       |
 | 46  | Real images on the canvas (research Roblox's rules first; a small Vercel function if allowed) | `feat(canvas): show real images`                           |
+| 47  | Fix the stray white lines that appear on the canvas's game screen                             | `fix(canvas): stray white lines`                           |
 
 Tag `v0.1.0` (the end of Phase 1) once the Pet Inventory comparison is clean and Phase 1 feels finished. It's a separate step, not part of a build.

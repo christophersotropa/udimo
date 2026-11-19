@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEVICES } from '../model/screen.ts'
+import { DEFAULT_PANEL_LAYOUT, PANEL_MIN_WIDTH } from './panelLayout.ts'
 import { createViewStore, currentView, screenOf } from './viewStore.ts'
 
 function setup() {
@@ -73,5 +74,28 @@ describe('view store', () => {
     const { store, view } = setup()
     store.getState().zoomTo(1)
     expect(view().zoom).toBe(1)
+  })
+
+  it('resizes, docks, flips and resets the side panels', () => {
+    const { store } = setup()
+    const state = () => store.getState()
+    state().setSideWidth('left', 320)
+    expect(state().panels.widths.left).toBe(320)
+    state().setSideWidth('right', 5) // too narrow: held at the limit
+    expect(state().panels.widths.right).toBe(PANEL_MIN_WIDTH)
+
+    // Dock the Explorer under Properties: the left side empties.
+    state().dockPanel('explorer', { side: 'right', index: 1 })
+    expect(state().panels.left).toEqual([])
+    expect(state().panels.right).toEqual(['properties', 'explorer'])
+    state().setPanelSplit(0.7)
+    expect(state().panels.split).toBe(0.7)
+
+    state().swapPanels() // the whole stack moves to the left
+    expect(state().panels.left).toEqual(['properties', 'explorer'])
+    expect(state().panels.right).toEqual([])
+
+    state().resetPanels()
+    expect(state().panels).toEqual(DEFAULT_PANEL_LAYOUT)
   })
 })
