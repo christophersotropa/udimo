@@ -13,6 +13,7 @@ import {
 } from '../model/enums.ts'
 import { FONTS } from '../model/fonts.ts'
 import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
+import { BUTTON_SCRIPT_NAME, buttonScriptSource } from './scripts.ts'
 import type {
   Color3,
   ColorKeypoint,
@@ -61,6 +62,8 @@ export type Value =
     }
   | { type: 'ColorSequence'; value: ColorKeypoint[] }
   | { type: 'NumberSequence'; value: NumberKeypoint[] }
+  // A script's code.
+  | { type: 'source'; value: string }
 
 // `only`: a few properties are written differently by each format, so each
 // version says which exporter it's for. Unmarked properties go in both.
@@ -280,9 +283,13 @@ function modifierInstances(doc: UiDocument, id: NodeId): ExportInstance[] {
 
 // The whole document as instances, starting from the ScreenGui.
 // `resetOnSpawn` is the ScreenGui's ResetOnSpawn (see export/options.ts).
+// `buttonScript` adds the button-stubs LocalScript (see export/scripts.ts).
 export function exportTree(
   doc: UiDocument,
-  { resetOnSpawn = true }: { resetOnSpawn?: boolean } = {},
+  {
+    resetOnSpawn = true,
+    buttonScript = false,
+  }: { resetOnSpawn?: boolean; buttonScript?: boolean } = {},
 ): ExportInstance {
   function build(id: NodeId): ExportInstance {
     const node = doc.nodes[id]
@@ -296,5 +303,17 @@ export function exportTree(
       children: [...modifierInstances(doc, id), ...node.children.map(build)],
     }
   }
-  return build(doc.rootId)
+  const root = build(doc.rootId)
+  const source = buttonScript ? buttonScriptSource(doc) : null
+  if (source) {
+    root.children.push({
+      className: 'LocalScript',
+      properties: [
+        string('Name', BUTTON_SCRIPT_NAME),
+        prop('Source', { type: 'source', value: source }),
+      ],
+      children: [],
+    })
+  }
+  return root
 }

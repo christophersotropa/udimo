@@ -6,7 +6,6 @@ import { downloadTextFile } from '../../lib/download.ts'
 import { measureTextWidth } from '../../lib/text.ts'
 import { FONT_WEIGHT } from '../../model/enums.ts'
 import { FONTS } from '../../model/fonts.ts'
-import { DEVICES } from '../../model/screen.ts'
 import {
   exportWarnings,
   type MeasureText,
@@ -14,7 +13,7 @@ import {
 } from '../../model/warnings.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
-import { CloseIcon, CopyIcon, DownloadIcon } from '../panels/icons.tsx'
+import { CloseIcon } from '../panels/icons.tsx'
 import { fileBaseName } from '../topbar/projectFiles.ts'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { Checkbox } from '../ui/Checkbox.tsx'
@@ -23,7 +22,7 @@ import { Dialog } from '../ui/Dialog.tsx'
 type Format = 'rbxmx' | 'luau'
 
 // Measures text in the browser with the element's real font, so "won't
-// fit" warnings are as accurate as the canvas.
+// fit" checks are as accurate as the canvas.
 const measure: MeasureText = (text, font, size) =>
   measureTextWidth(
     text,
@@ -42,11 +41,12 @@ type Settings = {
   format: Format
   convertToScale: boolean
   keepOnRespawn: boolean
+  buttonScript: boolean
   fileName: string | null
 }
 
-// The export dialog: pick a format (.rbxmx file or Luau script), set the
-// options, see what to check first, then download or copy.
+// The export dialog: choose a format, set the options, check the warnings,
+// then download the file or copy the script.
 export function ExportDialog({
   open,
   onClose,
@@ -58,6 +58,7 @@ export function ExportDialog({
     format: 'rbxmx',
     convertToScale: true,
     keepOnRespawn: true,
+    buttonScript: false,
     fileName: null,
   })
   const change = (update: Partial<Settings>) =>
@@ -79,36 +80,33 @@ function ExportContent({
   change: (update: Partial<Settings>) => void
   onClose: () => void
 }) {
-  const { format, convertToScale, keepOnRespawn, fileName } = settings
+  const { format, convertToScale, keepOnRespawn, buttonScript, fileName } =
+    settings
   const [copied, setCopied] = useState(false)
   const doc = useDocumentStore((state) => state.document)
   const screen = useViewStore(screenOf)
-  const deviceLabel = useViewStore((state) => DEVICES[state.device].label)
   const rootName = doc.nodes[doc.rootId].name
   // The file name box starts as the ScreenGui's name until you type in it.
   const name = fileName ?? fileBaseName(doc)
+  const file = `${safeFileName(name)}.rbxmx`
 
-  // What would actually be exported, and its warnings. useMemo: only
-  // recomputed when the document or an option changes.
+  // What would actually be exported, and its checks. useMemo: worked out
+  // again only when the document or an option changes.
   const exported = useMemo(
     () => documentForExport(doc, { convertToScale, screen }),
     [doc, convertToScale, screen],
   )
   const warnings = useMemo(() => exportWarnings(exported, measure), [exported])
-  const options = { resetOnSpawn: !keepOnRespawn }
-
-  const counts = useMemo(() => {
-    const nodes = Object.values(doc.nodes)
-    const modifiers = nodes.reduce(
-      (sum, node) => sum + Object.keys(node.modifiers ?? {}).length,
-      0,
-    )
-    return { instances: nodes.length - 1, modifiers }
-  }, [doc])
+  const options = { resetOnSpawn: !keepOnRespawn, buttonScript }
+  const instances = Object.keys(doc.nodes).length - 1
+  const buttons = Object.values(doc.nodes).filter(
+    (node) =>
+      node.className === 'TextButton' || node.className === 'ImageButton',
+  ).length
 
   function download() {
     downloadTextFile(
-      `${safeFileName(name)}.rbxmx`,
+      file,
       documentToRbxmx(exported, options),
       'application/xml',
     )
@@ -126,122 +124,154 @@ function ExportContent({
     }
   }
 
-  // Clicking a warning's action takes you to the problem.
-  const { select } = useDocumentStore.getState()
-  const { setDevice } = useViewStore.getState()
-  function show(warning: Warning, device?: keyof typeof DEVICES) {
-    if (device) setDevice(device)
-    if (warning.nodeId) select(warning.nodeId)
+  // A check's link takes you to the problem: selects the element, and for
+  // device problems switches to that device first.
+  function show(warning: Warning) {
+    const device = warning.devices?.[warning.devices.length - 1]
+    if (device) useViewStore.getState().setDevice(device)
+    if (warning.nodeId) useDocumentStore.getState().select(warning.nodeId)
     onClose()
   }
 
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="flex items-start justify-between border-b border-line px-6 py-4">
-        <div>
-          <h2 className="text-lg font-semibold">Export {rootName}</h2>
-          <p className="text-sm text-muted">
-            1 ScreenGui · {counts.instances} instance
-            {counts.instances === 1 ? '' : 's'} · {counts.modifiers} modifier
-            {counts.modifiers === 1 ? '' : 's'}
-          </p>
-        </div>
+      <div className="flex items-center justify-between border-b border-line py-2.5 pr-3 pl-5">
+        <h2 className="flex items-baseline gap-2">
+          <span className="text-[15px] font-semibold">Export</span>
+          <span className="font-mono text-xs text-muted">
+            {rootName} · {instances} instance{instances === 1 ? '' : 's'}
+          </span>
+        </h2>
         <IconButton label="Close" onClick={onClose}>
-          <CloseIcon size={16} />
+          <CloseIcon size={14} />
         </IconButton>
       </div>
 
-      <div className="space-y-5 px-6 py-5">
-        {/* Format choice */}
-        <div
-          className="grid grid-cols-2 gap-2"
-          role="radiogroup"
-          aria-label="Format"
-        >
-          <FormatCard
-            selected={format === 'rbxmx'}
-            onSelect={() => change({ format: 'rbxmx' })}
-            title=".rbxmx file"
-            description="Download, insert into StarterGui"
-          />
-          <FormatCard
-            selected={format === 'luau'}
-            onSelect={() => change({ format: 'luau' })}
-            title="Luau script"
-            description="Paste into the Command Bar"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-5">
-          {/* Left: settings and things to check */}
-          <div className="space-y-4">
-            {format === 'rbxmx' && (
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-medium">
-                  File name
-                </span>
-                <span className="flex items-center rounded-md bg-raised ring-1 ring-line focus-within:ring-accent">
-                  <input
-                    value={name}
-                    onChange={(event) =>
-                      change({ fileName: event.target.value })
-                    }
-                    className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
-                  />
-                  <span className="pr-3 text-sm text-faint">.rbxmx</span>
-                </span>
-              </label>
-            )}
-            <div className="space-y-3">
-              <Checkbox
-                checked={convertToScale}
-                onChange={(on) => change({ convertToScale: on })}
-                description={`Keeps the layout the same on phones and tablets (measured on ${deviceLabel}). Your design isn’t changed.`}
-              >
-                Convert pixel sizes to Scale
-              </Checkbox>
-              <Checkbox
-                checked={keepOnRespawn}
-                onChange={(on) => change({ keepOnRespawn: on })}
-                description="The GUI stays open when the player respawns"
-              >
-                Set ResetOnSpawn to false
-              </Checkbox>
-            </div>
-            <ThingsToCheck warnings={warnings} onShow={show} />
+      <div className="grid grid-cols-2">
+        {/* Left: format, file name, options */}
+        <div className="space-y-5 border-r border-line p-5">
+          <div className="space-y-2" role="radiogroup" aria-label="Format">
+            <Label>Format</Label>
+            <FormatCard
+              selected={format === 'rbxmx'}
+              onSelect={() => change({ format: 'rbxmx' })}
+              title=".rbxmx model file"
+              description="Insert into StarterGui from Studio"
+            />
+            <FormatCard
+              selected={format === 'luau'}
+              onSelect={() => change({ format: 'luau' })}
+              title="Luau builder script"
+              description="Paste into Studio's Command Bar"
+            />
           </div>
 
-          {/* Right: what to do in Studio */}
-          <StudioSteps
-            format={format}
-            fileName={`${safeFileName(name)}.rbxmx`}
-          />
+          {format === 'rbxmx' && (
+            <label className="block space-y-2">
+              <Label>File name</Label>
+              <span className="flex h-8 items-stretch rounded bg-app ring-1 ring-line focus-within:ring-accent">
+                <input
+                  value={name}
+                  onChange={(event) => change({ fileName: event.target.value })}
+                  className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-[13px] outline-none"
+                />
+                <span className="flex items-center border-l border-line px-2.5 font-mono text-xs text-muted">
+                  .rbxmx
+                </span>
+              </span>
+            </label>
+          )}
+
+          <div className="space-y-3">
+            <Checkbox
+              checked={convertToScale}
+              onChange={(on) => change({ convertToScale: on })}
+              description="Same layout on phone, tablet and desktop"
+            >
+              Convert Offset to Scale
+            </Checkbox>
+            <Checkbox
+              checked={keepOnRespawn}
+              onChange={(on) => change({ keepOnRespawn: on })}
+              description="GUI stays open after the player respawns"
+            >
+              <span className="font-mono text-xs">ResetOnSpawn = false</span>
+            </Checkbox>
+            <Checkbox
+              checked={buttonScript}
+              onChange={(on) => change({ buttonScript: on })}
+              description={
+                buttons > 0
+                  ? `Empty handlers for each button (${buttons})`
+                  : 'Empty handlers for each button (none yet)'
+              }
+            >
+              Include LocalScript stubs
+            </Checkbox>
+          </div>
+        </div>
+
+        {/* Right: what to do in Studio, and the checks */}
+        <div className="space-y-5 p-5">
+          <div className="space-y-2">
+            <Label>In Roblox Studio</Label>
+            <ol className="space-y-2 text-[13px]">
+              {(format === 'rbxmx'
+                ? [
+                    <>
+                      Open the Explorer and find <Code>StarterGui</Code>.
+                    </>,
+                    <>
+                      Right-click it, then choose <Code>Insert from File…</Code>
+                      .
+                    </>,
+                    <>
+                      Pick <Code>{file}</Code>. It arrives as a normal
+                      ScreenGui.
+                    </>,
+                    <>Press Play to test it in game.</>,
+                  ]
+                : [
+                    <>
+                      Open the <Code>View</Code> tab and click{' '}
+                      <Code>Command Bar</Code>.
+                    </>,
+                    <>Paste the script into the bar.</>,
+                    <>
+                      Press Enter. It lands in <Code>StarterGui</Code>,
+                      selected.
+                    </>,
+                    <>Press Play to test it in game.</>,
+                  ]
+              ).map((step, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="font-mono text-accent">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="text-ink">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <Checks warnings={warnings} onShow={show} />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-4 border-t border-line px-6 py-4">
+      <div className="flex items-center justify-between gap-4 border-t border-line px-5 py-3">
         <p className="text-xs text-faint">
-          Exports are made in your browser. Nothing is uploaded.
+          Generated in your browser. Nothing is uploaded.
         </p>
         <div className="flex gap-2">
           <Button onClick={onClose}>Cancel</Button>
           {format === 'rbxmx' ? (
-            <Button
-              variant="primary"
-              icon={<DownloadIcon />}
-              onClick={download}
-            >
-              Download {safeFileName(name)}.rbxmx
+            <Button variant="primary" onClick={download}>
+              Download {file}
             </Button>
           ) : (
-            <Button
-              variant="primary"
-              icon={<CopyIcon />}
-              onClick={copy}
-              className="min-w-40"
-            >
+            <Button variant="primary" onClick={copy} className="min-w-36">
               {copied ? 'Copied!' : 'Copy Luau script'}
             </Button>
           )}
@@ -251,170 +281,128 @@ function ExportContent({
   )
 }
 
-// One of the three format choices.
+function Label({ children }: { children: ReactNode }) {
+  return <p className="text-xs text-muted">{children}</p>
+}
+
+// A bit of Studio's interface named in the steps, like StarterGui.
+function Code({ children }: { children: ReactNode }) {
+  return (
+    <code className="rounded-sm bg-raised px-1 py-px font-mono text-xs text-ink ring-1 ring-line">
+      {children}
+    </code>
+  )
+}
+
+// One format choice: a card with a radio dot.
 function FormatCard({
   title,
   description,
-  selected = false,
-  disabled = false,
-  badge,
+  selected,
   onSelect,
 }: {
   title: string
   description: string
-  selected?: boolean
-  disabled?: boolean
-  badge?: string
-  onSelect?: () => void
+  selected: boolean
+  onSelect: () => void
 }) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
-      disabled={disabled}
       onClick={onSelect}
-      className={`rounded-lg p-3 text-left ring-1 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 ${
-        selected
-          ? 'bg-accent-soft ring-accent'
-          : 'bg-raised ring-line enabled:hover:bg-hover'
+      className={`flex w-full items-start gap-3 rounded p-3 text-left ring-1 focus-visible:outline-2 focus-visible:outline-accent ${
+        selected ? 'bg-accent-soft ring-accent' : 'ring-line hover:bg-hover'
       }`}
     >
-      <span className="flex items-center gap-2 text-sm font-medium text-ink">
-        {title}
-        {badge && (
-          <span className="rounded bg-hover px-1.5 py-0.5 text-[10px] text-muted">
-            {badge}
-          </span>
-        )}
+      <span
+        aria-hidden="true"
+        className={`mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full ring-1 ${
+          selected ? 'ring-accent' : 'ring-faint'
+        }`}
+      >
+        {selected && <span className="size-2 rounded-full bg-accent" />}
       </span>
-      <span className="mt-0.5 block text-xs text-muted">{description}</span>
+      <span>
+        <span
+          className={`block text-[13px] font-semibold ${selected ? 'text-accent' : 'text-ink'}`}
+        >
+          {title}
+        </span>
+        <span className="block text-xs text-muted">{description}</span>
+      </span>
     </button>
   )
 }
 
-// The warnings (things that will look wrong), then notes (worth knowing),
-// each with a way to jump to the element.
-function ThingsToCheck({
+// The checks: warnings first (things that will look wrong), then notes,
+// each showing where (its path), what, and a link to it.
+function Checks({
   warnings,
   onShow,
 }: {
   warnings: Warning[]
-  onShow: (warning: Warning, device?: keyof typeof DEVICES) => void
+  onShow: (warning: Warning) => void
 }) {
   const problems = warnings.filter((w) => w.level === 'warning')
   const notes = warnings.filter((w) => w.level === 'info')
-  if (warnings.length === 0) {
-    return (
-      <p className="rounded-lg bg-raised p-3 text-sm text-muted ring-1 ring-line">
-        ✓ Nothing to check. Ready for Studio.
-      </p>
-    )
-  }
   return (
-    <div
-      className={`max-h-56 space-y-2 overflow-y-auto rounded-lg p-3 ring-1 ${
-        problems.length > 0 ? 'bg-warn/5 ring-warn/30' : 'bg-raised ring-line'
-      }`}
-    >
-      {problems.length > 0 && (
-        <p className="text-sm font-semibold text-warn">
-          {problems.length} thing{problems.length === 1 ? '' : 's'} to check
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between">
+        <Label>Checks</Label>
+        <span className="font-mono text-xs text-muted">
+          {problems.length} warning{problems.length === 1 ? '' : 's'}
+          {notes.length > 0 &&
+            ` · ${notes.length} note${notes.length === 1 ? '' : 's'}`}
+        </span>
+      </div>
+      {warnings.length === 0 ? (
+        <p className="border-t border-line pt-2 text-[13px] text-muted">
+          ✓ Nothing to fix. Ready for Studio.
         </p>
-      )}
-      {[...problems, ...notes].map((warning) => (
-        <p
-          key={warning.key}
-          className={`text-xs ${warning.level === 'warning' ? 'text-ink' : 'text-muted'}`}
-        >
-          {warning.level === 'info' && 'ⓘ '}
-          {warning.message}{' '}
-          {warning.nodeId && (
-            <LinkButton onClick={() => onShow(warning)}>Show</LinkButton>
-          )}
-          {warning.devices?.map((device) => (
-            <span key={device}>
-              {' · '}
-              <LinkButton onClick={() => onShow(warning, device)}>
-                Preview on {DEVICES[device].label}
-              </LinkButton>
-            </span>
+      ) : (
+        <ul className="max-h-60 overflow-y-auto">
+          {[...problems, ...notes].map((warning) => (
+            <li
+              key={warning.key}
+              className="flex gap-2.5 border-t border-line py-2"
+            >
+              <span
+                aria-hidden="true"
+                className={
+                  warning.level === 'warning' ? 'text-warn' : 'text-faint'
+                }
+              >
+                {warning.level === 'warning' ? '⚠' : 'ⓘ'}
+              </span>
+              <span className="min-w-0 flex-1">
+                {warning.path && (
+                  <span className="block truncate font-mono text-xs text-ink">
+                    {warning.path}
+                  </span>
+                )}
+                <span className="block text-xs text-muted">
+                  {warning.message}
+                </span>
+              </span>
+              {warning.nodeId && (
+                <button
+                  type="button"
+                  onClick={() => onShow(warning)}
+                  className="self-start text-xs text-accent underline underline-offset-2 hover:text-accent-hover"
+                >
+                  {warning.devices
+                    ? 'Preview'
+                    : warning.key.startsWith('image:')
+                      ? 'Fix'
+                      : 'Show'}
+                </button>
+              )}
+            </li>
           ))}
-        </p>
-      ))}
-    </div>
-  )
-}
-
-function LinkButton({
-  onClick,
-  children,
-}: {
-  onClick: () => void
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-accent-hover underline underline-offset-2 hover:text-ink"
-    >
-      {children}
-    </button>
-  )
-}
-
-// Step-by-step instructions for getting the export into Studio.
-function StudioSteps({
-  format,
-  fileName,
-}: {
-  format: Format
-  fileName: string
-}) {
-  const steps =
-    format === 'rbxmx'
-      ? [
-          <>
-            Open the Explorer and find <b>StarterGui</b>.
-          </>,
-          <>
-            Right-click it and choose <b>Insert from File…</b>
-          </>,
-          <>
-            Pick <b>{fileName}</b>. It appears as a ScreenGui you can edit like
-            any other.
-          </>,
-          <>
-            Press <b>Play</b> to see it in game.
-          </>,
-        ]
-      : [
-          <>
-            Open the <b>View</b> tab and click <b>Command Bar</b>.
-          </>,
-          <>Paste the script into the bar at the bottom of Studio.</>,
-          <>
-            Press <b>Enter</b>. The ScreenGui appears in StarterGui, already
-            selected.
-          </>,
-          <>
-            Press <b>Play</b> to see it in game.
-          </>,
-        ]
-  return (
-    <div className="flex flex-col rounded-lg bg-app p-4 ring-1 ring-line">
-      <p className="mb-2 text-sm font-semibold">Then, in Roblox Studio</p>
-      <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted marker:text-faint">
-        {steps.map((step, i) => (
-          <li key={i}>{step}</li>
-        ))}
-      </ol>
-      <p className="mt-auto border-t border-line pt-3 text-xs text-faint">
-        {format === 'rbxmx'
-          ? 'Dragging the file into the viewport works too, but move it into StarterGui afterwards.'
-          : 'The script only adds things: it never changes or deletes what’s already in your game.'}
-      </p>
+        </ul>
+      )}
     </div>
   )
 }

@@ -15,6 +15,10 @@ export type Warning = {
   nodeId: NodeId | null
   // 'warning': it will look or work wrong. 'info': worth knowing.
   level: 'warning' | 'info'
+  // Where it is, the way a script reaches it: "Window.BuyButton" (the
+  // names from the ScreenGui down). Missing for the whole screen.
+  path?: string
+  // What's wrong, briefly: the path already says which element.
   message: string
   // The devices the problem shows up on, so it can be previewed there.
   devices?: DeviceId[]
@@ -54,6 +58,19 @@ function allElements(doc: UiDocument): NodeId[] {
   return ids
 }
 
+// An element's path, the way a script reaches it: its ancestors' names and
+// its own, joined with dots, from just inside the ScreenGui ("Window.Buy").
+// The ScreenGui itself is just its name.
+export function pathOf(doc: UiDocument, id: NodeId): string {
+  const names: string[] = []
+  let current: NodeId | null = id
+  while (current !== null && current !== doc.rootId) {
+    names.unshift(doc.nodes[current].name)
+    current = doc.nodes[current].parentId
+  }
+  return names.length > 0 ? names.join('.') : doc.nodes[doc.rootId].name
+}
+
 // ---------- The checks ----------
 
 function imageWarnings(doc: UiDocument, id: NodeId): Warning[] {
@@ -62,21 +79,21 @@ function imageWarnings(doc: UiDocument, id: NodeId): Warning[] {
   const image = resolveProps(node).Image
   const uri = toContentUri(image)
   const say = (message: string): Warning[] => [
-    { key: `image:${id}`, nodeId: id, level: 'warning', message },
+    {
+      key: `image:${id}`,
+      nodeId: id,
+      level: 'warning',
+      path: pathOf(doc, id),
+      message,
+    },
   ]
 
   if (uri === PLACEHOLDER_IMAGE) {
-    return say(
-      `"${node.name}" still shows Studio's placeholder picture. Upload your image to Roblox and paste its ID.`,
-    )
+    return say('Still shows Studio’s placeholder image; paste an asset ID')
   }
-  if (uri === '') {
-    return say(`"${node.name}" has no image, so it will show nothing.`)
-  }
+  if (uri === '') return say('Image has no asset ID; exports blank')
   if (!/^rbxassetid:\/\/\d+$/.test(uri) && !uri.startsWith('rbxasset://')) {
-    return say(
-      `"${node.name}" has an image that doesn't look like a Roblox ID ("${image}"). Paste the image's ID or its Roblox link.`,
-    )
+    return say(`“${image}” doesn’t look like a Roblox image ID`)
   }
   return []
 }
@@ -111,7 +128,8 @@ function textWarnings(
       key: `text:${id}`,
       nodeId: id,
       level: 'warning',
-      message: `The text in "${node.name}" may not fit on ${deviceList(tooSmallOn)}. Turn on TextScaled, or make the box bigger.`,
+      path: pathOf(doc, id),
+      message: `May overflow on ${deviceList(tooSmallOn).toLowerCase()} at TextSize ${p.TextSize}`,
       devices: tooSmallOn,
     },
   ]
@@ -155,27 +173,27 @@ function offScreenWarnings(doc: UiDocument): Warning[] {
     key: `offscreen:${id}`,
     nodeId: id,
     level: 'warning' as const,
-    message: `"${doc.nodes[id].name}" goes past the edge of the screen on ${deviceList(devices)}. Try "Make responsive", or move it in.`,
+    path: pathOf(doc, id),
+    message: `Goes off-screen on ${deviceList(devices).toLowerCase()}`,
     devices,
   }))
 }
 
-// Top-level elements in the top strip, where Roblox's top bar is.
+// Top-level elements in the top strip, where Roblox's top bar is. In game
+// the ScreenGui is laid out below the bar, so they sit lower than shown.
 function topBarWarning(doc: UiDocument): Warning[] {
-  const nearTop = doc.nodes[doc.rootId].children.filter((id) => {
-    const box = absoluteBox(doc, id, DEVICES.pc)
-    return resolveProps(doc.nodes[id]).Visible && box.y < TOP_BAR_HEIGHT
-  })
-  if (nearTop.length === 0) return []
-  const names = nearTop.map((id) => `"${doc.nodes[id].name}"`).join(', ')
-  return [
-    {
-      key: 'topbar',
-      nodeId: nearTop[0],
-      level: 'info',
-      message: `${names} ${nearTop.length === 1 ? 'sits' : 'sit'} in the top ${TOP_BAR_HEIGHT} px. In game, Roblox lays your UI out below its top bar, so everything starts a little lower than on the canvas.`,
-    },
-  ]
+  return doc.nodes[doc.rootId].children
+    .filter((id) => {
+      const box = absoluteBox(doc, id, DEVICES.pc)
+      return resolveProps(doc.nodes[id]).Visible && box.y < TOP_BAR_HEIGHT
+    })
+    .map((id) => ({
+      key: `topbar:${id}`,
+      nodeId: id,
+      level: 'info' as const,
+      path: pathOf(doc, id),
+      message: `In the top ${TOP_BAR_HEIGHT} px: sits lower in game, under Roblox’s top bar`,
+    }))
 }
 
 // Siblings sharing a name: scripts find elements by name
@@ -194,7 +212,8 @@ function duplicateNameWarnings(doc: UiDocument): Warning[] {
         key: `names:${parentId}:${name}`,
         nodeId: ids[1],
         level: 'info',
-        message: `${ids.length} elements in "${doc.nodes[parentId].name}" are called "${name}". Scripts find elements by name, so give each a different one.`,
+        path: pathOf(doc, parentId),
+        message: `${ids.length} children called “${name}”; scripts can’t tell them apart`,
       })
     }
   }
@@ -203,20 +222,21 @@ function duplicateNameWarnings(doc: UiDocument): Warning[] {
 
 // ---------- All of them ----------
 
-// Warnings with exactly the same message (say, six copies of the same
-// slot, each with a placeholder image) become one, with a count, so the
-// list stays readable. The first element is the one selected on click.
+// The same problem at the same path (say, six copies of a slot, each with
+// a placeholder image, all at "Grid.Slot.Icon") becomes one warning with a
+// count, so the list stays readable. The first element is the one selected.
 function mergeRepeats(warnings: Warning[]): Warning[] {
   const merged = new Map<string, { warning: Warning; count: number }>()
   for (const warning of warnings) {
-    const seen = merged.get(warning.message)
+    const key = `${warning.path} ${warning.message}`
+    const seen = merged.get(key)
     if (seen) seen.count++
-    else merged.set(warning.message, { warning, count: 1 })
+    else merged.set(key, { warning, count: 1 })
   }
   return [...merged.values()].map(({ warning, count }) =>
     count === 1
       ? warning
-      : { ...warning, message: `${warning.message} (${count} elements)` },
+      : { ...warning, message: `${warning.message} (×${count})` },
   )
 }
 
@@ -233,7 +253,7 @@ export function exportWarnings(
         key: 'empty',
         nodeId: null,
         level: 'info',
-        message: 'The ScreenGui is empty: there is nothing to export yet.',
+        message: 'Nothing to export yet: the ScreenGui is empty',
       },
     ]
   }

@@ -75,6 +75,14 @@ function propertyTag({ name, value }: Property): string {
           )
           .join(''),
       )
+    case 'source':
+      // Script code goes in a CDATA section, which keeps it exactly as
+      // written (no &lt; escapes). A CDATA section ends at "]]>", so any
+      // "]]>" in the code is split across two sections.
+      return tag(
+        'ProtectedString',
+        `<![CDATA[${value.value.replaceAll(']]>', ']]]]><![CDATA[>')}]]>`,
+      )
     case 'NumberSequence':
       return tag(
         'NumberSequence',
@@ -85,7 +93,7 @@ function propertyTag({ name, value }: Property): string {
 
 export function documentToRbxmx(
   doc: UiDocument,
-  options: { resetOnSpawn?: boolean } = {},
+  options: { resetOnSpawn?: boolean; buttonScript?: boolean } = {},
 ): string {
   const lines: string[] = ['<roblox version="4">']
   let nextReferent = 0
