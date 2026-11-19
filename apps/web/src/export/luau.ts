@@ -1,4 +1,5 @@
 import type { Color3, UiDocument } from '../model/types.ts'
+import { luauString } from './luauString.ts'
 import {
   type ExportInstance,
   exportTree,
@@ -11,25 +12,6 @@ import {
 // selects it. Which properties each instance gets is decided in
 // instances.ts, the same list the .rbxmx file uses; this file only knows
 // how to write them as Luau.
-
-// A Luau string literal, in double quotes. Backslashes, quotes and line
-// breaks are escaped; other invisible control characters become \ddd
-// (their character code), which Luau understands.
-export function luauString(text: string): string {
-  let out = '"'
-  for (const char of text) {
-    const code = char.codePointAt(0)!
-    if (char === '\\') out += '\\\\'
-    else if (char === '"') out += '\\"'
-    else if (char === '\n') out += '\\n'
-    else if (char === '\r') out += '\\r'
-    else if (char === '\t') out += '\\t'
-    else if (code < 32 || code === 127) {
-      out += `\\${String(code).padStart(3, '0')}`
-    } else out += char
-  }
-  return out + '"'
-}
 
 // Numbers as Luau understands them. JavaScript's own formatting (like 0.5,
 // -24, 1e-7) is valid Luau too.
@@ -51,6 +33,7 @@ function luauValue(value: Value): string {
   switch (value.type) {
     case 'string':
     case 'Content':
+    case 'source':
       return luauString(value.value)
     case 'bool':
       return String(value.value)
@@ -98,7 +81,7 @@ function propertyTable(properties: Property[]): string[] {
 
 export function documentToLuau(
   doc: UiDocument,
-  options: { resetOnSpawn?: boolean } = {},
+  options: { resetOnSpawn?: boolean; buttonScript?: boolean } = {},
 ): string {
   const tree = exportTree(doc, options)
   const name = doc.nodes[doc.rootId].name
@@ -149,3 +132,5 @@ export function documentToLuau(
   )
   return lines.join('\n') + '\n'
 }
+
+export { luauString }

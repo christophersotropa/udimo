@@ -29,7 +29,7 @@ describe('exportWarnings', () => {
   it('notes an empty ScreenGui', () => {
     const store = createDocumentStore()
     expect(messages(exportWarnings(store.getState().document))).toEqual([
-      'The ScreenGui is empty: there is nothing to export yet.',
+      'Nothing to export yet: the ScreenGui is empty',
     ])
   })
 
@@ -44,12 +44,12 @@ describe('exportWarnings', () => {
       )
       expect(
         messages(setup('ImageLabel', { Image: '' }).warnings())[0],
-      ).toContain('has no image')
+      ).toContain('no asset ID')
       expect(
         messages(
           setup('ImageLabel', { Image: 'my-picture.png' }).warnings(),
         )[0],
-      ).toContain("doesn't look like a Roblox ID")
+      ).toContain('doesn’t look like a Roblox image ID')
     })
 
     it('is happy with an asset ID or a Roblox link', () => {
@@ -73,7 +73,10 @@ describe('exportWarnings', () => {
         Text: 'fifteen letters', // 150px
       })
       const [warning] = exportWarnings(store.getState().document, tenPerChar)
-      expect(warning.message).toContain('may not fit on Tablet and Phone')
+      expect(warning.message).toBe(
+        'May overflow on tablet and phone at TextSize 14',
+      )
+      expect(warning.path).toBe('TextLabel')
       expect(warning.level).toBe('warning')
       expect(warning.devices).toEqual(['tablet', 'phone']) // to preview there
     })
@@ -107,7 +110,7 @@ describe('exportWarnings', () => {
         Size: { xs: 0, xo: 200, ys: 0, yo: 100 },
       })
       expect(messages(warnings())).toEqual([
-        '"Frame" goes past the edge of the screen on Tablet and Phone. Try "Make responsive", or move it in.',
+        'Goes off-screen on tablet and phone',
       ])
     })
 
@@ -139,7 +142,8 @@ describe('exportWarnings', () => {
         Position: { xs: 0, xo: 24, ys: 0, yo: 24 },
       }).warnings()
       expect(note.level).toBe('info')
-      expect(note.message).toContain('"Frame" sits in the top 58 px')
+      expect(note.message).toContain('In the top 58 px')
+      expect(note.path).toBe('Frame')
     })
 
     it('ignores hidden elements', () => {
@@ -160,7 +164,7 @@ describe('exportWarnings', () => {
       w.key.startsWith('image:'),
     )
     expect(placeholder).toHaveLength(1)
-    expect(placeholder[0].message).toMatch(/\(2 elements\)$/)
+    expect(placeholder[0].message).toMatch(/\(×2\)$/)
   })
 
   describe('duplicate names', () => {
@@ -170,8 +174,26 @@ describe('exportWarnings', () => {
         Position: { xs: 0, xo: 300, ys: 0, yo: 100 },
       })
       expect(messages(exportWarnings(store.getState().document))).toEqual([
-        '2 elements in "ScreenGui" are called "Frame". Scripts find elements by name, so give each a different one.',
+        '2 children called “Frame”; scripts can’t tell them apart',
       ])
     })
+  })
+})
+
+describe('pathOf', () => {
+  it('names an element the way a script reaches it', () => {
+    const store = createDocumentStore()
+    const { addNode, renameNode } = store.getState()
+    const rootId = store.getState().document.rootId
+    const items = addNode(rootId, 'Frame')
+    renameNode(items, 'Items')
+    const card = addNode(items, 'Frame')
+    renameNode(card, 'PotionCard')
+    const icon = addNode(card, 'ImageLabel')
+    renameNode(icon, 'Icon')
+    const [warning] = exportWarnings(store.getState().document).filter((w) =>
+      w.key.startsWith('image:'),
+    )
+    expect(warning.path).toBe('Items.PotionCard.Icon')
   })
 })
