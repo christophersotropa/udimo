@@ -7,7 +7,6 @@ import {
   useState,
 } from 'react'
 import { planWrap } from '../../model/wrap.ts'
-import { resolveProps } from '../../model/defaults.ts'
 import {
   copyToClipboard,
   hasClipboard,
@@ -16,8 +15,7 @@ import {
 import {
   deleteSelection,
   duplicateSelection,
-  setLockedAll,
-  setVisible,
+  selectChildren,
   wrapSelectionInFrame,
 } from '../../store/commands.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -104,7 +102,7 @@ function MenuBox({ menu }: { menu: ContextMenuState }) {
       // Right-clicking the menu itself shouldn't open the browser's menu.
       onContextMenu={(event) => event.preventDefault()}
       style={{ left: position.left, top: position.top }}
-      className="fixed z-[100] rounded-lg bg-raised shadow-2xl ring-1 ring-line"
+      className="fixed z-[100] rounded bg-raised py-1 shadow-2xl shadow-black/50 ring-1 ring-line"
     >
       {menu.insertOnly ? (
         <InsertObjectMenu targetId={menu.targetId} onDone={close} />
@@ -140,13 +138,6 @@ function MainItems({
   const isRoot = targetId === doc.rootId
   const store = useDocumentStore
 
-  // Hide and Lock act on the whole selection: they say "Show" / "Unlock"
-  // when everything selected already is hidden / locked.
-  const allHidden =
-    selection.length > 0 &&
-    selection.every((id) => !resolveProps(doc.nodes[id]).Visible)
-  const allLocked =
-    selection.length > 0 && selection.every((id) => doc.nodes[id].locked)
   const canGroup = planWrap(doc, selection, screen) !== null
 
   // Runs an action, then closes the menu.
@@ -170,7 +161,7 @@ function MainItems({
   }
 
   return (
-    <div className="relative w-56 p-1" onKeyDown={onKeyDown}>
+    <div className="relative w-52" onKeyDown={onKeyDown}>
       <button
         type="button"
         role="menuitem"
@@ -184,8 +175,10 @@ function MainItems({
             setInsertOpen(true)
           }
         }}
-        className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-sm text-ink focus-visible:outline-none ${
-          insertOpen ? 'bg-accent text-white' : 'hover:bg-hover focus:bg-hover'
+        className={`flex h-6 w-full items-center px-3 text-[13px] focus-visible:outline-none ${
+          insertOpen
+            ? 'bg-accent text-accent-ink'
+            : 'text-ink hover:bg-hover focus:bg-hover'
         }`}
       >
         <span className="flex-1 text-left">Insert Object</span>
@@ -193,7 +186,7 @@ function MainItems({
       </button>
       {insertOpen && (
         <div
-          className={`absolute top-0 rounded-lg bg-raised shadow-2xl ring-1 ring-line ${
+          className={`absolute -top-1 rounded bg-raised py-1 shadow-2xl shadow-black/50 ring-1 ring-line ${
             submenuLeft ? 'right-full mr-1' : 'left-full ml-1'
           }`}
         >
@@ -251,17 +244,10 @@ function MainItems({
       </Item>
       <Item
         onHover={() => setInsertOpen(false)}
-        disabled={isRoot}
-        onClick={run(() => setVisible(store, selection, allHidden))}
+        disabled={doc.nodes[targetId].children.length === 0}
+        onClick={run(() => selectChildren(store, targetId))}
       >
-        {allHidden ? 'Show' : 'Hide'}
-      </Item>
-      <Item
-        onHover={() => setInsertOpen(false)}
-        disabled={isRoot}
-        onClick={run(() => setLockedAll(store, selection, !allLocked))}
-      >
-        {allLocked ? 'Unlock' : 'Lock'}
+        Select Children
       </Item>
       <hr className="my-1 border-line" />
       <Item
@@ -300,12 +286,16 @@ function Item({
       onClick={onClick}
       onPointerEnter={onHover}
       onFocus={onHover}
-      className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-sm hover:bg-hover focus:bg-hover focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
+      className={`group flex h-6 w-full items-center px-3 text-[13px] hover:bg-accent hover:text-accent-ink focus:bg-accent focus:text-accent-ink focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
         danger ? 'text-danger' : 'text-ink'
       }`}
     >
       <span className="flex-1 text-left">{children}</span>
-      {shortcut && <span className="text-xs text-faint">{shortcut}</span>}
+      {shortcut && (
+        <span className="font-mono text-[11px] text-faint group-hover:text-accent-ink/70 group-focus:text-accent-ink/70">
+          {shortcut}
+        </span>
+      )}
     </button>
   )
 }

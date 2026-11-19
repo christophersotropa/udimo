@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { arrangeSelection, selectAll } from './commands.ts'
+import { arrangeSelection, selectAll, selectChildren } from './commands.ts'
 import { createDocumentStore } from './documentStore.ts'
 
 // ScreenGui > a, b, c, d (in that drawing order: d is on top).
@@ -63,5 +63,24 @@ describe('arranging several elements', () => {
     expect(order()).toEqual([b, d, a, c])
     arrangeSelection(store, 'forward') // each one place: b 0→1, d 1→2
     expect(order()).toEqual([a, b, d, c])
+  })
+})
+
+describe('selectChildren', () => {
+  it("selects an element's children, not deeper", () => {
+    const { store, a } = setup()
+    const { addNode } = store.getState()
+    const one = addNode(a, 'TextLabel')
+    const two = addNode(a, 'Frame')
+    addNode(two, 'Frame') // a grandchild: not selected
+    selectChildren(store, a)
+    expect(store.getState().selection).toEqual([one, two])
+  })
+
+  it('leaves the selection alone when there are no children', () => {
+    const { store, b, c } = setup()
+    store.getState().select(c)
+    selectChildren(store, b)
+    expect(store.getState().selection).toEqual([c])
   })
 })

@@ -386,3 +386,11 @@ export function selectAll(store: DocumentStore) {
   clearSelection()
   for (const id of document.nodes[document.rootId].children) select(id, true)
 }
+
+// Selects the elements directly inside `id` (not their children). Does
+// nothing if it has none.
+export function selectChildren(store: DocumentStore, id: NodeId) {
+  const { document, select } = store.getState()
+  const children = document.nodes[id]?.children ?? []
+  children.forEach((childId, i) => select(childId, i > 0))
+}

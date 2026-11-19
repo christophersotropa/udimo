@@ -4,6 +4,7 @@ import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
 import { openMenuFor } from '../menus/openMenu.ts'
 import { NodeView } from './NodeView.tsx'
+import { ZoomBar } from './ZoomBar.tsx'
 import { CanvasOverlay } from './CanvasOverlay.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
 
@@ -154,6 +155,7 @@ export function Canvas() {
           <CanvasOverlay />
         </div>
       </div>
+      <ZoomBar />
     </main>
   )
 }

@@ -144,3 +144,31 @@ export function PlusIcon(props: IconProps) {
     </Icon>
   )
 }
+
+// Magnifying glasses for zooming out and in.
+export function ZoomOutIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="M10.5 10.5L14 14M5 7h4" />
+    </Icon>
+  )
+}
+
+export function ZoomInIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="M10.5 10.5L14 14M5 7h4M7 5v4" />
+    </Icon>
+  )
+}
+
+// Collapse everything: an upward chevron.
+export function CollapseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 10l4-4 4 4" />
+    </Icon>
+  )
+}
