@@ -34,7 +34,7 @@ export function Dialog({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="m-auto max-h-[calc(100vh-2rem)] w-[760px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-panel p-0 text-ink shadow-2xl ring-1 ring-line"
+      className="m-auto max-h-[calc(100vh-2rem)] w-[760px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md bg-panel p-0 text-ink shadow-2xl shadow-black/60 ring-1 ring-line"
     >
       {open && children}
     </dialog>

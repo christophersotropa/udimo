@@ -20,8 +20,10 @@ function cursorFor({ x, y }: Handle): string {
   return x === y ? 'nwse-resize' : 'nesw-resize' // corners: diagonal
 }
 
-// Small squares drawn inside the selected element, centered on its edges.
-// They're sized with --canvas-scale so they stay 10 screen pixels at any zoom.
+// Small amber squares drawn inside the selected element, centered on its
+// edges. Each handle is 13 screen pixels (easy to grab) but transparent,
+// with only a 7-pixel square painted in its middle. Sizes are divided by
+// --canvas-scale, so they stay the same on screen at any zoom.
 // useCanvasPointer finds them by their data-handle-x / data-handle-y.
 export function ResizeHandles() {
   return HANDLES.map((handle) => {
@@ -30,11 +32,13 @@ export function ResizeHandles() {
       // -1 -> 0%, 0 -> 50%, 1 -> 100%: the left edge, middle or right edge.
       left: `${((handle.x + 1) / 2) * 100}%`,
       top: `${((handle.y + 1) / 2) * 100}%`,
-      width: 'calc(10px / var(--canvas-scale))',
-      height: 'calc(10px / var(--canvas-scale))',
+      width: 'calc(13px / var(--canvas-scale))',
+      height: 'calc(13px / var(--canvas-scale))',
       transform: 'translate(-50%, -50%)',
-      background: 'white',
-      border: 'calc(1.5px / var(--canvas-scale)) solid rgb(59 130 246)',
+      // A one-colour "gradient" is the simplest way to paint a smaller
+      // square in the middle of a box.
+      background:
+        'linear-gradient(var(--color-accent), var(--color-accent)) center / calc(7px / var(--canvas-scale)) calc(7px / var(--canvas-scale)) no-repeat',
       cursor: cursorFor(handle),
       zIndex: 10_000, // above the element's own children
     }

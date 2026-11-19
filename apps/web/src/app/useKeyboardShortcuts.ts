@@ -6,6 +6,8 @@ import {
   nudgeSelection,
   wrapSelectionInFrame,
 } from '../store/commands.ts'
+import { actions } from '../editor/actions.ts'
+import { pickProjectFile, saveProject } from '../editor/topbar/projectFiles.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
 import { screenOf, type Tool, useViewStore } from '../store/viewStore.ts'
 
@@ -19,10 +21,6 @@ const ARROWS: Record<string, [number, number]> = {
 // Single keys that pick a tool.
 const TOOL_KEYS: Record<string, Tool> = {
   v: 'select',
-  f: 'frame',
-  t: 'text',
-  b: 'button',
-  i: 'image',
   h: 'hand',
 }
 const NUDGE_SMALL = 1
@@ -35,11 +33,15 @@ const NUDGE_BIG = 10
 //   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
 //   Paste Into     Cmd+Shift+V: inside the one selected element
 //   Rename         F2
+//   Files          Cmd+S save, Cmd+O open, Cmd+E export
+//   Select all     Cmd+A
+//   Arrange        Cmd+] / Cmd+[ forward / backward (Shift: front / back)
+//   Hide / Lock    Cmd+Shift+H / Cmd+Shift+L
 //   Wrap in Frame  Cmd+G / Ctrl+G
 //   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
 //   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
-//   Tools          V select, F frame, T text, B button, I image, H hand
+//   Tools          V select, H hand (pan)
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
 export function useKeyboardShortcuts() {
@@ -78,6 +80,43 @@ export function useKeyboardShortcuts() {
         const into =
           event.shiftKey && selection.length === 1 ? selection[0] : undefined
         if (pasteFromClipboard(store, into)) event.preventDefault()
+      } else if (command && !event.shiftKey && key === 's') {
+        // Instead of the browser's "save this web page".
+        event.preventDefault()
+        saveProject()
+      } else if (command && key === 'o') {
+        event.preventDefault()
+        pickProjectFile()
+      } else if (command && key === 'e') {
+        event.preventDefault()
+        actions.openExport()
+      } else if (command && key === 'a') {
+        event.preventDefault()
+        actions.selectAll()
+      } else if (
+        command &&
+        (event.code === 'BracketRight' || event.code === 'BracketLeft')
+      ) {
+        // ⌘] / ⌘[ move forward / backward; with Shift, all the way. (They're
+        // read by key position, since Shift turns ] into }.) Without
+        // preventDefault, ⌘[ would go back a page in some browsers.
+        event.preventDefault()
+        const front = event.code === 'BracketRight'
+        actions.arrange(
+          front
+            ? event.shiftKey
+              ? 'front'
+              : 'forward'
+            : event.shiftKey
+              ? 'back'
+              : 'backward',
+        )
+      } else if (command && event.shiftKey && key === 'h') {
+        event.preventDefault()
+        actions.toggleHidden()
+      } else if (command && event.shiftKey && key === 'l') {
+        event.preventDefault()
+        actions.toggleLocked()
       } else if (command && key === 'g') {
         // Cmd+G is the browser's "find next"; here it wraps in a Frame.
         event.preventDefault()

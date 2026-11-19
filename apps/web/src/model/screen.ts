@@ -5,12 +5,12 @@
 export type ScreenSize = { width: number; height: number }
 
 export const DEVICES = {
-  pc: { label: 'PC', width: 1920, height: 1080 },
+  pc: { label: 'Desktop', width: 1920, height: 1080 },
   tablet: { label: 'Tablet', width: 1024, height: 768 }, // an iPad
   phone: { label: 'Phone', width: 844, height: 390 }, // an iPhone 14
 } as const satisfies Record<string, ScreenSize & { label: string }>
 
 export type DeviceId = keyof typeof DEVICES
 
-// The PC screen: the default, and what tests use unless they say otherwise.
+// The desktop screen: the default, and what tests use unless they say otherwise.
 export const SCREEN: ScreenSize = DEVICES.pc

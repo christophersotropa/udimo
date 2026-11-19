@@ -19,10 +19,10 @@ export function Checkbox({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-0.5 size-4 shrink-0 accent-accent"
+        className="mt-0.5 size-4 shrink-0 cursor-pointer accent-accent"
       />
       <span>
-        <span className="block text-sm text-ink">{children}</span>
+        <span className="block text-[13px] text-ink">{children}</span>
         {description && (
           <span className="block text-xs text-muted">{description}</span>
         )}

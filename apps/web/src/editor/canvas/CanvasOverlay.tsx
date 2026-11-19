@@ -1,5 +1,4 @@
 import { useShallow } from 'zustand/react/shallow'
-import { formatNumber } from '../../lib/numbers.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import { absoluteBox } from '../../model/layout.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -7,14 +6,12 @@ import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { ScreenLabel } from './ScreenLabel.tsx'
 
 // Everything drawn on top of the design while you work: alignment guides
-// (with labels), the box being drawn with a draw tool, and the selected
-// element's Size. It covers the whole screen, above every element, and
+// (with labels) and the selected element's size. It covers the whole screen, above every element, and
 // lets clicks through.
 export function CanvasOverlay() {
   return (
     <div className="pointer-events-none absolute inset-0 z-[1000000]">
       <SnapGuides />
-      <DrawPreview />
       <SizeBadge />
     </div>
   )
@@ -23,13 +20,13 @@ export function CanvasOverlay() {
 const THIN = 'calc(1px / var(--canvas-scale))' // 1 screen pixel at any zoom
 
 // The pink alignment lines shown while a drag snaps, and their labels
-// ("Centered in Window").
+// ("center").
 function SnapGuides() {
   const guides = useViewStore((state) => state.guides)
   return guides.map((guide, i) => (
     <div key={i}>
       <div
-        className="absolute bg-pink-500"
+        className="absolute bg-guide"
         style={
           guide.axis === 'x'
             ? {
@@ -60,39 +57,9 @@ function SnapGuides() {
   ))
 }
 
-// The dashed box while drawing with a draw tool, with its size.
-function DrawPreview() {
-  const box = useViewStore((state) => state.drawBox)
-  if (!box) return null
-  return (
-    <>
-      <div
-        className="absolute border-accent bg-accent-soft"
-        style={{
-          left: box.x,
-          top: box.y,
-          width: box.width,
-          height: box.height,
-          borderWidth: THIN,
-          borderStyle: 'dashed',
-        }}
-      />
-      <ScreenLabel
-        side="belowLeft"
-        x={box.x + box.width}
-        y={box.y + box.height}
-      >
-        {Math.round(box.width)} × {Math.round(box.height)}
-      </ScreenLabel>
-    </>
-  )
-}
-
-// The selected element's Size, as Roblox writes it ({Scale, Offset} for X,
-// then Y), under its bottom-right corner.
+// The selected element's size in pixels ("248 × 270"), centred under it.
 function SizeBadge() {
   const screen = useViewStore(screenOf)
-  const drawing = useViewStore((state) => state.drawBox !== null)
   const badge = useDocumentStore(
     useShallow((state) => {
       if (state.selection.length !== 1) return null
@@ -100,17 +67,16 @@ function SizeBadge() {
       const node = state.document.nodes[id]
       if (!node || !resolveProps(node).Visible) return null
       const box = absoluteBox(state.document, id, screen)
-      const { Size } = resolveProps(node)
       return {
-        x: box.x + box.width,
+        x: box.x + box.width / 2,
         y: box.y + box.height,
-        text: `{${formatNumber(Size.xs)}, ${formatNumber(Size.xo)}}, {${formatNumber(Size.ys)}, ${formatNumber(Size.yo)}}`,
+        text: `${Math.round(box.width)} × ${Math.round(box.height)}`,
       }
     }),
   )
-  if (!badge || drawing) return null
+  if (!badge) return null
   return (
-    <ScreenLabel side="belowLeft" x={badge.x} y={badge.y}>
+    <ScreenLabel side="below" x={badge.x} y={badge.y}>
       {badge.text}
     </ScreenLabel>
   )

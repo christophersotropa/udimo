@@ -16,7 +16,6 @@ import { isLaidOut } from '../../model/layout.ts'
 import { topLevelNodes } from '../../model/tree.ts'
 import type { NodeId, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
-import { dragBox } from '../../model/draw.ts'
 import {
   type Guide,
   type SnapContext,
@@ -24,15 +23,7 @@ import {
   snapMove,
   snapResize,
 } from '../../model/snap.ts'
-import { drawElement } from '../../store/commands.ts'
-import type { ElementClassName } from '../../store/documentStore.ts'
-import {
-  currentView,
-  DRAW_TOOLS,
-  isDrawTool,
-  screenOf,
-  useViewStore,
-} from '../../store/viewStore.ts'
+import { screenOf, useViewStore } from '../../store/viewStore.ts'
 
 // How far (in screen pixels) the pointer must move before a click becomes a
 // drag, so a slightly shaky click doesn't nudge anything.
@@ -75,15 +66,6 @@ type DragAction =
       snap: SnapContext | null
     }
   | {
-      kind: 'draw'
-      className: ElementClassName
-      // Where the drag started, and where the pointer is now, in game
-      // pixels from the screen's corner.
-      from: { x: number; y: number }
-      to: { x: number; y: number }
-      square: boolean // Shift held: draw a square
-    }
-  | {
       kind: 'pan'
       // Where the pointer was at the last move. Panning isn't undone and
       // isn't rounded, so it can simply follow each move.
@@ -114,7 +96,6 @@ export function useCanvasPointer(scale: number) {
   const [spaceDown, setSpaceDown] = useState(false)
   const [panning, setPanning] = useState(false)
   const handTool = useViewStore((state) => state.tool === 'hand')
-  const drawing = useViewStore((state) => isDrawTool(state.tool))
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -164,19 +145,6 @@ export function useCanvasPointer(scale: number) {
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
-  // Where the pointer is on the game screen, in game pixels from its
-  // top-left corner. The handlers sit on the canvas area, so
-  // event.currentTarget is that area; the view says where the screen is
-  // drawn inside it, and how much it's zoomed.
-  function gamePoint(event: ReactPointerEvent<HTMLElement>) {
-    const area = event.currentTarget.getBoundingClientRect()
-    const view = currentView(useViewStore.getState())
-    return {
-      x: (event.clientX - area.left - view.x) / view.zoom,
-      y: (event.clientY - area.top - view.y) / view.zoom,
-    }
-  }
-
   function onPointerDown(event: ReactPointerEvent<HTMLElement>) {
     // ---- Pan: the middle button, or the left button with Space held or
     // the hand tool chosen.
@@ -196,20 +164,6 @@ export function useCanvasPointer(scale: number) {
     }
     if (event.button !== 0) return // otherwise, left button only
     const clicked = event.target as Element
-
-    // ---- Draw: a draw tool is chosen, so the drag draws a new element.
-    const { tool } = useViewStore.getState()
-    if (isDrawTool(tool)) {
-      const point = gamePoint(event)
-      beginDrag(event, {
-        kind: 'draw',
-        className: DRAW_TOOLS[tool],
-        from: point,
-        to: point,
-        square: event.shiftKey,
-      })
-      return
-    }
 
     // If a Properties box is mid-edit, finish it now: blurring it saves the
     // typed value to the element it belongs to, before the selection changes.
@@ -289,15 +243,6 @@ export function useCanvasPointer(scale: number) {
     const current = drag.current
     if (!current || event.pointerId !== current.pointerId || scale === 0) return
 
-    if (current.kind === 'draw') {
-      current.to = gamePoint(event)
-      current.square = event.shiftKey
-      useViewStore
-        .getState()
-        .setDrawBox(dragBox(current.from, current.to, current.square))
-      return
-    }
-
     if (current.kind === 'pan') {
       useViewStore
         .getState()
@@ -324,8 +269,9 @@ export function useCanvasPointer(scale: number) {
     let dx = screenDx / scale
     let dy = screenDy / scale
 
-    // Snap, unless Cmd/Ctrl is held to place freely.
-    const snap = event.metaKey || event.ctrlKey ? null : current.snap
+    // Snap, unless snapping is off or Cmd/Ctrl is held to place freely.
+    const snapOn = useViewStore.getState().snapping
+    const snap = !snapOn || event.metaKey || event.ctrlKey ? null : current.snap
     const { setGuides } = useViewStore.getState()
     const threshold = SNAP_DISTANCE / scale
 
@@ -378,24 +324,6 @@ export function useCanvasPointer(scale: number) {
 
   function endDrag(event: ReactPointerEvent<HTMLElement>) {
     if (drag.current?.pointerId !== event.pointerId) return
-    // A finished draw makes the element (a click makes a default-size one),
-    // then goes back to the select tool, ready to adjust it. A cancelled
-    // pointer (the browser took it over) draws nothing.
-    const done = drag.current
-    if (done.kind === 'draw') {
-      const view = useViewStore.getState()
-      if (event.type === 'pointerup') {
-        drawElement(
-          useDocumentStore,
-          done.className,
-          done.from,
-          dragBox(done.from, done.to, done.square),
-          screenOf(view),
-        )
-      }
-      view.setDrawBox(null)
-      view.setTool('select')
-    }
     if (drag.current.started) useDocumentStore.getState().endGroup()
     if (drag.current.kind === 'pan') setPanning(false)
     useViewStore.getState().setGuides([]) // guides only show mid-drag
@@ -416,13 +344,7 @@ export function useCanvasPointer(scale: number) {
       },
     },
     // A hand while Space is held or the hand tool is on, a closed hand
-    // while panning, a crosshair for drawing.
-    cursor: panning
-      ? 'grabbing'
-      : spaceDown || handTool
-        ? 'grab'
-        : drawing
-          ? 'crosshair'
-          : undefined,
+    // while panning.
+    cursor: panning ? 'grabbing' : spaceDown || handTool ? 'grab' : undefined,
   }
 }
