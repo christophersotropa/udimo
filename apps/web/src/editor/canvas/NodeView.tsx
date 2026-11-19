@@ -1,11 +1,15 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { color3ToCss } from '../../lib/color.ts'
+import { measureTextWidth, scaledTextSize } from '../../lib/text.ts'
 import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import { useShallow } from 'zustand/react/shallow'
+import { FONT_WEIGHT } from '../../model/enums.ts'
+import { FONTS } from '../../model/fonts.ts'
 import {
   absoluteBox,
+  contentArea,
   cornerRadiusPixels,
   layoutSlot,
   visibleFraction,
@@ -138,17 +142,61 @@ function ContentArea({
 // TextBoxes and TextButtons are drawn, not real inputs or buttons: on the
 // canvas you click them to select them, not to type or press.
 function NodeText({ id }: { id: NodeId }) {
+  const screen = useViewStore(screenOf)
   const node = useDocumentStore((state) => state.document.nodes[id])
+  // With TextScaled, the size of the box the text must fit in (inside any
+  // padding), else null.
+  const scaledArea = useDocumentStore(
+    useShallow((state) => {
+      const current = state.document.nodes[id]
+      if (!current || !resolveProps(current).TextScaled) return null
+      const box = absoluteBox(state.document, id, screen)
+      const { width, height } = contentArea(current, box)
+      return { width, height }
+    }),
+  )
+  useFontsLoaded()
   if (!node) return null
+
   const p = resolveProps(node)
-  if (node.className === 'TextBox' && p.Text === '') {
-    return (
-      <span style={{ color: color3ToCss(p.PlaceholderColor3) }}>
-        {p.PlaceholderText}
-      </span>
+  const placeholder = node.className === 'TextBox' && p.Text === ''
+  const text = placeholder ? p.PlaceholderText : p.Text
+
+  // TextScaled: measure the widest line in this font, then pick the biggest
+  // size that fits (see lib/text.ts).
+  let fontSize: number | undefined
+  if (scaledArea) {
+    const weight = FONT_WEIGHT[p.FontFace.weight]
+    const cssFont = `${weight} 100px ${FONTS[p.FontFace.family].css}`
+    const lines = text.split('\n')
+    const widest = Math.max(
+      ...lines.map((line) => measureTextWidth(line, cssFont)),
     )
+    fontSize = scaledTextSize(widest / 100, lines.length, scaledArea)
   }
-  return <span>{p.Text}</span>
+
+  return (
+    <span
+      style={{
+        fontSize,
+        color: placeholder ? color3ToCss(p.PlaceholderColor3) : undefined,
+      }}
+    >
+      {text}
+    </span>
+  )
+}
+
+// Re-renders the component whenever the browser finishes loading a font.
+// Text measured before its web font arrived was measured in a fallback
+// font, so TextScaled sizes are worked out again once it's there.
+function useFontsLoaded() {
+  const [, setLoads] = useState(0)
+  useEffect(() => {
+    const onLoaded = () => setLoads((count) => count + 1)
+    document.fonts.addEventListener('loadingdone', onLoaded)
+    return () => document.fonts.removeEventListener('loadingdone', onLoaded)
+  }, [])
 }
 
 // The browser can't load Roblox images (they need Roblox's servers), so an

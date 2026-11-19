@@ -1,10 +1,12 @@
 import type {
   ApplyStrokeMode,
   FillDirection,
+  FontWeight,
   HorizontalAlignment,
   SortOrder,
   VerticalAlignment,
 } from './enums.ts'
+import type { FontId } from './fonts.ts'
 
 // The shape of an Udimo document. Plain TypeScript, no React:
 // the canvas, the exporters and (later) the AI all read and write these types.
@@ -75,8 +77,11 @@ export type Props = {
   LayoutOrder?: number
   // Text classes (TextLabel, TextButton, TextBox)
   Text?: string
+  // Which font, and how thick (see model/fonts.ts)
+  FontFace?: { family: FontId; weight: FontWeight }
   TextColor3?: Color3
   TextSize?: number
+  // Text grows or shrinks to fill the box (TextSize is then ignored)
   TextScaled?: boolean
   // TextButton: darkens the button while hovered or pressed, in game
   AutoButtonColor?: boolean

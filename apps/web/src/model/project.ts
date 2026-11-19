@@ -2,10 +2,12 @@ import { isValidTimeline } from '../lib/sequence.ts'
 import {
   APPLY_STROKE_MODE,
   FILL_DIRECTION,
+  FONT_WEIGHT,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
   VERTICAL_ALIGNMENT,
 } from './enums.ts'
+import { FONTS } from './fonts.ts'
 import type {
   ClassName,
   ModifierClass,
@@ -113,6 +115,12 @@ const isWholeNumber = (v: unknown) => isNumber(v) && Number.isInteger(v)
 // One of an enum's names, like "Vertical".
 const isOneOf = (table: Record<string, number>) => (v: unknown) =>
   typeof v === 'string' && Object.hasOwn(table, v)
+// A font Udimo knows, with a weight it offers.
+const isFontFace = (v: unknown) =>
+  isRecord(v) &&
+  typeof v.family === 'string' &&
+  Object.hasOwn(FONTS, v.family) &&
+  isOneOf(FONT_WEIGHT)(v.weight)
 
 type Check = (value: unknown) => boolean
 
@@ -169,6 +177,7 @@ const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   ZIndex: isNumber,
   LayoutOrder: isNumber,
   Text: isString,
+  FontFace: isFontFace,
   TextColor3: isColor3,
   TextSize: isNumber,
   TextScaled: isBoolean,

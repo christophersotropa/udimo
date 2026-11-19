@@ -15,6 +15,7 @@ const BASE_DEFAULTS: Required<Props> = {
   ZIndex: 1,
   LayoutOrder: 0,
   Text: 'Label',
+  FontFace: { family: 'SourceSansPro', weight: 'Regular' },
   TextColor3: { r: 0, g: 0, b: 0 }, // black
   TextSize: 14,
   TextScaled: false,

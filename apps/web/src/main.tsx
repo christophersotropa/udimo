@@ -1,6 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+// Web copies of Roblox fonts, for drawing text on the canvas (see
+// model/fonts.ts). Each import adds one font weight to the page.
+import '@fontsource/source-sans-3/400.css'
+import '@fontsource/source-sans-3/700.css'
+import '@fontsource/fredoka-one/400.css'
+import '@fontsource/luckiest-guy/400.css'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/700.css'
 import App from './app/App.tsx'
 import { createSampleDocument } from './app/sampleDocument.ts'
 import {

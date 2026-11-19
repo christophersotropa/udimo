@@ -4,6 +4,8 @@ import { gradientCss } from '../../lib/gradient.ts'
 import { boxCss } from '../../lib/udim2.ts'
 import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
+import { FONT_WEIGHT } from '../../model/enums.ts'
+import { FONTS } from '../../model/fonts.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
 import type { Box } from '../../model/layout.ts'
 import type { ScreenSize } from '../../model/screen.ts'
@@ -89,7 +91,9 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
       whiteSpace: 'pre',
       lineHeight: 1,
       color: color3ToCss(p.TextColor3),
-      fontSize: p.TextSize,
+      fontSize: p.TextSize, // NodeText overrides this for TextScaled
+      fontFamily: FONTS[p.FontFace.family].css,
+      fontWeight: FONT_WEIGHT[p.FontFace.weight],
     } satisfies CSSProperties)
 
     if (strokeOnText && stroke.Thickness > 0) {
