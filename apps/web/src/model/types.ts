@@ -67,6 +67,10 @@ export type Props = {
   ClearTextOnFocus?: boolean
   // Image classes (ImageLabel, ImageButton), e.g. "rbxassetid://123"
   Image?: string
+  // ScrollingFrame: the size of the scrollable area its children sit on
+  // (Scale is a fraction of the frame), and the scroll bar width in pixels
+  CanvasSize?: UDim2
+  ScrollBarThickness?: number
 }
 
 export type NodeId = string

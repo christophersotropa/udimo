@@ -22,12 +22,17 @@ const BASE_DEFAULTS: Required<Props> = {
   PlaceholderText: '',
   PlaceholderColor3: { r: 0.5, g: 0.5, b: 0.5 }, // mid grey
   ClearTextOnFocus: true,
-  Image: '',
+  // Studio's grey placeholder picture, which new image elements start with.
+  Image: 'rbxasset://textures/ui/GuiImagePlaceholder.png',
+  CanvasSize: { xs: 0, xo: 0, ys: 2, yo: 0 }, // twice the frame's height
+  ScrollBarThickness: 12,
 }
 
-// Where a class differs from the base. Checked against the Studio reference
-// files so far: Frame and TextLabel (defaults.rbxmx), TextButton and TextBox
-// (text-classes.rbxmx). Image classes and ScrollingFrame come in build 23.
+// Where a class differs from the base. Every class is checked against a
+// Studio reference file in docs/reference/: defaults.rbxmx (Frame,
+// TextLabel), text-classes.rbxmx (TextButton, TextBox) and
+// image-classes.rbxmx (ImageLabel, ImageButton, ScrollingFrame, which all
+// match the base).
 const TEXT_SIZE = { xs: 0, xo: 200, ys: 0, yo: 50 }
 const CLASS_DEFAULTS: Partial<Record<ClassName, Props>> = {
   TextLabel: { Size: TEXT_SIZE },

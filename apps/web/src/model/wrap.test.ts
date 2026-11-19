@@ -141,3 +141,35 @@ describe('wrapSelectionInFrame', () => {
     expect(store.getState().document).toBe(before)
   })
 })
+
+describe('wrapping inside a ScrollingFrame', () => {
+  it('moves nothing on screen', () => {
+    const store = createDocumentStore()
+    const { addNode, select } = store.getState()
+    const rootId = store.getState().document.rootId
+    const scroller = addNode(rootId, 'ScrollingFrame', {
+      Size: { xs: 0.5, xo: 0, ys: 0.5, yo: 0 },
+    })
+    // A pixel offset on the Y axis: Scale-only layouts come out the same
+    // whatever size you assume, so they wouldn't catch a wrong canvas size.
+    const a = addNode(scroller, 'Frame', {
+      Position: { xs: 0, xo: 10, ys: 0, yo: 30 },
+      Size: { xs: 0.5, xo: 0, ys: 0.1, yo: 0 },
+    })
+    const b = addNode(scroller, 'TextLabel', {
+      Position: { xs: 0.5, xo: 0, ys: 0.6, yo: 0 },
+    })
+    const before = store.getState().document
+    select(a)
+    select(b, true)
+
+    wrapSelectionInFrame(store, SCREEN)
+    const after = store.getState().document
+    for (const id of [a, b]) {
+      expectSameBox(
+        absoluteBox(after, id, SCREEN),
+        absoluteBox(before, id, SCREEN),
+      )
+    }
+  })
+})

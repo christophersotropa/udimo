@@ -104,6 +104,8 @@ const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   PlaceholderColor3: isColor3,
   ClearTextOnFocus: isBoolean,
   Image: isString,
+  CanvasSize: isUDim2,
+  ScrollBarThickness: isNumber,
 }
 
 // Ids become keys of the `nodes` object. A key like "__proto__" would change
