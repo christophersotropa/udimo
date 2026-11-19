@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
-import { ancestorIds, inTreeOrder, isInside, topLevelNodes } from './tree.ts'
+import {
+  ancestorIds,
+  filterTree,
+  inTreeOrder,
+  isInside,
+  topLevelNodes,
+} from './tree.ts'
 
 // ScreenGui > frame > button, plus a separate coins label.
 function setup() {
@@ -60,5 +66,28 @@ describe('inTreeOrder', () => {
       button,
       coins,
     ])
+  })
+})
+
+describe('filterTree', () => {
+  it('shows matches and their parents', () => {
+    const { doc, rootId, frame, button } = setup()
+    // "textlabel" matches both TextLabels by class; the button's parent
+    // (frame) and the root come along so the tree still makes sense.
+    const shown = filterTree(doc, 'TEXTLABEL')!
+    expect(shown.has(button)).toBe(true)
+    expect(shown.has(frame)).toBe(true)
+    expect(shown.has(rootId)).toBe(true)
+  })
+
+  it('leaves out what does not match', () => {
+    const { doc, frame, button } = setup()
+    const shown = filterTree(doc, 'Frame')!
+    expect(shown.has(frame)).toBe(true)
+    expect(shown.has(button)).toBe(false)
+  })
+
+  it('shows everything for an empty search', () => {
+    expect(filterTree(setup().doc, '  ')).toBeNull()
   })
 })

@@ -1,23 +1,13 @@
 import { useEffect } from 'react'
-import type { NodeId, UiDocument } from '../model/types.ts'
+import { copyToClipboard, pasteFromClipboard } from '../store/clipboard.ts'
 import {
-  copySelection,
-  cutSelection,
   deleteSelection,
   duplicateSelection,
   nudgeSelection,
-  pasteFragment,
   wrapSelectionInFrame,
 } from '../store/commands.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
 import { screenOf, useViewStore } from '../store/viewStore.ts'
-
-// What Copy or Cut last took. It lives here, in memory, not in the store:
-// it isn't part of the document and isn't undone. It's lost on refresh,
-// and it doesn't reach other tabs or apps.
-let clipboard: UiDocument | null = null
-// The copies the last paste made, so pasting again goes beside them.
-let lastPasted: NodeId[] = []
 
 // Arrow key -> direction. Shift makes each step bigger.
 const ARROWS: Record<string, [number, number]> = {
@@ -34,6 +24,8 @@ const NUDGE_BIG = 10
 //   Redo           Cmd+Shift+Z / Ctrl+Shift+Z / Ctrl+Y
 //   Duplicate      Cmd+D / Ctrl+D
 //   Copy/Cut/Paste Cmd+C / Cmd+X / Cmd+V (Ctrl on Windows)
+//   Paste Into     Cmd+Shift+V: inside the one selected element
+//   Rename         F2
 //   Wrap in Frame  Cmd+G / Ctrl+G
 //   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
@@ -46,6 +38,9 @@ export function useKeyboardShortcuts() {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement
       if (target.closest('input, textarea, [contenteditable="true"]')) return
+      // Menus and dialogs handle their own keys (arrows move through a
+      // menu there, not your selection on the canvas).
+      if (target.closest('[role="menu"], dialog')) return
 
       const store = useDocumentStore
       // metaKey is Cmd on a Mac; ctrlKey is Ctrl everywhere.
@@ -67,17 +62,13 @@ export function useKeyboardShortcuts() {
       } else if (command && (key === 'c' || key === 'x')) {
         // With nothing selected, leave the key to the browser (and keep
         // whatever was copied before).
-        const fragment =
-          key === 'c' ? copySelection(store) : cutSelection(store)
-        if (fragment) {
-          event.preventDefault()
-          clipboard = fragment
-          lastPasted = []
-        }
+        if (copyToClipboard(store, key === 'x')) event.preventDefault()
       } else if (command && key === 'v') {
-        if (!clipboard) return
-        event.preventDefault()
-        lastPasted = pasteFragment(store, clipboard, lastPasted)
+        // Shift: "Paste Into" the one selected element.
+        const { selection } = store.getState()
+        const into =
+          event.shiftKey && selection.length === 1 ? selection[0] : undefined
+        if (pasteFromClipboard(store, into)) event.preventDefault()
       } else if (command && key === 'g') {
         // Cmd+G is the browser's "find next"; here it wraps in a Frame.
         event.preventDefault()
@@ -101,6 +92,12 @@ export function useKeyboardShortcuts() {
         nudgeSelection(store, x * step, y * step)
       } else if (!command && !event.shiftKey && (key === 'v' || key === 'h')) {
         useViewStore.getState().setTool(key === 'v' ? 'select' : 'hand')
+      } else if (key === 'f2') {
+        const { selection } = store.getState()
+        if (selection.length === 1) {
+          event.preventDefault()
+          useViewStore.getState().setRenamingId(selection[0])
+        }
       } else if (key === 'escape') {
         store.getState().clearSelection()
       }

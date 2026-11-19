@@ -2,10 +2,21 @@ import { create } from 'zustand'
 import { fitView, type Point, type View, zoomAt } from '../lib/viewport.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
+import type { NodeId } from '../model/types.ts'
 import type { SaveStatus } from './autosave.ts'
 
 // What a left-drag on the canvas does: select and move, or pan the view.
 export type Tool = 'select' | 'hand'
+
+// An open right-click menu: where it is on the page, and the element it's
+// about (the ScreenGui for empty canvas). `insertOnly` opens just the
+// Insert Object list (from a "+" button).
+export type ContextMenuState = {
+  x: number
+  y: number
+  targetId: NodeId
+  insertOnly?: boolean
+}
 
 // Editor view state: which device screen is shown, and how it's zoomed and
 // panned. Like the selection it's not part of the document, so it's never
@@ -24,6 +35,10 @@ export type ViewState = {
   tool: Tool
   // Autosave's status, or 'off' when the browser blocks storage.
   saveStatus: SaveStatus | 'off'
+  contextMenu: ContextMenuState | null
+  // An element whose name should switch to a rename box in the Explorer
+  // (asked for by F2 or the menu), else null.
+  renamingId: NodeId | null
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -36,6 +51,9 @@ export type ViewState = {
   setGuides: (guides: Guide[]) => void
   setTool: (tool: Tool) => void
   setSaveStatus: (status: SaveStatus | 'off') => void
+  openContextMenu: (menu: ContextMenuState) => void
+  closeContextMenu: () => void
+  setRenamingId: (id: NodeId | null) => void
 }
 
 // The screen size for a device.
@@ -58,6 +76,8 @@ export function createViewStore() {
     guides: [],
     tool: 'select',
     saveStatus: 'saved',
+    contextMenu: null,
+    renamingId: null,
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -84,6 +104,9 @@ export function createViewStore() {
 
     setTool: (tool) => set({ tool }),
     setSaveStatus: (saveStatus) => set({ saveStatus }),
+    openContextMenu: (contextMenu) => set({ contextMenu }),
+    closeContextMenu: () => set({ contextMenu: null }),
+    setRenamingId: (renamingId) => set({ renamingId }),
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.

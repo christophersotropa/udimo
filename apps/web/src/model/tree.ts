@@ -48,3 +48,22 @@ export function inTreeOrder(doc: UiDocument, ids: NodeId[]): NodeId[] {
   visit(doc.rootId)
   return order.filter((id) => ids.includes(id))
 }
+
+// The Explorer's filter: the ids to show for a search, meaning every node
+// whose name or class contains it (ignoring capitals), plus their parents
+// so the tree still makes sense. null for an empty search: show everything.
+export function filterTree(doc: UiDocument, query: string): Set<NodeId> | null {
+  const words = query.trim().toLowerCase()
+  if (words === '') return null
+  const shown = new Set<NodeId>()
+  for (const node of Object.values(doc.nodes)) {
+    const text = `${node.name} ${node.className}`.toLowerCase()
+    if (!text.includes(words)) continue
+    let current: NodeId | null = node.id
+    while (current !== null && !shown.has(current)) {
+      shown.add(current)
+      current = doc.nodes[current].parentId
+    }
+  }
+  return shown
+}

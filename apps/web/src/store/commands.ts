@@ -2,7 +2,8 @@ import { addOffset } from '../lib/udim2.ts'
 import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
 import { extractSubtrees, pasteParent } from '../model/fragment.ts'
-import { cascadeShift } from '../model/insert.ts'
+import type { CatalogEntry } from '../model/catalog.ts'
+import { cascadeShift, planInsert } from '../model/insert.ts'
 import { isLaidOut } from '../model/layout.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
@@ -202,15 +203,18 @@ export function cutSelection(store: DocumentStore): UiDocument | null {
 // their ids. They keep their Position, shifted 20px at a time only if they'd
 // land exactly on a sibling (say, pasting right next to the originals).
 // `pastedBefore`: what the previous paste returned (see pasteParent).
+// `into`: paste inside this element instead ("Paste Into").
 export function pasteFragment(
   store: DocumentStore,
   fragment: UiDocument,
   pastedBefore: NodeId[] = [],
+  into?: NodeId,
 ): NodeId[] {
   const tops = fragment.nodes[fragment.rootId].children
   if (tops.length === 0) return []
   const { document, selection } = store.getState()
-  const parentId = pasteParent(document, selection, fragment, pastedBefore)
+  const parentId =
+    into ?? pasteParent(document, selection, fragment, pastedBefore)
 
   const positions = tops.map((id) => resolveProps(fragment.nodes[id]).Position)
   const taken = document.nodes[parentId].children.map(
@@ -279,5 +283,58 @@ export function convertUnits(
   asOneStep(store, () => {
     const { updateProps } = store.getState()
     for (const [id, props] of plan) updateProps(id, props)
+  })
+}
+
+// ---------- Menu actions ----------
+
+// "Insert Object" on the element `targetId` (the ScreenGui for empty
+// canvas). An element goes where the Insert rules say: inside a container,
+// next to anything else. A modifier goes on the target itself. The new
+// element is selected. Returns false if nothing was added (a modifier the
+// target already has, or one on the ScreenGui).
+export function insertObject(
+  store: DocumentStore,
+  targetId: NodeId,
+  entry: CatalogEntry,
+): boolean {
+  const { document, addNode, addModifier, select } = store.getState()
+  if (entry.kind === 'modifier') {
+    const target = document.nodes[targetId]
+    if (target.parentId === null || target.modifiers?.[entry.className]) {
+      return false
+    }
+    addModifier(targetId, entry.className)
+    return true
+  }
+  const selection = targetId === document.rootId ? [] : [targetId]
+  const { parentId, props } = planInsert(document, selection, entry.className)
+  select(addNode(parentId, entry.className, props))
+  return true
+}
+
+// Shows or hides several elements at once, as one undo step.
+export function setVisible(
+  store: DocumentStore,
+  ids: NodeId[],
+  visible: boolean,
+) {
+  asOneStep(store, () => {
+    const { updateProps } = store.getState()
+    // Visible is true by default, so showing removes the property.
+    for (const id of ids)
+      updateProps(id, { Visible: visible ? undefined : false })
+  })
+}
+
+// Locks or unlocks several elements at once, as one undo step.
+export function setLockedAll(
+  store: DocumentStore,
+  ids: NodeId[],
+  locked: boolean,
+) {
+  asOneStep(store, () => {
+    const { setLocked } = store.getState()
+    for (const id of ids) setLocked(id, locked)
   })
 }
