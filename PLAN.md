@@ -29,7 +29,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 - [x] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
 - [x] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
 - [x] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
-- [ ] Snapping and alignment guides against siblings and the parent
+- [x] Snapping and alignment guides against siblings and the parent
 - [ ] Insert palette (click or drag onto the canvas)
 
 **Panels**
