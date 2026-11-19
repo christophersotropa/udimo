@@ -16,8 +16,6 @@ export type Warning = {
   // 'warning': it will look or work wrong. 'info': worth knowing.
   level: 'warning' | 'info'
   message: string
-  // The devices the problem shows up on, so it can be previewed there.
-  devices?: DeviceId[]
 }
 
 // How wide `text` is in pixels at `size`. The editor passes a real
@@ -112,7 +110,6 @@ function textWarnings(
       nodeId: id,
       level: 'warning',
       message: `The text in "${node.name}" may not fit on ${deviceList(tooSmallOn)}. Turn on TextScaled, or make the box bigger.`,
-      devices: tooSmallOn,
     },
   ]
 }
@@ -156,7 +153,6 @@ function offScreenWarnings(doc: UiDocument): Warning[] {
     nodeId: id,
     level: 'warning' as const,
     message: `"${doc.nodes[id].name}" goes past the edge of the screen on ${deviceList(devices)}. Try "Make responsive", or move it in.`,
-    devices,
   }))
 }
 

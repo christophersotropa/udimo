@@ -14,9 +14,9 @@ export function Panel({ title, side, children }: PanelProps) {
   return (
     <aside
       aria-label={title}
-      className={`flex min-h-0 flex-col border-line bg-panel ${border}`}
+      className={`flex min-h-0 flex-col border-zinc-800 bg-zinc-900 ${border}`}
     >
-      <h2 className="px-3.5 pt-3.5 pb-1.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
+      <h2 className="border-b border-zinc-800 px-3 py-2 text-xs font-semibold tracking-wide text-zinc-400 uppercase">
         {title}
       </h2>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">{children}</div>

@@ -2,10 +2,6 @@ import { create } from 'zustand'
 import { fitView, type Point, type View, zoomAt } from '../lib/viewport.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
-import type { SaveStatus } from './autosave.ts'
-
-// What a left-drag on the canvas does: select and move, or pan the view.
-export type Tool = 'select' | 'hand'
 
 // Editor view state: which device screen is shown, and how it's zoomed and
 // panned. Like the selection it's not part of the document, so it's never
@@ -21,9 +17,6 @@ export type ViewState = {
   // Alignment guides to draw while a drag is snapping, in game pixels from
   // the screen's top-left corner. Empty when nothing is snapping.
   guides: Guide[]
-  tool: Tool
-  // Autosave's status, or 'off' when the browser blocks storage.
-  saveStatus: SaveStatus | 'off'
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -34,8 +27,6 @@ export type ViewState = {
   zoomTo: (zoom: number) => void
   panBy: (dx: number, dy: number) => void
   setGuides: (guides: Guide[]) => void
-  setTool: (tool: Tool) => void
-  setSaveStatus: (status: SaveStatus | 'off') => void
 }
 
 // The screen size for a device.
@@ -56,8 +47,6 @@ export function createViewStore() {
     area: { width: 0, height: 0 },
     custom: null,
     guides: [],
-    tool: 'select',
-    saveStatus: 'saved',
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -81,9 +70,6 @@ export function createViewStore() {
       const view = currentView(get())
       set({ custom: { ...view, x: view.x + dx, y: view.y + dy } })
     },
-
-    setTool: (tool) => set({ tool }),
-    setSaveStatus: (saveStatus) => set({ saveStatus }),
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.

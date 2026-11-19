@@ -1,25 +1,40 @@
 import type { PointerEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { DEVICES, type DeviceId } from '../../model/screen.ts'
 import { currentView, useViewStore } from '../../store/viewStore.ts'
 
 const ZOOM_STEP = 1.25
 
 const buttonClass =
-  'h-7 rounded-md px-2 text-sm text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-accent'
+  'rounded px-1.5 py-0.5 text-zinc-300 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-blue-500'
 
-// Zoom out, the zoom level (click for 100%), zoom in, and fit, in the
-// canvas's bottom-right corner. (The device switch is in the top bar.)
-export function ZoomBar() {
+// The bar at the bottom of the canvas: device, zoom out, zoom level, zoom
+// in, fit.
+export function CanvasControls() {
+  const device = useViewStore((state) => state.device)
   const zoom = useViewStore(useShallow((state) => currentView(state).zoom))
-  const { zoomBy, zoomTo, fit } = useViewStore.getState()
+  const { setDevice, zoomBy, zoomTo, fit } = useViewStore.getState()
 
   return (
     // Stops clicks here from reaching the canvas (which would clear the
     // selection or start a drag).
     <div
       onPointerDown={(event: PointerEvent) => event.stopPropagation()}
-      className="absolute right-3 bottom-3 flex items-center gap-0.5 rounded-lg bg-panel p-1 shadow-lg ring-1 ring-line"
+      className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-zinc-900/90 px-1.5 py-1 text-xs ring-1 ring-zinc-800"
     >
+      <select
+        aria-label="Device"
+        value={device}
+        onChange={(event) => setDevice(event.target.value as DeviceId)}
+        className="rounded bg-zinc-800 px-1 py-0.5 text-zinc-100 focus-visible:outline-2 focus-visible:outline-blue-500"
+      >
+        {(Object.keys(DEVICES) as DeviceId[]).map((id) => (
+          <option key={id} value={id}>
+            {DEVICES[id].label} · {DEVICES[id].width} × {DEVICES[id].height}
+          </option>
+        ))}
+      </select>
+      <span className="mx-1 h-4 w-px bg-zinc-700" />
       <button
         type="button"
         aria-label="Zoom out"
@@ -33,7 +48,7 @@ export function ZoomBar() {
         type="button"
         title="Zoom to 100%"
         onClick={() => zoomTo(1)}
-        className={`${buttonClass} w-14 text-ink tabular-nums`}
+        className={`${buttonClass} w-12 tabular-nums`}
       >
         {Math.round(zoom * 100)}%
       </button>
@@ -46,7 +61,6 @@ export function ZoomBar() {
       >
         +
       </button>
-      <span className="mx-0.5 h-4 w-px bg-line" />
       <button
         type="button"
         title="Fit the screen in view (⌘0)"

@@ -95,7 +95,6 @@ export function useCanvasPointer(scale: number) {
   // The same two facts as state, just to pick the cursor.
   const [spaceDown, setSpaceDown] = useState(false)
   const [panning, setPanning] = useState(false)
-  const handTool = useViewStore((state) => state.tool === 'hand')
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -146,13 +145,8 @@ export function useCanvasPointer(scale: number) {
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLElement>) {
-    // ---- Pan: the middle button, or the left button with Space held or
-    // the hand tool chosen.
-    if (
-      event.button === 1 ||
-      (event.button === 0 &&
-        (spaceHeld.current || useViewStore.getState().tool === 'hand'))
-    ) {
+    // ---- Pan: the middle button, or the left button with Space held.
+    if (event.button === 1 || (event.button === 0 && spaceHeld.current)) {
       event.preventDefault() // stops the browser's middle-click scrolling
       beginDrag(event, {
         kind: 'pan',
@@ -342,8 +336,7 @@ export function useCanvasPointer(scale: number) {
         overCanvas.current = false
       },
     },
-    // A hand while Space is held or the hand tool is on, a closed hand
-    // while panning.
-    cursor: panning ? 'grabbing' : spaceDown || handTool ? 'grab' : undefined,
+    // A hand while Space is held, a closed hand while panning.
+    cursor: panning ? 'grabbing' : spaceDown ? 'grab' : undefined,
   }
 }

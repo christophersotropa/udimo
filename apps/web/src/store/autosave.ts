@@ -41,17 +41,12 @@ export function loadAutosave(storage: ReadStorage): UiDocument | null {
   }
 }
 
-// What autosave is doing, for the "Saved in this browser" note.
-export type SaveStatus = 'saved' | 'saving' | 'failed'
-
 // Saves the document a moment after each change. Returns a function that
-// stops autosaving (and saves anything still waiting). `onStatus` hears
-// about each change of status.
+// stops autosaving (and saves anything still waiting).
 export function startAutosave(
   store: DocumentStore,
   storage: WriteStorage,
   delayMs = SAVE_DELAY_MS,
-  onStatus: (status: SaveStatus) => void = () => {},
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -59,11 +54,9 @@ export function startAutosave(
     timer = undefined
     try {
       storage.setItem(AUTOSAVE_KEY, serializeProject(store.getState().document))
-      onStatus('saved')
     } catch (error) {
       // The storage is full or blocked. Keep editing; just say so.
       console.warn('Udimo: autosave failed.', error)
-      onStatus('failed')
     }
   }
 
@@ -81,7 +74,6 @@ export function startAutosave(
     // Restart the wait on every edit: this is called debouncing.
     clearTimeout(timer)
     timer = setTimeout(save, delayMs)
-    onStatus('saving')
   })
 
   // pagehide fires when the tab is closed or refreshed, so an edit made in

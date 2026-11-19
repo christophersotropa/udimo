@@ -75,7 +75,6 @@ describe('exportWarnings', () => {
       const [warning] = exportWarnings(store.getState().document, tenPerChar)
       expect(warning.message).toContain('may not fit on Tablet and Phone')
       expect(warning.level).toBe('warning')
-      expect(warning.devices).toEqual(['tablet', 'phone']) // to preview there
     })
 
     it('counts lines against the height', () => {
