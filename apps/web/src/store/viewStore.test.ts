@@ -55,6 +55,13 @@ describe('view store', () => {
     expect(store.getState().tool).toBe('hand')
   })
 
+  it('snaps by default, and can be switched off', () => {
+    const { store } = setup()
+    expect(store.getState().snapping).toBe(true)
+    store.getState().setSnapping(false)
+    expect(store.getState().snapping).toBe(false)
+  })
+
   it('zoomTo sets an exact zoom', () => {
     const { store, view } = setup()
     store.getState().zoomTo(1)

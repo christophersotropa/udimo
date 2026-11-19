@@ -155,7 +155,7 @@ function ExportContent({
       <div className="space-y-5 px-6 py-5">
         {/* Format choice */}
         <div
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-2 gap-2"
           role="radiogroup"
           aria-label="Format"
         >
@@ -170,12 +170,6 @@ function ExportContent({
             onSelect={() => change({ format: 'luau' })}
             title="Luau script"
             description="Paste into the Command Bar"
-          />
-          <FormatCard
-            disabled
-            title="Studio plugin"
-            badge="Soon"
-            description="Paste a code, GUI appears"
           />
         </div>
 

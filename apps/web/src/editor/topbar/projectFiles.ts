@@ -53,3 +53,17 @@ export async function openProjectFile(file: File) {
 export function startFrom(make: () => UiDocument) {
   if (confirmReplace()) useDocumentStore.getState().loadDocument(make())
 }
+
+// Asks for a project file to open, with the browser's file picker. The
+// picker is a file <input> made just for this and clicked from code, so
+// menus and shortcuts can both use it.
+export function pickProjectFile() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json,application/json'
+  input.addEventListener('change', () => {
+    const file = input.files?.[0]
+    if (file) void openProjectFile(file)
+  })
+  input.click()
+}

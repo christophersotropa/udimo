@@ -2,27 +2,11 @@ import { create } from 'zustand'
 import { fitView, type Point, type View, zoomAt } from '../lib/viewport.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
-import type { Box } from '../model/layout.ts'
 import type { NodeId } from '../model/types.ts'
-import type { ElementClassName } from './documentStore.ts'
 import type { SaveStatus } from './autosave.ts'
 
-// The draw tools, and the class each one draws.
-export const DRAW_TOOLS = {
-  frame: 'Frame',
-  text: 'TextLabel',
-  button: 'TextButton',
-  image: 'ImageLabel',
-} as const satisfies Record<string, ElementClassName>
-export type DrawTool = keyof typeof DRAW_TOOLS
-
-// What a left-drag on the canvas does: select and move, pan the view, or
-// draw a new element.
-export type Tool = 'select' | 'hand' | DrawTool
-
-export function isDrawTool(tool: Tool): tool is DrawTool {
-  return tool in DRAW_TOOLS
-}
+// What a left-drag on the canvas does: select and move, or pan the view.
+export type Tool = 'select' | 'hand'
 
 // An open right-click menu: where it is on the page, and the element it's
 // about (the ScreenGui for empty canvas). `insertOnly` opens just the
@@ -48,8 +32,10 @@ export type ViewState = {
   // Alignment guides to draw while a drag is snapping, in game pixels from
   // the screen's top-left corner. Empty when nothing is snapping.
   guides: Guide[]
-  // The box being drawn with a draw tool, in game pixels, else null.
-  drawBox: Box | null
+  // Snap to the parent and siblings while dragging (the status bar toggle).
+  snapping: boolean
+  // The export dialog is open (from the Export button, File menu or ⌘E).
+  exportOpen: boolean
   tool: Tool
   // Autosave's status, or 'off' when the browser blocks storage.
   saveStatus: SaveStatus | 'off'
@@ -68,7 +54,8 @@ export type ViewState = {
   panBy: (dx: number, dy: number) => void
   setGuides: (guides: Guide[]) => void
   setTool: (tool: Tool) => void
-  setDrawBox: (box: Box | null) => void
+  setSnapping: (on: boolean) => void
+  setExportOpen: (open: boolean) => void
   setSaveStatus: (status: SaveStatus | 'off') => void
   openContextMenu: (menu: ContextMenuState) => void
   closeContextMenu: () => void
@@ -93,7 +80,8 @@ export function createViewStore() {
     area: { width: 0, height: 0 },
     custom: null,
     guides: [],
-    drawBox: null,
+    snapping: true,
+    exportOpen: false,
     tool: 'select',
     saveStatus: 'saved',
     contextMenu: null,
@@ -123,7 +111,8 @@ export function createViewStore() {
     },
 
     setTool: (tool) => set({ tool }),
-    setDrawBox: (drawBox) => set({ drawBox }),
+    setSnapping: (snapping) => set({ snapping }),
+    setExportOpen: (exportOpen) => set({ exportOpen }),
     setSaveStatus: (saveStatus) => set({ saveStatus }),
     openContextMenu: (contextMenu) => set({ contextMenu }),
     closeContextMenu: () => set({ contextMenu: null }),

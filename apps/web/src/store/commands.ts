@@ -3,9 +3,8 @@ import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
 import { extractSubtrees, pasteParent } from '../model/fragment.ts'
 import type { CatalogEntry } from '../model/catalog.ts'
-import { planDraw } from '../model/draw.ts'
 import { cascadeShift, planInsert } from '../model/insert.ts'
-import { type Box, isLaidOut } from '../model/layout.ts'
+import { isLaidOut } from '../model/layout.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import { planUnitConversion, type Units } from '../model/responsive.ts'
@@ -340,19 +339,50 @@ export function setLockedAll(
   })
 }
 
-// Draws a new element of `className`: in the container where the drag
-// started (`from`), filling `box` (see model/draw.ts). Selects it and
-// returns its id. One undo step, like any insert.
-export function drawElement(
-  store: DocumentStore,
-  className: ElementClassName,
-  from: { x: number; y: number },
-  box: Box,
-  screen: ScreenSize = SCREEN,
-): NodeId {
-  const { document, addNode, select } = store.getState()
-  const { parentId, props } = planDraw(document, className, from, box, screen)
-  const id = addNode(parentId, className, props)
-  select(id)
-  return id
+// ---------- Arrange ----------
+
+export type ArrangeMove = 'front' | 'forward' | 'backward' | 'back'
+
+// Moves the selected elements in their parent's list of children, which is
+// their drawing order: later children are drawn on top (when their ZIndex
+// is the same). "front" is the end of the list, "back" the start; forward
+// and backward move one place. One undo step.
+export function arrangeSelection(store: DocumentStore, move: ArrangeMove) {
+  const ids = selectedTopLevel(store)
+  if (ids.length === 0) return
+  const doc = store.getState().document
+  // Work through them in the order that keeps them in their order among
+  // themselves. Jumping all the way (front/back): the one that should end
+  // up furthest goes last, so front goes first-to-last, back last-to-first.
+  // Stepping one place (forward/backward): the one nearest the end it's
+  // heading for goes first, so they don't hop over each other.
+  const ordered = inTreeOrder(doc, ids)
+  if (move === 'back' || move === 'forward') ordered.reverse()
+  asOneStep(store, () => {
+    for (const id of ordered) {
+      const { document, moveNode } = store.getState()
+      const parentId = document.nodes[id].parentId!
+      const siblings = document.nodes[parentId].children
+      const index = siblings.indexOf(id)
+      const last = siblings.length - 1
+      const target =
+        move === 'front'
+          ? last
+          : move === 'back'
+            ? 0
+            : move === 'forward'
+              ? Math.min(last, index + 1)
+              : Math.max(0, index - 1)
+      // moveNode counts positions with the element taken out, which is the
+      // same number here, because it's already in this parent.
+      if (target !== index) moveNode(id, parentId, target)
+    }
+  })
+}
+
+// Selects every element directly inside the ScreenGui.
+export function selectAll(store: DocumentStore) {
+  const { document, select, clearSelection } = store.getState()
+  clearSelection()
+  for (const id of document.nodes[document.rootId].children) select(id, true)
 }

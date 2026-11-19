@@ -18,7 +18,11 @@ const SIDES = {
     origin: 'top right',
     shift: 'translateY(-50%)',
   },
-  belowLeft: { box: 'right-0 top-0 pt-1.5', origin: 'top right', shift: '' },
+  below: {
+    box: 'left-0 top-0 pt-1.5',
+    origin: 'top left',
+    shift: 'translateX(-50%)',
+  },
 } as const
 
 export function ScreenLabel({
@@ -46,8 +50,10 @@ export function ScreenLabel({
         }}
       >
         <span
-          className={`block rounded px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-white ${
-            tone === 'guide' ? 'bg-pink-500' : 'bg-accent'
+          className={`block rounded-sm px-1 py-px font-mono text-[11px] whitespace-nowrap ${
+            tone === 'guide'
+              ? 'bg-guide text-white'
+              : 'bg-accent text-accent-ink'
           }`}
         >
           {children}

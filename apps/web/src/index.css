@@ -2,36 +2,51 @@
 @import 'tailwindcss';
 
 /*
-  The editor's colors, as theme tokens: each line makes a set of Tailwind
+  The editor's look, as theme tokens: each line makes a set of Tailwind
   classes (--color-panel gives bg-panel, text-panel, border-panel...).
   Every screen uses these names instead of raw colors, so the whole look
-  can be changed here, in one place.
+  changes here, in one place.
+
+  The style: a working tool, not a showcase. Near-black flat surfaces, thin
+  lines, compact rows, one accent color (amber), and monospace for values.
 */
 @theme {
-  --color-app: #16171b; /* behind everything, and the canvas area */
-  --color-panel: #1d1e23; /* side panels and the top bar */
-  --color-raised: #26282f; /* inputs, menus, cards */
-  --color-hover: #2d2f37; /* things under the pointer */
-  --color-line: #2c2e36; /* borders and dividers */
-  --color-ink: #e9e9ee; /* main text */
-  --color-muted: #8d8f9a; /* secondary text */
-  --color-faint: #5d606c; /* hints, disabled */
-  --color-accent: #3b6cf4; /* primary buttons, selection */
-  --color-accent-hover: #5583f7;
-  --color-accent-soft: rgb(59 108 244 / 0.18); /* selected rows */
-  --color-warn: #f2b84b;
-  --color-danger: #ef6b6b;
-  --color-screen: #3a3d47; /* the game screen, behind your UI */
+  --color-app: #121212; /* behind everything: the canvas area */
+  --color-panel: #181818; /* side panels, top bar, status bar */
+  --color-raised: #202020; /* inputs, menus, dialogs */
+  --color-hover: #2a2a2a; /* things under the pointer */
+  --color-line: #2a2a2a; /* borders and dividers */
+  --color-ink: #e4e4e4; /* main text */
+  --color-muted: #9a9a9a; /* secondary text */
+  --color-faint: #636363; /* hints, disabled */
+  --color-accent: #e5a23c; /* the one accent: selection, primary actions */
+  --color-accent-hover: #f0b458;
+  --color-accent-ink: #1c1406; /* text on an accent background */
+  --color-accent-soft: rgb(229 162 60 / 0.14); /* selected rows */
+  --color-warn: #e5a23c;
+  --color-danger: #e5534b;
+  --color-guide: #e0457b; /* alignment guides */
+  --color-screen: #232323; /* the game screen's checkerboard... */
+  --color-screen-alt: #1d1d1d; /* ...and its other square */
+
+  /* Values, sizes and code: the system's monospace font (no download). */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-/* The canvas area's dotted background. */
-.canvas-dots {
-  background-color: var(--color-app);
-  background-image: radial-gradient(#2a2c34 1px, transparent 1px);
-  background-size: 20px 20px;
+/* The game screen's background: a checkerboard, the usual way design tools
+   show "nothing here yet" (the game world goes behind your UI). */
+.screen-checker {
+  background-color: var(--color-screen);
+  background-image: conic-gradient(
+    var(--color-screen-alt) 25%,
+    transparent 0 50%,
+    var(--color-screen-alt) 0 75%,
+    transparent 0
+  );
+  background-size: 24px 24px;
 }
 
 /* Native <dialog>: the dimmed layer behind it. */
 dialog::backdrop {
-  background: rgb(0 0 0 / 0.55);
+  background: rgb(0 0 0 / 0.6);
 }

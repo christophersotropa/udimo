@@ -8,7 +8,7 @@ const FOCUS =
 
 const VARIANTS = {
   // The main action on screen (Export, Download).
-  primary: 'bg-accent text-white hover:bg-accent-hover',
+  primary: 'bg-accent font-semibold text-accent-ink hover:bg-accent-hover',
   // Ordinary actions, with a border.
   secondary: 'bg-raised text-ink ring-1 ring-line hover:bg-hover',
   // Quiet actions in toolbars and menus.
@@ -30,7 +30,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${FOCUS} ${className}`}
+      className={`inline-flex h-7 items-center justify-center gap-1.5 rounded px-3 text-[13px] disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${FOCUS} ${className}`}
       {...rest}
     >
       {icon}
@@ -57,9 +57,9 @@ export function IconButton({
       aria-label={label}
       title={label}
       aria-pressed={active}
-      className={`inline-flex size-8 items-center justify-center rounded-md disabled:pointer-events-none disabled:opacity-40 ${
+      className={`inline-flex size-7 items-center justify-center rounded disabled:pointer-events-none disabled:opacity-40 ${
         active
-          ? 'bg-accent text-white'
+          ? 'bg-accent-soft text-accent'
           : 'text-muted hover:bg-hover hover:text-ink'
       } ${FOCUS} ${className}`}
       {...rest}

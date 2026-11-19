@@ -84,7 +84,7 @@ export function NodeView({ id }: { id: NodeId }) {
   const style = isSelected
     ? {
         ...nodeStyle(node, pixels),
-        outline: 'calc(2px / var(--canvas-scale)) solid rgb(59 130 246)',
+        outline: 'calc(1.5px / var(--canvas-scale)) solid var(--color-accent)',
       }
     : nodeStyle(node, pixels)
 

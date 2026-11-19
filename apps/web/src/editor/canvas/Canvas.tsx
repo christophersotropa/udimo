@@ -2,8 +2,6 @@ import { type CSSProperties, useLayoutEffect, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
-import { DEVICES } from '../../model/screen.ts'
-import { ZoomBar } from './ZoomBar.tsx'
 import { openMenuFor } from '../menus/openMenu.ts'
 import { NodeView } from './NodeView.tsx'
 import { CanvasOverlay } from './CanvasOverlay.tsx'
@@ -16,7 +14,9 @@ export function Canvas() {
   const areaRef = useRef<HTMLElement>(null)
   const rootId = useDocumentStore((state) => state.document.rootId)
   const screen = useViewStore(screenOf)
-  const device = useViewStore((state) => state.device)
+  const rootName = useDocumentStore(
+    (state) => state.document.nodes[state.document.rootId].name,
+  )
   const view = useViewStore(useShallow(currentView))
   const { handlers, cursor } = useCanvasPointer(view.zoom)
 
@@ -115,11 +115,11 @@ export function Canvas() {
         )
       }}
       style={{ cursor }}
-      className="canvas-dots relative min-h-0 min-w-0 touch-none overflow-hidden select-none"
+      className="relative min-h-0 min-w-0 touch-none overflow-hidden bg-app select-none"
     >
       {/* This box takes the zoomed size, at the view's position. */}
       <div
-        className="absolute shadow-2xl ring-1 ring-line"
+        className="absolute ring-1 ring-line"
         style={{
           left: view.x,
           top: view.y,
@@ -127,13 +127,16 @@ export function Canvas() {
           height: screen.height * view.zoom,
         }}
       >
-        {/* The device, its size and the zoom, just above the screen. */}
-        <p className="absolute -top-6 left-0 text-xs whitespace-nowrap text-faint">
-          {DEVICES[device].label} · {screen.width} × {screen.height} ·{' '}
-          {Math.round(view.zoom * 100)}%
+        {/* Above the screen: the ScreenGui's name on the left, the screen
+            size and zoom on the right. */}
+        <p className="absolute -top-6 right-0 left-0 flex justify-between gap-3 font-mono text-[11px] whitespace-nowrap text-faint">
+          <span className="truncate">{rootName}</span>
+          <span>
+            {screen.width} × {screen.height} · {Math.round(view.zoom * 100)}%
+          </span>
         </p>
         <div
-          className="relative overflow-hidden bg-screen"
+          className="screen-checker relative overflow-hidden"
           style={
             {
               width: screen.width,
@@ -151,8 +154,6 @@ export function Canvas() {
           <CanvasOverlay />
         </div>
       </div>
-
-      <ZoomBar />
     </main>
   )
 }

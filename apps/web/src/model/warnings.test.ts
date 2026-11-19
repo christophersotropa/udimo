@@ -67,7 +67,7 @@ describe('exportWarnings', () => {
     const tenPerChar: MeasureText = (text) => text.length * 10
 
     it('names the devices where it overflows', () => {
-      // 10% of the screen wide: 192px on PC, 102px on tablet, 84px on phone.
+      // 10% of the screen wide: 192px on desktop, 102px on tablet, 84px on phone.
       const { store } = setup('TextLabel', {
         Size: { xs: 0.1, xo: 0, ys: 0, yo: 50 },
         Text: 'fifteen letters', // 150px
@@ -101,7 +101,7 @@ describe('exportWarnings', () => {
 
   describe('elements off the screen', () => {
     it('names the devices where an element goes past the edge', () => {
-      // 1000 to 1200px from the left: fine on PC (1920), not on smaller screens.
+      // 1000 to 1200px from the left: fine on desktop (1920), not on smaller screens.
       const { warnings } = setup('Frame', {
         Position: { xs: 0, xo: 1000, ys: 0, yo: 100 },
         Size: { xs: 0, xo: 200, ys: 0, yo: 100 },

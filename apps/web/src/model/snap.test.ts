@@ -114,8 +114,8 @@ describe('snapContext', () => {
 })
 
 describe('guide labels', () => {
-  it("labels the parent's center lines with its name", () => {
-    const targets = snapTargets({ width: 1000, height: 500 }, [], 'Window')
+  it("labels the parent's center lines", () => {
+    const targets = snapTargets({ width: 1000, height: 500 }, [], true)
     const [guide] = snapMove(
       { x: 448, y: 10, width: 100, height: 50 },
       targets,
@@ -124,12 +124,12 @@ describe('guide labels', () => {
     expect(guide).toMatchObject({
       axis: 'x',
       position: 500,
-      label: 'Centered in Window',
+      label: 'center',
     })
   })
 
   it('leaves edge lines unlabelled', () => {
-    const targets = snapTargets({ width: 1000, height: 500 }, [], 'Window')
+    const targets = snapTargets({ width: 1000, height: 500 }, [], true)
     const [guide] = snapMove(
       { x: 3, y: 200, width: 100, height: 50 },
       targets,
