@@ -274,12 +274,20 @@ function modifierInstances(doc: UiDocument, id: NodeId): ExportInstance[] {
 // ---------- The tree ----------
 
 // The whole document as instances, starting from the ScreenGui.
-export function exportTree(doc: UiDocument): ExportInstance {
+// `resetOnSpawn` is the ScreenGui's ResetOnSpawn (see export/options.ts).
+export function exportTree(
+  doc: UiDocument,
+  { resetOnSpawn = true }: { resetOnSpawn?: boolean } = {},
+): ExportInstance {
   function build(id: NodeId): ExportInstance {
     const node = doc.nodes[id]
+    const properties = elementProperties(doc, id)
+    if (id === doc.rootId) {
+      properties.push(bool('ResetOnSpawn', resetOnSpawn))
+    }
     return {
       className: node.className,
-      properties: elementProperties(doc, id),
+      properties,
       children: [...modifierInstances(doc, id), ...node.children.map(build)],
     }
   }

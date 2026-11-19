@@ -38,6 +38,7 @@ const NUDGE_BIG = 10
 //   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
 //   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
+//   Tools          V select, H hand (pan)
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
 export function useKeyboardShortcuts() {
@@ -98,6 +99,8 @@ export function useKeyboardShortcuts() {
         const [x, y] = ARROWS[event.key]
         const step = event.shiftKey ? NUDGE_BIG : NUDGE_SMALL
         nudgeSelection(store, x * step, y * step)
+      } else if (!command && !event.shiftKey && (key === 'v' || key === 'h')) {
+        useViewStore.getState().setTool(key === 'v' ? 'select' : 'hand')
       } else if (key === 'escape') {
         store.getState().clearSelection()
       }

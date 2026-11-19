@@ -83,7 +83,10 @@ function propertyTag({ name, value }: Property): string {
   }
 }
 
-export function documentToRbxmx(doc: UiDocument): string {
+export function documentToRbxmx(
+  doc: UiDocument,
+  options: { resetOnSpawn?: boolean } = {},
+): string {
   const lines: string[] = ['<roblox version="4">']
   let nextReferent = 0
 
@@ -106,7 +109,7 @@ export function documentToRbxmx(doc: UiDocument): string {
     lines.push(`${tab}</Item>`)
   }
 
-  writeItem(exportTree(doc), 1)
+  writeItem(exportTree(doc, options), 1)
   lines.push('</roblox>')
   return lines.join('\n') + '\n'
 }

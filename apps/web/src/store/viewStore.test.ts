@@ -48,6 +48,13 @@ describe('view store', () => {
     expect(screenOf(store.getState())).toEqual(DEVICES.phone)
   })
 
+  it('starts with the select tool, and switches tools', () => {
+    const { store } = setup()
+    expect(store.getState().tool).toBe('select')
+    store.getState().setTool('hand')
+    expect(store.getState().tool).toBe('hand')
+  })
+
   it('zoomTo sets an exact zoom', () => {
     const { store, view } = setup()
     store.getState().zoomTo(1)
