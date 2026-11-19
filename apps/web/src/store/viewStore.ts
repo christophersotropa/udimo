@@ -36,6 +36,8 @@ export type ViewState = {
   snapping: boolean
   // The export dialog is open (from the Export button, File menu or ⌘E).
   exportOpen: boolean
+  // The text element whose text is being edited on the canvas, else null.
+  editingTextId: NodeId | null
   // Properties sections you've folded shut, by title ("Appearance"), so
   // they stay shut as you click from element to element.
   closedSections: string[]
@@ -60,6 +62,7 @@ export type ViewState = {
   setSnapping: (on: boolean) => void
   setExportOpen: (open: boolean) => void
   toggleSection: (title: string) => void
+  setEditingTextId: (id: NodeId | null) => void
   setSaveStatus: (status: SaveStatus | 'off') => void
   openContextMenu: (menu: ContextMenuState) => void
   closeContextMenu: () => void
@@ -87,6 +90,7 @@ export function createViewStore() {
     snapping: true,
     exportOpen: false,
     closedSections: [],
+    editingTextId: null,
     tool: 'select',
     saveStatus: 'saved',
     contextMenu: null,
@@ -118,6 +122,7 @@ export function createViewStore() {
     setTool: (tool) => set({ tool }),
     setSnapping: (snapping) => set({ snapping }),
     setExportOpen: (exportOpen) => set({ exportOpen }),
+    setEditingTextId: (editingTextId) => set({ editingTextId }),
     toggleSection: (title) =>
       set({
         closedSections: get().closedSections.includes(title)

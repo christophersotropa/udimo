@@ -146,6 +146,10 @@ export function useCanvasPointer(scale: number) {
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLElement>) {
+    // Clicks inside the canvas text editor are for placing the caret and
+    // selecting text: no selecting elements, dragging or panning.
+    if ((event.target as Element).closest('[data-text-editor]')) return
+
     // ---- Pan: the middle button, or the left button with Space held or
     // the hand tool chosen.
     if (
