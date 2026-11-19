@@ -2,8 +2,9 @@ import { type CSSProperties, useLayoutEffect, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
-import { canEditTextOnCanvas } from '../../model/classes.ts'
+import { canEditTextOnCanvas, isImageClass } from '../../model/classes.ts'
 import { openMenuFor } from '../menus/openMenu.ts'
+import { insertImageFromFile, previewFromFile } from '../previewImage.ts'
 import { NodeView } from './NodeView.tsx'
 import { ZoomBar } from './ZoomBar.tsx'
 import { CanvasOverlay } from './CanvasOverlay.tsx'
@@ -94,6 +95,34 @@ export function Canvas() {
     }
   }, [])
 
+  // An image file dropped at (clientX, clientY), in window pixels: onto an
+  // image element, it becomes that element's preview; anywhere else, a new
+  // ImageLabel showing it, centred where it was dropped. If the file can't
+  // be used, the status bar says why.
+  async function dropImage(file: File, clientX: number, clientY: number) {
+    const under = document
+      .elementFromPoint(clientX, clientY)
+      ?.closest<HTMLElement>('[data-node-id]')
+    const target = under
+      ? useDocumentStore.getState().document.nodes[under.dataset.nodeId!]
+      : undefined
+    let error: string | null
+    if (target && isImageClass(target.className)) {
+      useDocumentStore.getState().select(target.id)
+      error = await previewFromFile(target.id, file)
+    } else {
+      // Window pixels to game pixels: from the canvas area's corner, less
+      // where the screen sits in it, divided by the zoom.
+      const box = areaRef.current!.getBoundingClientRect()
+      const point = {
+        x: (clientX - box.left - view.x) / view.zoom,
+        y: (clientY - box.top - view.y) / view.zoom,
+      }
+      error = await insertImageFromFile(file, point, screen)
+    }
+    if (error) useViewStore.getState().showNotice(error)
+  }
+
   return (
     // The pointer handlers sit on the whole canvas area, so clicking the dark
     // space around the screen also clears the selection.
@@ -119,6 +148,21 @@ export function Canvas() {
         useDocumentStore.getState().select(id)
         useViewStore.getState().setEditingTextId(id)
       }}
+      // Drop an image file from your computer: onto an image element to
+      // preview it there, anywhere else to add a new ImageLabel showing it.
+      // dragover must say "a drop is welcome here", or the browser just
+      // opens the file in the tab.
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes('Files')) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+      }}
+      onDrop={(event) => {
+        const file = event.dataTransfer.files[0]
+        if (!file) return
+        event.preventDefault()
+        void dropImage(file, event.clientX, event.clientY)
+      }}
       onContextMenu={(event) => {
         event.preventDefault()
         const element = (event.target as Element).closest<HTMLElement>(
@@ -135,7 +179,7 @@ export function Canvas() {
     >
       {/* This box takes the zoomed size, at the view's position. The
           checkerboard is painted here, not on the scaled screen inside:
-          scaled to an in-between zoom (say 40.3%), its 24 px tiles stop
+          scaled to an in-between zoom (say 40.3%), its tiles stop
           landing on whole pixels and Safari draws thin white seams between
           them while the zoom changes. Here, unscaled, the squares are a
           fixed size on screen at any zoom, like other design tools. */}

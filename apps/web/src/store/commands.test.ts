@@ -4,6 +4,8 @@ import {
   cutSelection,
   deleteSelection,
   duplicateSelection,
+  imageName,
+  insertImageAt,
   moveNodesTo,
   nudgeSelection,
   pasteFragment,
@@ -11,6 +13,8 @@ import {
   toggleVisible,
 } from './commands.ts'
 import { createDocumentStore } from './documentStore.ts'
+import { createEmptyDocument } from '../model/document.ts'
+import { PICTURE } from '../model/testPictures.ts'
 
 // ScreenGui > panel (at 100, 100) > button, plus coins (at 10, 10).
 function setup() {
@@ -327,5 +331,68 @@ describe('elements placed by a layout', () => {
     nudgeSelection(store, 5, 0)
     expect(doc().nodes[button].props.Position).toBeUndefined()
     expect(doc().nodes[coins].props.Position?.xo).toBe(15) // not laid out
+  })
+})
+
+describe('preview pictures', () => {
+  const SCREEN = { width: 1920, height: 1080 }
+
+  it('go with a duplicate', () => {
+    const { store, rootId } = setup()
+    const image = store.getState().addNode(rootId, 'ImageLabel')
+    store.getState().setPreviewImage(image, { key: 'pet', image: PICTURE })
+    store.getState().select(image)
+    duplicateSelection(store)
+    const copy = store.getState().selection[0]
+    expect(copy).not.toBe(image)
+    expect(store.getState().document.nodes[copy].previewImage).toBe('pet')
+  })
+
+  it('go with a copy pasted into a new document', () => {
+    const { store, rootId } = setup()
+    const image = store.getState().addNode(rootId, 'ImageLabel')
+    store.getState().setPreviewImage(image, { key: 'pet', image: PICTURE })
+    store.getState().select(image)
+    const fragment = copySelection(store)!
+    store.getState().loadDocument(createEmptyDocument()) // File > New
+    const [copy] = pasteFragment(store, fragment)
+    const doc = store.getState().document
+    expect(doc.nodes[copy].previewImage).toBe('pet')
+    expect(doc.images?.pet).toEqual(PICTURE)
+  })
+
+  it('dropped on the canvas make an ImageLabel centred where they land', () => {
+    const { store } = setup()
+    const id = insertImageAt(store, { x: 500, y: 300 }, SCREEN, {
+      key: 'pet',
+      image: PICTURE, // 64 × 32
+    })
+    const node = store.getState().document.nodes[id]
+    expect(node.className).toBe('ImageLabel')
+    expect(node.name).toBe('pet')
+    expect(node.props.Position).toEqual({ xs: 0, xo: 468, ys: 0, yo: 284 })
+    expect(node.props.Size).toEqual({ xs: 0, xo: 64, ys: 0, yo: 32 })
+    expect(node.props.BackgroundTransparency).toBe(1)
+    expect(store.getState().selection).toEqual([id])
+    // One undo step takes it all away.
+    store.getState().undo()
+    expect(store.getState().document.nodes[id]).toBeUndefined()
+  })
+
+  it('dropped near the edge stay on screen, at most half its size', () => {
+    const { store } = setup()
+    const big = { ...PICTURE, width: 1024, height: 1024 }
+    const id = insertImageAt(store, { x: 1900, y: 10 }, SCREEN, {
+      key: 'big',
+      image: big,
+    })
+    const { Position, Size } = store.getState().document.nodes[id].props
+    expect(Size).toEqual({ xs: 0, xo: 540, ys: 0, yo: 540 }) // half of 1080
+    expect(Position).toEqual({ xs: 0, xo: 1380, ys: 0, yo: 0 })
+  })
+
+  it('are named after their file', () => {
+    expect(imageName('pet icon.png')).toBe('pet icon')
+    expect(imageName('.png')).toBe('ImageLabel')
   })
 })

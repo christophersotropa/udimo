@@ -9,12 +9,14 @@ import {
   VERTICAL_ALIGNMENT,
 } from './enums.ts'
 import { FONTS } from './fonts.ts'
+import { isSafeImageDataUrl, withUsedImagesOnly } from './previewImages.ts'
 import type {
   ClassName,
   ModifierClass,
   ModifierProps,
   Modifiers,
   NodeId,
+  PreviewImage,
   Props,
   UiDocument,
   UiNode,
@@ -40,9 +42,14 @@ function fail(message: string): never {
 }
 
 export function serializeProject(doc: UiDocument): string {
-  // The 2 adds line breaks and indentation, so the file is readable.
+  // The 2 adds line breaks and indentation, so the file is readable. Only
+  // the preview pictures still in use are saved.
   return JSON.stringify(
-    { format: FORMAT, version: PROJECT_VERSION, document: doc },
+    {
+      format: FORMAT,
+      version: PROJECT_VERSION,
+      document: withUsedImagesOnly(doc),
+    },
     null,
     2,
   )
@@ -251,7 +258,7 @@ function readNode(id: string, value: unknown): UiNode {
   if (!isRecord(value) || value.id !== id) {
     fail('The project contains a broken element.')
   }
-  const { className, name, parentId, children, locked } = value
+  const { className, name, parentId, children, locked, previewImage } = value
   if (typeof name !== 'string') fail('An element has no name.')
   if (
     typeof className !== 'string' ||
@@ -268,6 +275,9 @@ function readNode(id: string, value: unknown): UiNode {
   if (locked !== undefined && typeof locked !== 'boolean') {
     fail(`"${name}" has an invalid locked flag.`)
   }
+  if (previewImage !== undefined && !isImageKey(previewImage)) {
+    fail(`"${name}" has an invalid preview image.`)
+  }
 
   const node: UiNode = {
     id,
@@ -280,7 +290,40 @@ function readNode(id: string, value: unknown): UiNode {
   const modifiers = readModifiers(value.modifiers, name)
   if (modifiers) node.modifiers = modifiers
   if (locked) node.locked = true
+  if (previewImage !== undefined) node.previewImage = previewImage
   return node
+}
+
+// A preview picture's key: letters, digits, - and _ only.
+function isImageKey(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value)
+}
+
+// The preview pictures (see UiNode.previewImage), each checked: a sensible
+// name and size, and a picture written out in the file, never a link.
+function readImages(value: unknown): Record<string, PreviewImage> {
+  if (value === undefined) return {}
+  if (!isRecord(value)) fail('The project has a broken list of images.')
+  const images: Record<string, PreviewImage> = {}
+  for (const [key, raw] of Object.entries(value)) {
+    const ok =
+      isImageKey(key) &&
+      isRecord(raw) &&
+      typeof raw.name === 'string' &&
+      raw.name.length <= 255 &&
+      typeof raw.dataUrl === 'string' &&
+      isSafeImageDataUrl(raw.dataUrl) &&
+      isPositive(raw.width) &&
+      isPositive(raw.height)
+    if (!ok) fail('The project has an image that can’t be read.')
+    images[key] = {
+      name: raw.name as string,
+      dataUrl: raw.dataUrl as string,
+      width: raw.width as number,
+      height: raw.height as number,
+    }
+  }
+  return images
 }
 
 function readDocument(value: unknown): UiDocument {
@@ -324,5 +367,15 @@ function readDocument(value: unknown): UiDocument {
     fail('The project contains elements outside the tree.')
   }
 
-  return { rootId, nodes }
+  // Preview pictures. An element pointing at a picture that isn't there
+  // just shows no preview (it's editor-only, nothing to lose).
+  const images = readImages(value.images)
+  for (const node of Object.values(nodes)) {
+    if (node.previewImage && !Object.hasOwn(images, node.previewImage)) {
+      delete node.previewImage
+    }
+  }
+  return Object.keys(images).length > 0
+    ? { rootId, nodes, images }
+    : { rootId, nodes }
 }

@@ -12,6 +12,8 @@ Udimo is a browser editor for building Roblox UI visually. You drag and drop fra
 
 Phase 1 (the MVP) is the only phase that has to be great; everything after it is optional. Phases 0 and 1 run in order, Phases 2 to 4 can be reordered, and Phase 6 needs Phase 5's accounts.
 
+**Order decided (Nov 2026):** finish Phase 1 with real images and more of Studio's properties (the builds after 48), then importing `.rbxmx` (Phase 2), then scripting with a node graph (Phase 4), with AI (Phase 3) last. BillboardGui and SurfaceGui come later. Releases are only tagged when the project owner says so.
+
 ### Phase 0 — Groundwork
 
 - [x] GitHub repo, license, README
@@ -60,13 +62,15 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 
 ### Phase 3 — AI prompt to UI
 
+- Done last. Likely "bring your own API key" (each user pastes their own key), so the site never pays for or stores keys; to be decided then
 - Describe a screen, get an editable layout (not an image)
 - "Edit selection with AI"
 - AI output is validated against the same schema the editor uses
 
 ### Phase 4 — Interactions, scripts and animation
 
-- Interaction builder: this button opens that frame, tabs, toggles, close buttons
+- A node graph first (like Blueprints): event nodes (Activated, MouseEnter), action nodes (set Visible, tween, fire a RemoteEvent) and logic. It's data in the document, compiled to a readable LocalScript by `export/`
+- Interaction presets later, as ready-made graphs: this button opens that frame, tabs, toggles, close buttons
 - Hover and press states
 - Tween animations on a simple timeline (TweenService)
 - A generated LocalScript ships inside the export
@@ -242,40 +246,50 @@ udimo/
 
 Finishes Phase 1. Each build that adds a class or modifier starts by saving a reference `.rbxmx` from Studio into `docs/reference/`, and its golden test checks the exporter against it.
 
-| #   | Build                                                                                         | Commit                                                     |
-| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 16  | Insert palette: click to add a Frame or TextLabel                                             | `feat(panels): add insert palette`                         |
-| 17  | Keyboard: delete, duplicate, arrow keys to nudge                                              | `feat(editor): delete, duplicate and nudge`                |
-| 18  | Explorer tree: select, rename, hide, lock                                                     | `feat(panels): add explorer tree`                          |
-| 19  | Explorer drag and drop: reparent and reorder                                                  | `feat(panels): drag to reparent in explorer`               |
-| 20  | Autosave in the browser; open and save a project `.json`                                      | `feat(store): autosave and project files`                  |
-| 21  | Copy and paste; wrap selection in a Frame                                                     | `feat(editor): copy, paste and wrap in Frame`              |
-| 22  | TextButton and TextBox                                                                        | `feat(canvas): add TextButton and TextBox`                 |
-| 23  | ImageLabel, ImageButton and ScrollingFrame                                                    | `feat(canvas): add images and ScrollingFrame`              |
-| 24  | Modifiers in the model; UICorner and UIStroke                                                 | `feat(model): add UICorner and UIStroke`                   |
-| 25  | UIGradient, UIPadding, UIAspectRatioConstraint                                                | `feat(model): add gradient, padding and aspect ratio`      |
-| 26  | UIListLayout and UIGridLayout                                                                 | `feat(canvas): add list and grid layouts`                  |
-| 27  | Device presets (PC, tablet, phone), zoom and pan                                              | `feat(canvas): device presets, zoom and pan`               |
-| 28  | Snapping and alignment guides                                                                 | `feat(canvas): snap to siblings and parent`                |
-| 29  | "Make responsive": Offset to Scale and back                                                   | `feat(panels): add make responsive button`                 |
-| 30  | Fonts and TextScaled                                                                          | `feat(canvas): fonts and TextScaled`                       |
-| 31  | Luau builder script for the Command Bar                                                       | `feat(export): copy Luau builder script`                   |
-| 32  | Export warnings                                                                               | `feat(export): warn about common export problems`          |
-| 33  | Rebuild the Pet Inventory reference; fix what it finds                                        | `test: rebuild the Pet Inventory reference`                |
-| 34  | UI overhaul 1: editor shell and export dialog                                                 | `feat(editor): new top bar and export dialog`              |
-| 35  | UI overhaul 2: right-click menus and Explorer (replaces the Insert panel)                     | `feat(panels): right-click insert and explorer redesign`   |
-| 36  | UI overhaul 3: Properties panel redesign                                                      | `style(panels): redesign the properties panel`             |
-| 37  | UI overhaul 4: toolbar insert tools (draw to add) and canvas labels                           | `feat(canvas): draw tools and guide labels`                |
-| 38  | New look: theme, top bar with menus, canvas, status bar (draw tools removed)                  | `feat(editor): new look with menu bar and status bar`      |
-| 39  | Explorer and right-click menu in the new look                                                 | `style(panels): explorer and context menu in the new look` |
-| 40  | Studio-style Properties; Rotation, ClipsDescendants, BorderSizePixel                          | `feat(panels): studio-style properties`                    |
-| 41  | Export dialog redesign; LocalScript stubs; checks listed by path                              | `feat(export): export dialog redesign and script stubs`    |
-| 42  | ~~Preview: play-test the UI~~ (dropped)                                                       | —                                                          |
-| 43  | Double-click a text element on the canvas to edit its text                                    | `feat(canvas): edit text in place`                         |
-| 44  | Font weights per font, named like Studio, plus italic (B and I toggles)                       | `feat(model): font weights and italic`                     |
-| 45  | Dockable side panels: resize, move to either side, or stack both on one side (like Studio)    | `feat(editor): dockable side panels`                       |
-| 46  | Real images on the canvas (research Roblox's rules first; a small Vercel function if allowed) | `feat(canvas): show real images`                           |
-| 47  | Fix the stray white lines on the canvas in Safari (seams in the scaled checkerboard)          | `fix(canvas): stray white lines in Safari`                 |
-| 48  | Smooth Explorer dragging: the row itself slides with the pointer and the others make room     | `feat(explorer): smooth row dragging`                      |
+| #   | Build                                                                                                                    | Commit                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| 16  | Insert palette: click to add a Frame or TextLabel                                                                        | `feat(panels): add insert palette`                         |
+| 17  | Keyboard: delete, duplicate, arrow keys to nudge                                                                         | `feat(editor): delete, duplicate and nudge`                |
+| 18  | Explorer tree: select, rename, hide, lock                                                                                | `feat(panels): add explorer tree`                          |
+| 19  | Explorer drag and drop: reparent and reorder                                                                             | `feat(panels): drag to reparent in explorer`               |
+| 20  | Autosave in the browser; open and save a project `.json`                                                                 | `feat(store): autosave and project files`                  |
+| 21  | Copy and paste; wrap selection in a Frame                                                                                | `feat(editor): copy, paste and wrap in Frame`              |
+| 22  | TextButton and TextBox                                                                                                   | `feat(canvas): add TextButton and TextBox`                 |
+| 23  | ImageLabel, ImageButton and ScrollingFrame                                                                               | `feat(canvas): add images and ScrollingFrame`              |
+| 24  | Modifiers in the model; UICorner and UIStroke                                                                            | `feat(model): add UICorner and UIStroke`                   |
+| 25  | UIGradient, UIPadding, UIAspectRatioConstraint                                                                           | `feat(model): add gradient, padding and aspect ratio`      |
+| 26  | UIListLayout and UIGridLayout                                                                                            | `feat(canvas): add list and grid layouts`                  |
+| 27  | Device presets (PC, tablet, phone), zoom and pan                                                                         | `feat(canvas): device presets, zoom and pan`               |
+| 28  | Snapping and alignment guides                                                                                            | `feat(canvas): snap to siblings and parent`                |
+| 29  | "Make responsive": Offset to Scale and back                                                                              | `feat(panels): add make responsive button`                 |
+| 30  | Fonts and TextScaled                                                                                                     | `feat(canvas): fonts and TextScaled`                       |
+| 31  | Luau builder script for the Command Bar                                                                                  | `feat(export): copy Luau builder script`                   |
+| 32  | Export warnings                                                                                                          | `feat(export): warn about common export problems`          |
+| 33  | Rebuild the Pet Inventory reference; fix what it finds                                                                   | `test: rebuild the Pet Inventory reference`                |
+| 34  | UI overhaul 1: editor shell and export dialog                                                                            | `feat(editor): new top bar and export dialog`              |
+| 35  | UI overhaul 2: right-click menus and Explorer (replaces the Insert panel)                                                | `feat(panels): right-click insert and explorer redesign`   |
+| 36  | UI overhaul 3: Properties panel redesign                                                                                 | `style(panels): redesign the properties panel`             |
+| 37  | UI overhaul 4: toolbar insert tools (draw to add) and canvas labels                                                      | `feat(canvas): draw tools and guide labels`                |
+| 38  | New look: theme, top bar with menus, canvas, status bar (draw tools removed)                                             | `feat(editor): new look with menu bar and status bar`      |
+| 39  | Explorer and right-click menu in the new look                                                                            | `style(panels): explorer and context menu in the new look` |
+| 40  | Studio-style Properties; Rotation, ClipsDescendants, BorderSizePixel                                                     | `feat(panels): studio-style properties`                    |
+| 41  | Export dialog redesign; LocalScript stubs; checks listed by path                                                         | `feat(export): export dialog redesign and script stubs`    |
+| 42  | ~~Preview: play-test the UI~~ (dropped)                                                                                  | —                                                          |
+| 43  | Double-click a text element on the canvas to edit its text                                                               | `feat(canvas): edit text in place`                         |
+| 44  | Font weights per font, named like Studio, plus italic (B and I toggles)                                                  | `feat(model): font weights and italic`                     |
+| 45  | Dockable side panels: resize, move to either side, or stack both on one side (like Studio)                               | `feat(editor): dockable side panels`                       |
+| 46  | Real images on the canvas: preview pictures from your computer (pick or drop a PNG, JPG or BMP); not exported            | `feat(canvas): preview real images`                        |
+| 47  | Fix the stray white lines on the canvas in Safari (seams in the scaled checkerboard)                                     | `fix(canvas): stray white lines in Safari`                 |
+| 48  | Smooth Explorer dragging: the row itself slides with the pointer and the others make room                                | `feat(explorer): smooth row dragging`                      |
+| 49  | Text options: TextWrapped, TextXAlignment and TextYAlignment, TextTransparency, RichText, TextTruncate, LineHeight       | `feat(model): more text options`                           |
+| 50  | Image options: ImageColor3, ImageTransparency, ScaleType (Stretch, Fit, Crop, Tile, Slice) with SliceCenter and TileSize | `feat(model): image options and 9-slice`                   |
+| 51  | Sizing helpers: AutomaticSize, UIScale, UISizeConstraint, UITextSizeConstraint                                           | `feat(model): automatic size, scale and size constraints`  |
+| 52  | ScrollingFrame options: AutomaticCanvasSize, ScrollingDirection, ScrollBarImageColor3                                    | `feat(model): scrolling frame options`                     |
+| 53  | CanvasGroup (GroupTransparency, GroupColor3)                                                                             | `feat(model): add CanvasGroup`                             |
+| 54  | More of Roblox's built-in fonts                                                                                          | `feat(model): more fonts`                                  |
 
-Tag `v0.1.0` (the end of Phase 1) once the Pet Inventory comparison is clean and Phase 1 feels finished. It's a separate step, not part of a build.
+Showing images by Roblox asset ID is on hold: it needs Roblox's legacy thumbnail API through a server function, and Roblox's Terms of Use need checking first (build 46 research).
+
+Each of 49–54 starts with a reference `.rbxmx` saved from Studio (see above). After these: UIPageLayout and UIFlexItem, importing `.rbxmx` (Phase 2), the node graph (Phase 4), then AI (Phase 3).
+
+Tag `v0.1.0` (the end of Phase 1) when the project owner says so. It's a separate step, not part of a build.

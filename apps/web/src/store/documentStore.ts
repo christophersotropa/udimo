@@ -10,6 +10,7 @@ import type {
   ModifierClass,
   ModifierProps,
   NodeId,
+  PreviewImage,
   Props,
   UiDocument,
   UiNode,
@@ -52,6 +53,13 @@ export type DocumentState = {
   renameNode: (id: NodeId, name: string) => void
   // Locks or unlocks an element on the canvas (see UiNode.locked).
   setLocked: (id: NodeId, locked: boolean) => void
+  // Shows a picture from your computer on an image element (see
+  // UiNode.previewImage), or none (null). `image` is stored under `key`
+  // unless a picture is already there (the same file, used again).
+  setPreviewImage: (
+    id: NodeId,
+    preview: { key: string; image: PreviewImage } | null,
+  ) => void
   // Merges `props` into the node's props. A value of `undefined` removes
   // that property, so it goes back to Roblox's default.
   updateProps: (id: NodeId, props: Props) => void
@@ -226,6 +234,19 @@ export function createDocumentStore(
         renameNode: (id, name) => {
           change((doc) => {
             getNode(doc, id).name = name
+          })
+        },
+
+        setPreviewImage: (id, preview) => {
+          change((doc) => {
+            const node = getNode(doc, id)
+            if (!preview) {
+              delete node.previewImage
+              return
+            }
+            doc.images ??= {}
+            doc.images[preview.key] ??= preview.image
+            node.previewImage = preview.key
           })
         },
 
