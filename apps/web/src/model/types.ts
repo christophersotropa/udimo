@@ -58,6 +58,13 @@ export type Props = {
   TextColor3?: Color3
   TextSize?: number
   TextScaled?: boolean
+  // TextButton: darkens the button while hovered or pressed, in game
+  AutoButtonColor?: boolean
+  // TextBox: grey hint text shown while the box is empty, and whether
+  // clicking the box empties it
+  PlaceholderText?: string
+  PlaceholderColor3?: Color3
+  ClearTextOnFocus?: boolean
   // Image classes (ImageLabel, ImageButton), e.g. "rbxassetid://123"
   Image?: string
 }

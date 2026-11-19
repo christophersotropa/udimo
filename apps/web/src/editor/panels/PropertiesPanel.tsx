@@ -213,6 +213,45 @@ function NodeProperties({ id }: { id: NodeId }) {
         </Section>
       )}
 
+      {node.className === 'TextButton' && (
+        <Section title="Button">
+          <Row label="AutoButtonColor">
+            {/* Only visible in game: the canvas doesn't react to hovering. */}
+            <CheckboxField
+              label="AutoButtonColor"
+              value={p.AutoButtonColor}
+              onChange={(AutoButtonColor) => set({ AutoButtonColor })}
+            />
+          </Row>
+        </Section>
+      )}
+
+      {node.className === 'TextBox' && (
+        <Section title="Text box">
+          <Row label="Placeholder">
+            <TextField
+              label="PlaceholderText"
+              value={p.PlaceholderText}
+              onChange={(PlaceholderText) => set({ PlaceholderText })}
+            />
+          </Row>
+          <Row label="Placeholder color">
+            <ColorField
+              label="PlaceholderColor3"
+              value={p.PlaceholderColor3}
+              onChange={(PlaceholderColor3) => set({ PlaceholderColor3 })}
+            />
+          </Row>
+          <Row label="ClearTextOnFocus">
+            <CheckboxField
+              label="ClearTextOnFocus"
+              value={p.ClearTextOnFocus}
+              onChange={(ClearTextOnFocus) => set({ ClearTextOnFocus })}
+            />
+          </Row>
+        </Section>
+      )}
+
       {isImageClass(node.className) && (
         <Section title="Image">
           <Row label="Image">

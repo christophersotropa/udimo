@@ -1,3 +1,5 @@
+import { color3ToCss } from '../../lib/color.ts'
+import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import type { NodeId } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -41,9 +43,27 @@ export function NodeView({ id }: { id: NodeId }) {
 
   return (
     <div style={style} data-node-id={node.id} title={node.name}>
-      {node.className === 'TextLabel' && <span>{resolveProps(node).Text}</span>}
+      {isTextClass(node.className) && <NodeText id={id} />}
       {children}
       {showHandles && <ResizeHandles />}
     </div>
   )
+}
+
+// The words inside a text element. An empty TextBox shows its
+// PlaceholderText in PlaceholderColor3 instead, like it does in game.
+// TextBoxes and TextButtons are drawn, not real inputs or buttons: on the
+// canvas you click them to select them, not to type or press.
+function NodeText({ id }: { id: NodeId }) {
+  const node = useDocumentStore((state) => state.document.nodes[id])
+  if (!node) return null
+  const p = resolveProps(node)
+  if (node.className === 'TextBox' && p.Text === '') {
+    return (
+      <span style={{ color: color3ToCss(p.PlaceholderColor3) }}>
+        {p.PlaceholderText}
+      </span>
+    )
+  }
+  return <span>{p.Text}</span>
 }

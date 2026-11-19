@@ -3,10 +3,12 @@ import type { ElementClassName } from '../../store/documentStore.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { Panel } from './Panel.tsx'
 
-// The classes you can insert so far. More arrive in builds 22 and 23.
+// The classes you can insert so far. Images and ScrollingFrame: build 23.
 const INSERTABLE: { className: ElementClassName; hint: string }[] = [
   { className: 'Frame', hint: 'A box. Holds other elements.' },
   { className: 'TextLabel', hint: 'A box with text.' },
+  { className: 'TextButton', hint: 'Text players can click.' },
+  { className: 'TextBox', hint: 'A box players can type in.' },
 ]
 
 // Adds an element, then selects it so you can drag or edit it straight away.

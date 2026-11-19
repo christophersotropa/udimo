@@ -99,6 +99,10 @@ const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   TextColor3: isColor3,
   TextSize: isNumber,
   TextScaled: isBoolean,
+  AutoButtonColor: isBoolean,
+  PlaceholderText: isString,
+  PlaceholderColor3: isColor3,
+  ClearTextOnFocus: isBoolean,
   Image: isString,
 }
 
