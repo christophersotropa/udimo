@@ -1,0 +1,158 @@
+import { describe, expect, it } from 'vitest'
+import { createSampleDocument } from '../app/sampleDocument.ts'
+import { createDocumentStore } from '../store/documentStore.ts'
+import {
+  PROJECT_VERSION,
+  ProjectFileError,
+  parseProject,
+  serializeProject,
+} from './project.ts'
+
+// The parsed shape of a project file, loosely typed so tests can break it.
+type FileData = {
+  format: string
+  version: number
+  document: {
+    rootId: string
+    nodes: Record<string, Record<string, unknown>>
+  }
+}
+
+// ScreenGui > frame > label, as a project file.
+function setup() {
+  const store = createDocumentStore()
+  const { addNode } = store.getState()
+  const rootId = store.getState().document.rootId
+  const frame = addNode(rootId, 'Frame')
+  const label = addNode(frame, 'TextLabel')
+  return { doc: store.getState().document, rootId, frame, label }
+}
+
+// A valid project file, changed by `edit` to test one problem at a time.
+function brokenFile(
+  edit: (data: FileData, ids: ReturnType<typeof setup>) => void,
+) {
+  const ids = setup()
+  const data = JSON.parse(serializeProject(ids.doc)) as FileData
+  edit(data, ids)
+  return JSON.stringify(data)
+}
+
+function expectRejected(text: string, message: string) {
+  expect(() => parseProject(text)).toThrow(ProjectFileError)
+  expect(() => parseProject(text)).toThrow(message)
+}
+
+describe('serializeProject and parseProject', () => {
+  it('give back the same document', () => {
+    const doc = createSampleDocument()
+    expect(parseProject(serializeProject(doc))).toEqual(doc)
+  })
+
+  it('keep the locked flag', () => {
+    const store = createDocumentStore()
+    const { addNode, setLocked } = store.getState()
+    const id = addNode(store.getState().document.rootId, 'Frame')
+    setLocked(id, true)
+
+    const doc = parseProject(serializeProject(store.getState().document))
+    expect(doc.nodes[id].locked).toBe(true)
+  })
+
+  it('label the file with its format and version', () => {
+    const data = JSON.parse(serializeProject(setup().doc)) as FileData
+    expect(data.format).toBe('udimo')
+    expect(data.version).toBe(PROJECT_VERSION)
+  })
+})
+
+describe('parseProject rejects', () => {
+  it('text that is not JSON', () => {
+    expectRejected('{ not json', 'not valid JSON')
+  })
+
+  it('JSON that is not a project', () => {
+    expectRejected('{"name": "something else"}', 'not an Udimo project')
+    expectRejected('[1, 2, 3]', 'not an Udimo project')
+  })
+
+  it('a file from a newer Udimo', () => {
+    const text = brokenFile((data) => {
+      data.version = PROJECT_VERSION + 1
+    })
+    expectRejected(text, 'newer version')
+  })
+
+  it('a root that is not a ScreenGui', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.rootId = frame
+    })
+    expectRejected(text, 'ScreenGui')
+  })
+
+  it('a child that does not exist', () => {
+    const text = brokenFile((data, { rootId }) => {
+      data.document.nodes[rootId].children = ['missing']
+    })
+    expectRejected(text, 'tree is broken')
+  })
+
+  it('an element listed in two places', () => {
+    const text = brokenFile((data, { rootId, label }) => {
+      ;(data.document.nodes[rootId].children as string[]).push(label)
+    })
+    expectRejected(text, 'tree is broken')
+  })
+
+  it('an element outside the tree', () => {
+    const text = brokenFile((data, { rootId }) => {
+      data.document.nodes[rootId].children = []
+    })
+    expectRejected(text, 'outside the tree')
+  })
+
+  it('an unknown class', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].className = 'Part'
+    })
+    expectRejected(text, 'unknown class')
+  })
+
+  it('a property with the wrong kind of value', () => {
+    const badColor = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].props = {
+        BackgroundColor3: { r: 2, g: 0, b: 0 },
+      }
+    })
+    expectRejected(badColor, 'invalid BackgroundColor3')
+
+    const badSize = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].props = {
+        Size: { xs: 0, xo: 'ten', ys: 0, yo: 0 },
+      }
+    })
+    expectRejected(badSize, 'invalid Size')
+  })
+
+  it('an id that could break the nodes object', () => {
+    // "__proto__" written as a JSON key is a normal key after JSON.parse,
+    // which is exactly how it would sneak in.
+    const text = brokenFile((data) => {
+      data.document.nodes.EVIL = { id: '__proto__' }
+    }).replace('"EVIL"', '"__proto__"')
+    expectRejected(text, 'invalid element id')
+  })
+})
+
+describe('parseProject skips', () => {
+  it('properties and fields it does not know', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].props = { Rotation: 45, Visible: false }
+      data.document.nodes[frame].comment = 'from the future'
+    })
+    const doc = parseProject(text)
+    const frame = Object.values(doc.nodes).find((n) => n.className === 'Frame')!
+    expect(frame.props).toEqual({ Visible: false })
+    expect('comment' in frame).toBe(false)
+  })
+})
