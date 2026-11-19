@@ -3,8 +3,9 @@ import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
 import { extractSubtrees, pasteParent } from '../model/fragment.ts'
 import type { CatalogEntry } from '../model/catalog.ts'
+import { planDraw } from '../model/draw.ts'
 import { cascadeShift, planInsert } from '../model/insert.ts'
-import { isLaidOut } from '../model/layout.ts'
+import { type Box, isLaidOut } from '../model/layout.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import { planUnitConversion, type Units } from '../model/responsive.ts'
@@ -337,4 +338,21 @@ export function setLockedAll(
     const { setLocked } = store.getState()
     for (const id of ids) setLocked(id, locked)
   })
+}
+
+// Draws a new element of `className`: in the container where the drag
+// started (`from`), filling `box` (see model/draw.ts). Selects it and
+// returns its id. One undo step, like any insert.
+export function drawElement(
+  store: DocumentStore,
+  className: ElementClassName,
+  from: { x: number; y: number },
+  box: Box,
+  screen: ScreenSize = SCREEN,
+): NodeId {
+  const { document, addNode, select } = store.getState()
+  const { parentId, props } = planDraw(document, className, from, box, screen)
+  const id = addNode(parentId, className, props)
+  select(id)
+  return id
 }

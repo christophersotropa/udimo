@@ -14,12 +14,19 @@ export type Axis = 'x' | 'y'
 
 // Lines an edge or center can snap to, on each axis. Each remembers the
 // box it came from, so a guide can be drawn from that box to the element.
-export type SnapLine = { position: number; source: Box }
+// `label` names what lining up with it means, like "Centered in Window".
+export type SnapLine = { position: number; source: Box; label?: string }
 export type SnapTargets = { x: SnapLine[]; y: SnapLine[] }
 
 // A guide line to draw: on the 'x' axis it's vertical, at x = position,
 // running from `from` to `to` down the screen. In the same space as above.
-export type Guide = { axis: Axis; position: number; from: number; to: number }
+export type Guide = {
+  axis: Axis
+  position: number
+  from: number
+  to: number
+  label?: string // shown next to the line, e.g. "Centered in Window"
+}
 
 // The three lines of a box on one axis: its start edge, center and end edge.
 function linesOf(box: Box, axis: Axis): number[] {
@@ -30,16 +37,28 @@ function linesOf(box: Box, axis: Axis): number[] {
 
 // The lines to snap to: the parent area's edges and center, and each
 // sibling's edges and center.
-export function snapTargets(area: ScreenSize, siblings: Box[]): SnapTargets {
+// The parent's center lines are labelled "Centered in <parentName>".
+export function snapTargets(
+  area: ScreenSize,
+  siblings: Box[],
+  parentName?: string,
+): SnapTargets {
   // Only width and height: the area's own corner is 0, 0 in this space.
   // (Spreading `...area` would let a content area's x and y slip in.)
   const parent = { x: 0, y: 0, width: area.width, height: area.height }
   const targets: SnapTargets = { x: [], y: [] }
   for (const box of [parent, ...siblings]) {
     for (const axis of ['x', 'y'] as const) {
-      for (const position of linesOf(box, axis)) {
-        targets[axis].push({ position, source: box })
-      }
+      linesOf(box, axis).forEach((position, i) => {
+        const isParentCenter = box === parent && i === 1
+        targets[axis].push({
+          position,
+          source: box,
+          ...(isParentCenter && parentName
+            ? { label: `Centered in ${parentName}` }
+            : {}),
+        })
+      })
     }
   }
   return targets
@@ -89,6 +108,7 @@ function guidesFor(
         position: target.position,
         from: Math.min(...ends),
         to: Math.max(...ends),
+        ...(target.label ? { label: target.label } : {}),
       })
     }
   }
@@ -194,7 +214,7 @@ export function snapContext(
 
   return {
     origin,
-    targets: snapTargets(area, siblings),
+    targets: snapTargets(area, siblings, doc.nodes[parentId].name),
     start: { x: left, y: top, width: right - left, height: bottom - top },
   }
 }

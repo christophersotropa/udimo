@@ -6,7 +6,7 @@ import { DEVICES } from '../../model/screen.ts'
 import { ZoomBar } from './ZoomBar.tsx'
 import { openMenuFor } from '../menus/openMenu.ts'
 import { NodeView } from './NodeView.tsx'
-import { SnapGuides } from './SnapGuides.tsx'
+import { CanvasOverlay } from './CanvasOverlay.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
 
 // The game screen is laid out at its real size (the chosen device's), so
@@ -148,9 +148,7 @@ export function Canvas() {
         >
           <NodeView id={rootId} />
           {/* Drawn last, so it sits above every element. */}
-          <div className="absolute inset-0 z-[1000000] pointer-events-none">
-            <SnapGuides />
-          </div>
+          <CanvasOverlay />
         </div>
       </div>
 

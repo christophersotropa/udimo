@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { DEVICES, type DeviceId } from '../../model/screen.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
-import { useViewStore } from '../../store/viewStore.ts'
+import { type Tool, useViewStore } from '../../store/viewStore.ts'
 import { ExportDialog } from '../export/ExportDialog.tsx'
 import {
+  ButtonToolIcon,
   CursorIcon,
   DownloadIcon,
+  FrameToolIcon,
   HandIcon,
+  ImageToolIcon,
+  TextToolIcon,
   RedoIcon,
   UndoIcon,
 } from '../panels/icons.tsx'
@@ -76,13 +80,40 @@ function DocumentTitle() {
   )
 }
 
-// The canvas tools. More (draw a Frame, Text, Button, Image) arrive in a
-// later build.
+// The draw tools: icon, name and shortcut key.
+const DRAW_TOOL_BUTTONS: {
+  tool: Tool
+  label: string
+  icon: ReactNode
+}[] = [
+  {
+    tool: 'frame',
+    label: 'Frame (F): drag to draw',
+    icon: <FrameToolIcon size={16} />,
+  },
+  {
+    tool: 'text',
+    label: 'Text (T): drag to draw a TextLabel',
+    icon: <TextToolIcon size={16} />,
+  },
+  {
+    tool: 'button',
+    label: 'Button (B): drag to draw a TextButton',
+    icon: <ButtonToolIcon size={16} />,
+  },
+  {
+    tool: 'image',
+    label: 'Image (I): drag to draw an ImageLabel',
+    icon: <ImageToolIcon size={16} />,
+  },
+]
+
+// The canvas tools: select, then the four draw tools, then pan.
 function Tools() {
   const tool = useViewStore((state) => state.tool)
   const setTool = useViewStore((state) => state.setTool)
   return (
-    <div className="flex gap-0.5 rounded-lg bg-app p-0.5 ring-1 ring-line">
+    <div className="flex items-center gap-0.5 rounded-lg bg-app p-0.5 ring-1 ring-line">
       <IconButton
         label="Select and move (V)"
         active={tool === 'select'}
@@ -90,6 +121,18 @@ function Tools() {
       >
         <CursorIcon size={16} />
       </IconButton>
+      <span className="mx-0.5 h-5 w-px bg-line" />
+      {DRAW_TOOL_BUTTONS.map((button) => (
+        <IconButton
+          key={button.tool}
+          label={button.label}
+          active={tool === button.tool}
+          onClick={() => setTool(button.tool)}
+        >
+          {button.icon}
+        </IconButton>
+      ))}
+      <span className="mx-0.5 h-5 w-px bg-line" />
       <IconButton
         label="Pan the view (H, or hold Space)"
         active={tool === 'hand'}

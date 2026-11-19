@@ -144,3 +144,39 @@ export function PlusIcon(props: IconProps) {
     </Icon>
   )
 }
+
+// ---- Draw tools
+
+export function FrameToolIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="2.5" y="2.5" width="11" height="11" rx="1.5" />
+    </Icon>
+  )
+}
+
+export function TextToolIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 4V3h9v1M8 3v10M6 13h4" />
+    </Icon>
+  )
+}
+
+export function ButtonToolIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="1.5" y="5" width="13" height="6" rx="3" />
+    </Icon>
+  )
+}
+
+export function ImageToolIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="2" y="3" width="12" height="10" rx="1.5" />
+      <circle cx="6" cy="6.5" r="1.25" />
+      <path d="M2.5 12l3.5-3.5 2.5 2.5 2-2 3 3" />
+    </Icon>
+  )
+}
