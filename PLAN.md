@@ -25,10 +25,10 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 **Document and canvas**
 
 - [x] Instance tree model with a ScreenGui root
-- [ ] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
+- [x] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
 - [ ] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
 - [ ] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
-- [ ] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
+- [x] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
 - [ ] Snapping and alignment guides against siblings and the parent
 - [ ] Insert palette (click or drag onto the canvas)
 
@@ -262,3 +262,4 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 31  | Luau builder script for the Command Bar                            | `feat(export): copy Luau builder script`              |
 | 32  | Export warnings                                                    | `feat(export): warn about common export problems`     |
 | 33  | Rebuild the Pet Inventory reference; fix what it finds; tag v0.1.0 | `test: rebuild the Pet Inventory reference`           |
+| 34  | UI overhaul of the editor's own panels (details to be discussed)   | `style(editor): overhaul the editor UI`               |

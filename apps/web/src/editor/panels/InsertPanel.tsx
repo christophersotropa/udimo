@@ -3,12 +3,15 @@ import type { ElementClassName } from '../../store/documentStore.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { Panel } from './Panel.tsx'
 
-// The classes you can insert so far. Images and ScrollingFrame: build 23.
+// Every class Udimo supports.
 const INSERTABLE: { className: ElementClassName; hint: string }[] = [
   { className: 'Frame', hint: 'A box. Holds other elements.' },
+  { className: 'ScrollingFrame', hint: 'A box that scrolls its contents.' },
   { className: 'TextLabel', hint: 'A box with text.' },
   { className: 'TextButton', hint: 'Text players can click.' },
   { className: 'TextBox', hint: 'A box players can type in.' },
+  { className: 'ImageLabel', hint: 'An image uploaded to Roblox.' },
+  { className: 'ImageButton', hint: 'An image players can click.' },
 ]
 
 // Adds an element, then selects it so you can drag or edit it straight away.

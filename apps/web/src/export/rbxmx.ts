@@ -1,3 +1,4 @@
+import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
 import type {
@@ -49,10 +50,12 @@ const vector2 = (name: string, v: Vector2) =>
   `<Vector2 name="${name}"><X>${v.x}</X><Y>${v.y}</Y></Vector2>`
 const color3 = (name: string, c: Color3) =>
   `<Color3 name="${name}"><R>${c.r}</R><G>${c.g}</G><B>${c.b}</B></Color3>`
-// An image asset like "rbxassetid://123", or <null> when there is none.
-const content = (name: string, url: string) =>
-  url
-    ? `<Content name="${name}"><url>${escapeXml(url)}</url></Content>`
+// An image like "rbxassetid://123", or <null> when there is none. Studio
+// now saves images as <uri> inside a *Content property (ImageContent), not
+// the older Image property with <url>: see docs/reference/image-classes.rbxmx.
+const content = (name: string, uri: string) =>
+  uri
+    ? `<Content name="${name}"><uri>${escapeXml(uri)}</uri></Content>`
     : `<Content name="${name}"><null></null></Content>`
 
 // Studio's default font (Source Sans Pro, regular), written the way Studio does.
@@ -93,7 +96,7 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
     )
   }
 
-  if (node.className === 'TextButton') {
+  if (node.className === 'TextButton' || node.className === 'ImageButton') {
     tags.push(bool('AutoButtonColor', p.AutoButtonColor))
   }
 
@@ -106,7 +109,15 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
   }
 
   if (isImageClass(node.className)) {
-    tags.push(content('Image', p.Image))
+    // A pasted id or link becomes a proper rbxassetid:// URI.
+    tags.push(content('ImageContent', toContentUri(p.Image)))
+  }
+
+  if (node.className === 'ScrollingFrame') {
+    tags.push(
+      udim2('CanvasSize', p.CanvasSize),
+      int('ScrollBarThickness', p.ScrollBarThickness),
+    )
   }
 
   return tags

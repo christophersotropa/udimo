@@ -213,7 +213,8 @@ function NodeProperties({ id }: { id: NodeId }) {
         </Section>
       )}
 
-      {node.className === 'TextButton' && (
+      {(node.className === 'TextButton' ||
+        node.className === 'ImageButton') && (
         <Section title="Button">
           <Row label="AutoButtonColor">
             {/* Only visible in game: the canvas doesn't react to hovering. */}
@@ -259,6 +260,29 @@ function NodeProperties({ id }: { id: NodeId }) {
               label="Image asset ID"
               value={p.Image}
               onChange={(Image) => set({ Image })}
+            />
+          </Row>
+          <p className="text-[11px] text-zinc-500">
+            Paste an image ID or its Roblox link. Upload the image to Roblox
+            first; the canvas shows a placeholder.
+          </p>
+        </Section>
+      )}
+
+      {node.className === 'ScrollingFrame' && (
+        <Section title="Scrolling">
+          <UDim2Rows
+            name="CanvasSize"
+            value={p.CanvasSize}
+            onChange={(CanvasSize) => set({ CanvasSize })}
+          />
+          <Row label="Scroll bar">
+            <NumberField
+              label="ScrollBarThickness"
+              integer
+              min={0}
+              value={p.ScrollBarThickness}
+              onChange={(ScrollBarThickness) => set({ ScrollBarThickness })}
             />
           </Row>
         </Section>

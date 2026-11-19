@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import reference from '../../../../docs/reference/defaults.rbxmx?raw'
 // ScreenGui > TextButton and TextBox, side by side, all defaults.
 import textReference from '../../../../docs/reference/text-classes.rbxmx?raw'
+// ScreenGui > ImageLabel, ImageButton and ScrollingFrame, all defaults.
+import imageReference from '../../../../docs/reference/image-classes.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -45,6 +47,17 @@ function textDocument() {
   return store.getState().document
 }
 
+// ScreenGui > ImageLabel, ImageButton, ScrollingFrame, like image-classes.rbxmx.
+function imageDocument() {
+  const store = createDocumentStore()
+  const { addNode } = store.getState()
+  const rootId = store.getState().document.rootId
+  addNode(rootId, 'ImageLabel')
+  addNode(rootId, 'ImageButton')
+  addNode(rootId, 'ScrollingFrame')
+  return store.getState().document
+}
+
 // The golden test: for each class, every property we write must match, value
 // for value, what Studio wrote in the reference file.
 function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
@@ -71,6 +84,27 @@ describe('documentToRbxmx', () => {
     'TextButton',
     'TextBox',
   ])
+  goldenTest(imageReference, documentToRbxmx(imageDocument()), [
+    'ImageLabel',
+    'ImageButton',
+    'ScrollingFrame',
+  ])
+
+  it('writes a pasted image id as an rbxassetid URI, and no image as null', () => {
+    const store = createDocumentStore()
+    const { addNode } = store.getState()
+    const rootId = store.getState().document.rootId
+    addNode(rootId, 'ImageLabel', { Image: '123456' })
+    addNode(rootId, 'ImageButton', { Image: '' })
+    const xml = documentToRbxmx(store.getState().document)
+
+    expect(propertiesOf(xml, 'ImageLabel').get('ImageContent')).toBe(
+      'Content:<uri>rbxassetid://123456</uri>',
+    )
+    expect(propertiesOf(xml, 'ImageButton').get('ImageContent')).toBe(
+      'Content:<null></null>',
+    )
+  })
 
   it('nests children inside their parent', () => {
     const xml = documentToRbxmx(defaultDocument())

@@ -1,5 +1,5 @@
 import { resolveProps } from './defaults.ts'
-import { absoluteBox, boxInParent } from './layout.ts'
+import { absoluteBox, boxInParent, contentSize } from './layout.ts'
 import type { ScreenSize } from './screen.ts'
 import { inTreeOrder, topLevelNodes } from './tree.ts'
 import type { NodeId, Props, UDim2, UiDocument } from './types.ts'
@@ -87,8 +87,12 @@ export function planWrap(
   if (parentId === null) return null
   if (ids.some((id) => doc.nodes[id].parentId !== parentId)) return null
 
-  // The old parent's size in pixels. (At least 1, so nothing divides by 0.)
-  const parentBox = absoluteBox(doc, parentId, screen)
+  // The size the elements are laid out in now (a ScrollingFrame's canvas,
+  // or just the parent). At least 1 pixel, so nothing divides by 0.
+  const parentBox = contentSize(
+    doc.nodes[parentId],
+    absoluteBox(doc, parentId, screen),
+  )
   const parent = {
     width: Math.max(1, parentBox.width),
     height: Math.max(1, parentBox.height),
