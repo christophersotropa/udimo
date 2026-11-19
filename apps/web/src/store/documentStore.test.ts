@@ -208,6 +208,18 @@ describe('document store', () => {
       ).toThrow('no UIStroke')
     })
 
+    it('keeps one layout per element: a new one replaces the old', () => {
+      const { actions, doc, rootId } = setup()
+      const frame = actions.addNode(rootId, 'Frame')
+      actions.addModifier(frame, 'UIListLayout')
+      actions.addModifier(frame, 'UICorner')
+      actions.addModifier(frame, 'UIGridLayout')
+      expect(Object.keys(doc().nodes[frame].modifiers ?? {}).sort()).toEqual([
+        'UICorner',
+        'UIGridLayout',
+      ])
+    })
+
     it('refuses modifiers on the ScreenGui', () => {
       const { actions, rootId } = setup()
       expect(() => actions.addModifier(rootId, 'UICorner')).toThrow('root')

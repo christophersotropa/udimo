@@ -7,7 +7,8 @@ const WHITE = { r: 1, g: 1, b: 1 }
 const NO_SPACE = { s: 0, o: 0 }
 
 // What a modifier starts with when you insert it in Studio, checked against
-// docs/reference/corner-stroke.rbxmx and gradient-padding-aspect.rbxmx.
+// the files in docs/reference/ (corner-stroke, gradient-padding-aspect and
+// list-grid-layouts).
 export const MODIFIER_DEFAULTS: {
   [K in ModifierClass]: Required<ModifierProps[K]>
 } = {
@@ -31,7 +32,30 @@ export const MODIFIER_DEFAULTS: {
     PaddingRight: NO_SPACE,
   },
   UIAspectRatioConstraint: { AspectRatio: 1 },
+  UIListLayout: {
+    FillDirection: 'Vertical',
+    HorizontalAlignment: 'Left',
+    VerticalAlignment: 'Top',
+    SortOrder: 'LayoutOrder',
+    Padding: NO_SPACE,
+  },
+  UIGridLayout: {
+    CellSize: { xs: 0, xo: 100, ys: 0, yo: 100 },
+    CellPadding: { xs: 0, xo: 5, ys: 0, yo: 5 },
+    FillDirection: 'Horizontal',
+    FillDirectionMaxCells: 0,
+    HorizontalAlignment: 'Left',
+    VerticalAlignment: 'Top',
+    SortOrder: 'LayoutOrder',
+  },
 }
+
+// The layout modifiers. An element can only have one: adding one removes
+// the other, because Roblox would only use one of them anyway.
+export const LAYOUT_MODIFIERS: ModifierClass[] = [
+  'UIListLayout',
+  'UIGridLayout',
+]
 
 // Every modifier class, in the order they're shown and exported.
 export const MODIFIER_CLASSES = Object.keys(

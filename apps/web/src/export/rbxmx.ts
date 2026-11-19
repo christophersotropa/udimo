@@ -1,5 +1,11 @@
 import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from '../model/classes.ts'
+import {
+  FILL_DIRECTION,
+  HORIZONTAL_ALIGNMENT,
+  SORT_ORDER,
+  VERTICAL_ALIGNMENT,
+} from '../model/enums.ts'
 import { resolveProps } from '../model/defaults.ts'
 import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
 import type {
@@ -174,6 +180,28 @@ const MODIFIER_TAGS: {
   ],
   UIAspectRatioConstraint: ({ AspectRatio }) => [
     float('AspectRatio', AspectRatio),
+  ],
+  UIListLayout: (list) => [
+    token('FillDirection', FILL_DIRECTION[list.FillDirection]),
+    token(
+      'HorizontalAlignment',
+      HORIZONTAL_ALIGNMENT[list.HorizontalAlignment],
+    ),
+    udim('Padding', list.Padding),
+    token('SortOrder', SORT_ORDER[list.SortOrder]),
+    token('VerticalAlignment', VERTICAL_ALIGNMENT[list.VerticalAlignment]),
+  ],
+  UIGridLayout: (grid) => [
+    udim2('CellPadding', grid.CellPadding),
+    udim2('CellSize', grid.CellSize),
+    token('FillDirection', FILL_DIRECTION[grid.FillDirection]),
+    int('FillDirectionMaxCells', grid.FillDirectionMaxCells),
+    token(
+      'HorizontalAlignment',
+      HORIZONTAL_ALIGNMENT[grid.HorizontalAlignment],
+    ),
+    token('SortOrder', SORT_ORDER[grid.SortOrder]),
+    token('VerticalAlignment', VERTICAL_ALIGNMENT[grid.VerticalAlignment]),
   ],
 }
 

@@ -1,4 +1,10 @@
 import { isValidTimeline } from '../lib/sequence.ts'
+import {
+  FILL_DIRECTION,
+  HORIZONTAL_ALIGNMENT,
+  SORT_ORDER,
+  VERTICAL_ALIGNMENT,
+} from './enums.ts'
 import type {
   ClassName,
   ModifierClass,
@@ -102,6 +108,10 @@ const isSequence = (isKeypoint: (k: JsonRecord) => boolean) => (v: unknown) =>
 const isColorSequence = isSequence((k) => isColor3(k.color))
 const isNumberSequence = isSequence((k) => isNumber(k.value))
 const isPositive = (v: unknown) => isNumber(v) && v > 0
+const isWholeNumber = (v: unknown) => isNumber(v) && Number.isInteger(v)
+// One of an enum's names, like "Vertical".
+const isOneOf = (table: Record<string, number>) => (v: unknown) =>
+  typeof v === 'string' && Object.hasOwn(table, v)
 
 type Check = (value: unknown) => boolean
 
@@ -123,6 +133,22 @@ const MODIFIER_CHECKS: {
     PaddingRight: isUDim,
   },
   UIAspectRatioConstraint: { AspectRatio: isPositive },
+  UIListLayout: {
+    FillDirection: isOneOf(FILL_DIRECTION),
+    HorizontalAlignment: isOneOf(HORIZONTAL_ALIGNMENT),
+    VerticalAlignment: isOneOf(VERTICAL_ALIGNMENT),
+    SortOrder: isOneOf(SORT_ORDER),
+    Padding: isUDim,
+  },
+  UIGridLayout: {
+    CellSize: isUDim2,
+    CellPadding: isUDim2,
+    FillDirection: isOneOf(FILL_DIRECTION),
+    FillDirectionMaxCells: isWholeNumber,
+    HorizontalAlignment: isOneOf(HORIZONTAL_ALIGNMENT),
+    VerticalAlignment: isOneOf(VERTICAL_ALIGNMENT),
+    SortOrder: isOneOf(SORT_ORDER),
+  },
 }
 
 // One check per property. The type makes TypeScript insist on a check for

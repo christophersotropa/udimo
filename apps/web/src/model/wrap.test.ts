@@ -45,6 +45,16 @@ describe('planWrap', () => {
     })
   })
 
+  it('refuses elements inside a layout', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier } = store.getState()
+    const panel = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(panel, 'UIListLayout')
+    const a = addNode(panel, 'Frame')
+    const b = addNode(panel, 'Frame')
+    expect(planWrap(store.getState().document, [a, b], SCREEN)).toBeNull()
+  })
+
   it('refuses elements with different parents, or nothing', () => {
     const store = createDocumentStore()
     const { addNode } = store.getState()

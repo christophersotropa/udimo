@@ -171,6 +171,15 @@ describe('parseProject rejects', () => {
     expectRejected(text, 'invalid UIGradient Transparency')
   })
 
+  it('a layout option Roblox does not have', () => {
+    const text = brokenFile((data, { frame }) => {
+      data.document.nodes[frame].modifiers = {
+        UIListLayout: { FillDirection: 'Diagonal' },
+      }
+    })
+    expectRejected(text, 'invalid UIListLayout FillDirection')
+  })
+
   it('modifiers on the ScreenGui', () => {
     const text = brokenFile((data, { rootId }) => {
       data.document.nodes[rootId].modifiers = { UICorner: {} }

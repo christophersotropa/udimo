@@ -3,6 +3,7 @@ import { resolveProps } from '../model/defaults.ts'
 import { canDrop, type DropPlace } from '../model/drop.ts'
 import { extractSubtrees, pasteParent } from '../model/fragment.ts'
 import { cascadeShift } from '../model/insert.ts'
+import { isLaidOut } from '../model/layout.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
 import { planWrap } from '../model/wrap.ts'
@@ -43,13 +44,15 @@ export function deleteSelection(store: DocumentStore) {
   })
 }
 
-// Moves each selected element by (dx, dy) pixels of Offset.
+// Moves each selected element by (dx, dy) pixels of Offset. Elements a
+// layout places are skipped.
 export function nudgeSelection(store: DocumentStore, dx: number, dy: number) {
   const ids = selectedTopLevel(store)
   if (ids.length === 0) return
   asOneStep(store, () => {
     const { document, updateProps } = store.getState()
     for (const id of ids) {
+      if (isLaidOut(document, id)) continue // a layout ignores Position
       const position = resolveProps(document.nodes[id]).Position
       updateProps(id, { Position: addOffset(position, dx, dy) })
     }

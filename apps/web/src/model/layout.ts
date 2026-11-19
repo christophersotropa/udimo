@@ -1,3 +1,4 @@
+import { arrangeGrid, arrangeList, type LayoutItem } from './arrange.ts'
 import { resolveProps } from './defaults.ts'
 import { resolveModifier } from './modifiers.ts'
 import type { ScreenSize } from './screen.ts'
@@ -81,6 +82,75 @@ export function contentArea(node: UiNode, size: ScreenSize): Box {
   }
 }
 
+// True if `id`'s parent has a layout that places it: the parent has a
+// UIListLayout or UIGridLayout, and the element is visible (layouts skip
+// hidden children, leaving no gap). Its Position is then ignored.
+export function isLaidOut(doc: UiDocument, id: NodeId): boolean {
+  const node = doc.nodes[id]
+  if (!node || node.parentId === null) return false
+  const parent = doc.nodes[node.parentId]
+  const hasLayout = Boolean(
+    parent.modifiers?.UIListLayout || parent.modifiers?.UIGridLayout,
+  )
+  return hasLayout && resolveProps(node).Visible
+}
+
+// Where a parent's layout puts each of its children, measured from the
+// corner of its content area (of size `area`), or null if it has no layout.
+export function layoutBoxes(
+  doc: UiDocument,
+  parentId: NodeId,
+  area: ScreenSize,
+): Map<NodeId, Box> | null {
+  const parent = doc.nodes[parentId]
+  const list = resolveModifier(parent, 'UIListLayout')
+  const grid = resolveModifier(parent, 'UIGridLayout')
+  if (!list && !grid) return null
+
+  const items: LayoutItem[] = parent.children
+    .filter((childId) => isLaidOut(doc, childId))
+    .map((childId) => {
+      const child = doc.nodes[childId]
+      const { width, height } = boxInParent(child, area)
+      return {
+        id: childId,
+        name: child.name,
+        layoutOrder: resolveProps(child).LayoutOrder,
+        width,
+        height,
+      }
+    })
+  return list ? arrangeList(items, area, list) : arrangeGrid(items, area, grid!)
+}
+
+// Where an element sits inside its parent's content area: placed by the
+// parent's layout if it has one, otherwise by its own Position and Size.
+function boxInContentArea(
+  doc: UiDocument,
+  node: UiNode,
+  area: ScreenSize,
+): Box {
+  const placed = isLaidOut(doc, node.id)
+    ? layoutBoxes(doc, node.parentId!, area)?.get(node.id)
+    : undefined
+  return placed ?? boxInParent(node, area)
+}
+
+// The box a layout gives an element, measured from the corner of its
+// parent's content area, or null if no layout places it. The canvas uses it
+// to draw laid-out children in pixels.
+export function layoutSlot(
+  doc: UiDocument,
+  id: NodeId,
+  screen: ScreenSize,
+): Box | null {
+  if (!isLaidOut(doc, id)) return null
+  const parentId = doc.nodes[id].parentId!
+  const parentBox = absoluteBox(doc, parentId, screen)
+  const area = contentArea(doc.nodes[parentId], parentBox)
+  return layoutBoxes(doc, parentId, area)?.get(id) ?? null
+}
+
 // An element's box in screen pixels, from the screen's top-left corner.
 // It needs its parent's box first, so it climbs up to the ScreenGui.
 // (A ScrollingFrame is assumed scrolled to the top, as it starts in game.)
@@ -93,7 +163,7 @@ export function absoluteBox(
   if (node.parentId === null) return { x: 0, y: 0, ...screen }
   const parent = absoluteBox(doc, node.parentId, screen)
   const area = contentArea(doc.nodes[node.parentId], parent)
-  const box = boxInParent(node, area)
+  const box = boxInContentArea(doc, node, area)
   return {
     ...box,
     x: parent.x + area.x + box.x,

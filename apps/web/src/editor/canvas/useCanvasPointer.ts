@@ -7,6 +7,7 @@ import {
 } from '../../lib/resize.ts'
 import { addOffset } from '../../lib/udim2.ts'
 import { resolveProps } from '../../model/defaults.ts'
+import { isLaidOut } from '../../model/layout.ts'
 import { topLevelNodes } from '../../model/tree.ts'
 import type { NodeId, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -121,6 +122,9 @@ export function useCanvasPointer(scale: number) {
     for (const nodeId of topLevelNodes(doc, selection)) {
       // A locked element picked in the Explorer stays put when you drag others.
       if (doc.nodes[nodeId].locked) continue
+      // A layout ignores Position, so dragging would only make invisible,
+      // confusing edits. Reorder laid-out children in the Explorer instead.
+      if (isLaidOut(doc, nodeId)) continue
       startPositions.set(nodeId, resolveProps(doc.nodes[nodeId]).Position)
     }
     beginDrag(event, { kind: 'move', startPositions })

@@ -5,6 +5,7 @@ import { boxCss } from '../../lib/udim2.ts'
 import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
+import type { Box } from '../../model/layout.ts'
 import type { ScreenSize } from '../../model/screen.ts'
 import type { UiNode } from '../../model/types.ts'
 
@@ -13,6 +14,9 @@ import type { UiNode } from '../../model/types.ts'
 export type NodePixels = {
   cornerRadius: number // UICorner radius, 0 for none
   aspectSize: ScreenSize | null // the size a UIAspectRatioConstraint forces
+  // Where the parent's UIListLayout or UIGridLayout puts this element,
+  // from the corner of the parent's content area.
+  slot: Box | null
 }
 
 // The CSS for one Roblox element on the canvas.
@@ -40,6 +44,18 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
   if (pixels.aspectSize) {
     style.width = pixels.aspectSize.width
     style.height = pixels.aspectSize.height
+  }
+
+  // A layout decides where the element goes, ignoring Position and
+  // AnchorPoint (and, in a grid, Size), so it's drawn at the layout's box.
+  if (pixels.slot) {
+    Object.assign(style, {
+      left: pixels.slot.x,
+      top: pixels.slot.y,
+      width: pixels.slot.width,
+      height: pixels.slot.height,
+      transform: 'none',
+    } satisfies CSSProperties)
   }
 
   const gradient = resolveModifier(node, 'UIGradient')

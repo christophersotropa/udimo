@@ -4,6 +4,7 @@ import {
   absoluteBox,
   boxInParent,
   fitAspect,
+  isLaidOut,
   visibleFraction,
 } from './layout.ts'
 
@@ -161,5 +162,50 @@ describe('UIPadding', () => {
       width: 160,
       height: 90,
     })
+  })
+})
+
+describe('children placed by a layout', () => {
+  // A 400 × 300 Frame with a UIListLayout, holding three 100 × 50 labels.
+  function setup() {
+    const store = createDocumentStore()
+    const { addNode, addModifier } = store.getState()
+    const list = addNode(store.getState().document.rootId, 'Frame', {
+      Position: { xs: 0, xo: 100, ys: 0, yo: 100 },
+      Size: { xs: 0, xo: 400, ys: 0, yo: 300 },
+    })
+    addModifier(list, 'UIListLayout')
+    const size = { xs: 0, xo: 100, ys: 0, yo: 50 }
+    const a = addNode(list, 'TextLabel', {
+      Size: size,
+      Position: { xs: 0.5, xo: 999, ys: 0, yo: 0 }, // ignored
+    })
+    const b = addNode(list, 'TextLabel', { Size: size, Visible: false })
+    const c = addNode(list, 'TextLabel', { Size: size })
+    return { store, a, b, c }
+  }
+
+  it('ignore their Position, and hidden children leave no gap', () => {
+    const { store, a, c } = setup()
+    const doc = store.getState().document
+    expect(absoluteBox(doc, a, SCREEN)).toEqual({
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 50,
+    })
+    expect(absoluteBox(doc, c, SCREEN)).toEqual({
+      x: 100,
+      y: 150,
+      width: 100,
+      height: 50,
+    })
+  })
+
+  it('are marked as laid out (visible ones only)', () => {
+    const { store, a, b } = setup()
+    const doc = store.getState().document
+    expect(isLaidOut(doc, a)).toBe(true)
+    expect(isLaidOut(doc, b)).toBe(false)
   })
 })
