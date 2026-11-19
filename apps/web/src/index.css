@@ -1,2 +1,36 @@
 /* Tailwind v4: this one line pulls in Tailwind's reset and every utility class. */
 @import 'tailwindcss';
+
+/*
+  The editor's colors, as theme tokens: each line makes a set of Tailwind
+  classes (--color-panel gives bg-panel, text-panel, border-panel...).
+  Every screen uses these names instead of raw colors, so the whole look
+  can be changed here, in one place.
+*/
+@theme {
+  --color-app: #16171b; /* behind everything, and the canvas area */
+  --color-panel: #1d1e23; /* side panels and the top bar */
+  --color-raised: #26282f; /* inputs, menus, cards */
+  --color-hover: #2d2f37; /* things under the pointer */
+  --color-line: #2c2e36; /* borders and dividers */
+  --color-ink: #e9e9ee; /* main text */
+  --color-muted: #8d8f9a; /* secondary text */
+  --color-faint: #5d606c; /* hints, disabled */
+  --color-accent: #3b6cf4; /* primary buttons, selection */
+  --color-accent-hover: #5583f7;
+  --color-accent-soft: rgb(59 108 244 / 0.18); /* selected rows */
+  --color-warn: #f2b84b;
+  --color-danger: #ef6b6b;
+}
+
+/* The canvas area's dotted background. */
+.canvas-dots {
+  background-color: var(--color-app);
+  background-image: radial-gradient(#2a2c34 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Native <dialog>: the dimmed layer behind it. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}

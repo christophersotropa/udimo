@@ -92,6 +92,16 @@ describe('startAutosave', () => {
     expect(storage.setItem).toHaveBeenCalledTimes(1)
   })
 
+  it('reports its status: saving after an edit, saved when written', () => {
+    const store = createDocumentStore()
+    const statuses: string[] = []
+    startAutosave(store, fakeStorage(), 500, (status) => statuses.push(status))
+    store.getState().addNode(store.getState().document.rootId, 'Frame')
+    expect(statuses).toEqual(['saving'])
+    vi.advanceTimersByTime(500)
+    expect(statuses).toEqual(['saving', 'saved'])
+  })
+
   it('keeps going when the storage is full', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { store, storage, rootId } = setup()
