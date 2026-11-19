@@ -1,41 +1,11 @@
-import { toContentUri } from '../lib/assets.ts'
-import { isImageClass, isTextClass } from '../model/classes.ts'
-import {
-  APPLY_STROKE_MODE,
-  FILL_DIRECTION,
-  FONT_WEIGHT,
-  HORIZONTAL_ALIGNMENT,
-  SORT_ORDER,
-  VERTICAL_ALIGNMENT,
-} from '../model/enums.ts'
-import { FONTS } from '../model/fonts.ts'
-import { resolveProps } from '../model/defaults.ts'
-import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
-import type {
-  Color3,
-  ColorKeypoint,
-  ModifierClass,
-  ModifierProps,
-  NodeId,
-  NumberKeypoint,
-  Props,
-  UDim,
-  UDim2,
-  UiDocument,
-  UiNode,
-  Vector2,
-} from '../model/types.ts'
+import { FONT_WEIGHT } from '../model/enums.ts'
+import type { UiDocument } from '../model/types.ts'
+import { type ExportInstance, exportTree, type Property } from './instances.ts'
 
-// Turns a document into a .rbxmx file: Roblox's XML model format, version 4.
-// Reference: https://dom.rojo.space/xml.html and docs/reference/defaults.rbxmx.
-//
-// Like Studio, it writes every supported property in full, with defaults
-// filled in, instead of leaving any out. So the file never depends on what
-// Roblox assumes for a missing property.
-
-// Enum values are written as numbers ("tokens"). Enum.ZIndexBehavior.Sibling = 1:
-// children draw above their parent, which is how the canvas draws them too.
-const Z_INDEX_BEHAVIOR_SIBLING = 1
+// Writes a document as a .rbxmx file: Roblox's XML model format, version 4.
+// Reference: https://dom.rojo.space/xml.html and the Studio files in
+// docs/reference/. Which properties each instance gets is decided in
+// instances.ts; this file only knows how to write them as XML.
 
 // Text can contain characters that mean something in XML, like < and &.
 // Escaping swaps them for codes (&lt; &amp;) so they come back out as text.
@@ -48,230 +18,95 @@ export function escapeXml(text: string): string {
     .replaceAll("'", '&apos;')
 }
 
-// ---------- One XML tag per property type ----------
-// Offsets and whole-number properties are integers in Roblox, so they're rounded.
+// One property as an XML tag, the way Studio writes it.
+function propertyTag({ name, value }: Property): string {
+  const tag = (type: string, inner: string) =>
+    `<${type} name="${name}">${inner}</${type}>`
 
-const string = (name: string, value: string) =>
-  `<string name="${name}">${escapeXml(value)}</string>`
-const bool = (name: string, value: boolean) =>
-  `<bool name="${name}">${value}</bool>`
-const int = (name: string, value: number) =>
-  `<int name="${name}">${Math.round(value)}</int>`
-const float = (name: string, value: number) =>
-  `<float name="${name}">${value}</float>`
-const token = (name: string, value: number) =>
-  `<token name="${name}">${value}</token>`
-const udim = (name: string, v: UDim) =>
-  `<UDim name="${name}"><S>${v.s}</S><O>${Math.round(v.o)}</O></UDim>`
-const udim2 = (name: string, v: UDim2) =>
-  `<UDim2 name="${name}"><XS>${v.xs}</XS><XO>${Math.round(v.xo)}</XO><YS>${v.ys}</YS><YO>${Math.round(v.yo)}</YO></UDim2>`
-const vector2 = (name: string, v: Vector2) =>
-  `<Vector2 name="${name}"><X>${v.x}</X><Y>${v.y}</Y></Vector2>`
-const color3 = (name: string, c: Color3) =>
-  `<Color3 name="${name}"><R>${c.r}</R><G>${c.g}</G><B>${c.b}</B></Color3>`
-// Sequences are written as plain numbers, a group per keypoint, the way
-// Studio does: "time R G B 0" for colors, "time value 0" for numbers. The
-// trailing 0 is the "envelope", a random spread Roblox only uses for
-// particles.
-const colorSequence = (name: string, keypoints: ColorKeypoint[]) =>
-  `<ColorSequence name="${name}">${keypoints
-    .map(({ time, color }) => `${time} ${color.r} ${color.g} ${color.b} 0 `)
-    .join('')}</ColorSequence>`
-const numberSequence = (name: string, keypoints: NumberKeypoint[]) =>
-  `<NumberSequence name="${name}">${keypoints
-    .map(({ time, value }) => `${time} ${value} 0 `)
-    .join('')}</NumberSequence>`
-// An image like "rbxassetid://123", or <null> when there is none. Studio
-// now saves images as <uri> inside a *Content property (ImageContent), not
-// the older Image property with <url>: see docs/reference/image-classes.rbxmx.
-const content = (name: string, uri: string) =>
-  uri
-    ? `<Content name="${name}"><uri>${escapeXml(uri)}</uri></Content>`
-    : `<Content name="${name}"><null></null></Content>`
-
-// A FontFace, written the way Studio does: the family, a weight number and
-// a style. For its default font (Source Sans Pro, regular) Studio also
-// writes a CachedFaceId, the actual font file. It's only a cache Roblox
-// fills in itself, and Studio leaves it out for other fonts (see
-// docs/reference/fonts.rbxmx), so only the default gets one.
-function fontFace(face: Required<Props>['FontFace']): string {
-  const weight = FONT_WEIGHT[face.weight]
-  const cached =
-    face.family === 'SourceSansPro' && face.weight === 'Regular'
-      ? '<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>'
-      : ''
-  return `<Font name="FontFace"><Family><url>${escapeXml(FONTS[face.family].family)}</url></Family><Weight>${weight}</Weight><Style>Normal</Style>${cached}</Font>`
-}
-
-// ---------- Writing the tree ----------
-
-function propertyTags(doc: UiDocument, id: NodeId): string[] {
-  const node = doc.nodes[id]
-  const tags = [string('Name', node.name)]
-
-  if (node.className === 'ScreenGui') {
-    tags.push(token('ZIndexBehavior', Z_INDEX_BEHAVIOR_SIBLING))
-    return tags
+  switch (value.type) {
+    case 'string':
+      return tag('string', escapeXml(value.value))
+    case 'bool':
+    case 'int':
+    case 'float':
+      return tag(value.type, String(value.value))
+    case 'enum':
+      // Enums are written as numbers ("tokens").
+      return tag('token', String(value.token))
+    case 'UDim':
+      return tag('UDim', `<S>${value.value.s}</S><O>${value.value.o}</O>`)
+    case 'UDim2': {
+      const v = value.value
+      return tag(
+        'UDim2',
+        `<XS>${v.xs}</XS><XO>${v.xo}</XO><YS>${v.ys}</YS><YO>${v.yo}</YO>`,
+      )
+    }
+    case 'Vector2':
+      return tag('Vector2', `<X>${value.value.x}</X><Y>${value.value.y}</Y>`)
+    case 'Color3': {
+      const c = value.value
+      return tag('Color3', `<R>${c.r}</R><G>${c.g}</G><B>${c.b}</B>`)
+    }
+    case 'Content':
+      // An image as a <uri>, or <null> when there is none.
+      return tag(
+        'Content',
+        value.value ? `<uri>${escapeXml(value.value)}</uri>` : '<null></null>',
+      )
+    case 'Font': {
+      const cached = value.cachedFaceId
+        ? `<CachedFaceId><url>${escapeXml(value.cachedFaceId)}</url></CachedFaceId>`
+        : ''
+      return tag(
+        'Font',
+        `<Family><url>${escapeXml(value.family)}</url></Family><Weight>${FONT_WEIGHT[value.weight]}</Weight><Style>Normal</Style>${cached}`,
+      )
+    }
+    // Sequences are plain numbers, a group per keypoint, the way Studio
+    // does: "time R G B 0" for colors, "time value 0" for numbers. The
+    // trailing 0 is the "envelope", which Roblox only uses for particles.
+    case 'ColorSequence':
+      return tag(
+        'ColorSequence',
+        value.value
+          .map(
+            ({ time, color }) => `${time} ${color.r} ${color.g} ${color.b} 0 `,
+          )
+          .join(''),
+      )
+    case 'NumberSequence':
+      return tag(
+        'NumberSequence',
+        value.value.map(({ time, value: v }) => `${time} ${v} 0 `).join(''),
+      )
   }
-
-  const p = resolveProps(node)
-  tags.push(
-    vector2('AnchorPoint', p.AnchorPoint),
-    color3('BackgroundColor3', p.BackgroundColor3),
-    float('BackgroundTransparency', p.BackgroundTransparency),
-    int('BorderSizePixel', 0), // the canvas draws no borders yet
-    int('LayoutOrder', p.LayoutOrder),
-    udim2('Position', p.Position),
-    udim2('Size', p.Size),
-    bool('Visible', p.Visible),
-    int('ZIndex', p.ZIndex),
-  )
-
-  if (isTextClass(node.className)) {
-    tags.push(
-      fontFace(p.FontFace),
-      string('Text', p.Text),
-      color3('TextColor3', p.TextColor3),
-      bool('TextScaled', p.TextScaled),
-      float('TextSize', p.TextSize),
-    )
-  }
-
-  if (node.className === 'TextButton' || node.className === 'ImageButton') {
-    tags.push(bool('AutoButtonColor', p.AutoButtonColor))
-  }
-
-  if (node.className === 'TextBox') {
-    tags.push(
-      bool('ClearTextOnFocus', p.ClearTextOnFocus),
-      color3('PlaceholderColor3', p.PlaceholderColor3),
-      string('PlaceholderText', p.PlaceholderText),
-    )
-  }
-
-  if (isImageClass(node.className)) {
-    // A pasted id or link becomes a proper rbxassetid:// URI.
-    tags.push(content('ImageContent', toContentUri(p.Image)))
-  }
-
-  if (node.className === 'ScrollingFrame') {
-    tags.push(
-      udim2('CanvasSize', p.CanvasSize),
-      int('ScrollBarThickness', p.ScrollBarThickness),
-    )
-  }
-
-  return tags
-}
-
-// How each modifier is written: its property tags, from its props with the
-// defaults filled in. Typed so every modifier must have an entry here.
-const MODIFIER_TAGS: {
-  [K in ModifierClass]: (props: Required<ModifierProps[K]>) => string[]
-} = {
-  // Studio now saves a radius per corner. Udimo has one radius for all four.
-  UICorner: ({ CornerRadius }) => [
-    udim('BottomLeftRadius', CornerRadius),
-    udim('BottomRightRadius', CornerRadius),
-    udim('TopLeftRadius', CornerRadius),
-    udim('TopRightRadius', CornerRadius),
-  ],
-  UIStroke: ({ Color, Thickness, Transparency, ApplyStrokeMode }) => [
-    token('ApplyStrokeMode', APPLY_STROKE_MODE[ApplyStrokeMode]),
-    color3('Color', Color),
-    float('Thickness', Thickness),
-    float('Transparency', Transparency),
-  ],
-  UIGradient: ({ Color, Transparency, Rotation }) => [
-    colorSequence('Color', Color),
-    numberSequence('Transparency', Transparency),
-    float('Rotation', Rotation),
-  ],
-  UIPadding: (padding) => [
-    udim('PaddingBottom', padding.PaddingBottom),
-    udim('PaddingLeft', padding.PaddingLeft),
-    udim('PaddingRight', padding.PaddingRight),
-    udim('PaddingTop', padding.PaddingTop),
-  ],
-  UIAspectRatioConstraint: ({ AspectRatio }) => [
-    float('AspectRatio', AspectRatio),
-  ],
-  UIListLayout: (list) => [
-    token('FillDirection', FILL_DIRECTION[list.FillDirection]),
-    token(
-      'HorizontalAlignment',
-      HORIZONTAL_ALIGNMENT[list.HorizontalAlignment],
-    ),
-    udim('Padding', list.Padding),
-    token('SortOrder', SORT_ORDER[list.SortOrder]),
-    token('VerticalAlignment', VERTICAL_ALIGNMENT[list.VerticalAlignment]),
-  ],
-  UIGridLayout: (grid) => [
-    udim2('CellPadding', grid.CellPadding),
-    udim2('CellSize', grid.CellSize),
-    token('FillDirection', FILL_DIRECTION[grid.FillDirection]),
-    int('FillDirectionMaxCells', grid.FillDirectionMaxCells),
-    token(
-      'HorizontalAlignment',
-      HORIZONTAL_ALIGNMENT[grid.HorizontalAlignment],
-    ),
-    token('SortOrder', SORT_ORDER[grid.SortOrder]),
-    token('VerticalAlignment', VERTICAL_ALIGNMENT[grid.VerticalAlignment]),
-  ],
-}
-
-// An element's modifiers, as the child instances Roblox expects.
-function modifierItems(node: UiNode): { className: string; tags: string[] }[] {
-  const items: { className: string; tags: string[] }[] = []
-  for (const modifier of MODIFIER_CLASSES) {
-    const props = resolveModifier(node, modifier)
-    if (!props) continue
-    // TypeScript can't follow that `props` belongs to this same `modifier`
-    // inside a loop, so the lookup is widened by hand.
-    const tagsFor = MODIFIER_TAGS[modifier] as (p: typeof props) => string[]
-    items.push({
-      className: modifier,
-      tags: [string('Name', modifier), ...tagsFor(props)],
-    })
-  }
-  return items
 }
 
 export function documentToRbxmx(doc: UiDocument): string {
   const lines: string[] = ['<roblox version="4">']
   let nextReferent = 0
 
-  // Writes one <Item> with its properties, then whatever goes inside it.
+  // Writes one <Item> with its properties, then its children inside it.
   // Tabs show the nesting.
-  function writeItem(
-    className: string,
-    tags: string[],
-    depth: number,
-    writeInside: () => void = () => {},
-  ) {
+  function writeItem(instance: ExportInstance, depth: number) {
     const tab = '\t'.repeat(depth)
     // A referent is a unique label for each instance in the file.
     const referent = `RBX${nextReferent++}`
-    lines.push(`${tab}<Item class="${className}" referent="${referent}">`)
+    lines.push(
+      `${tab}<Item class="${instance.className}" referent="${referent}">`,
+    )
     lines.push(`${tab}\t<Properties>`)
-    for (const tag of tags) lines.push(`${tab}\t\t${tag}`)
+    for (const property of instance.properties) {
+      if (property.only === 'luau') continue
+      lines.push(`${tab}\t\t${propertyTag(property)}`)
+    }
     lines.push(`${tab}\t</Properties>`)
-    writeInside()
+    for (const child of instance.children) writeItem(child, depth + 1)
     lines.push(`${tab}</Item>`)
   }
 
-  // An element, then its modifiers and its children inside it.
-  function writeNode(id: NodeId, depth: number) {
-    const node = doc.nodes[id]
-    writeItem(node.className, propertyTags(doc, id), depth, () => {
-      for (const item of modifierItems(node)) {
-        writeItem(item.className, item.tags, depth + 1)
-      }
-      for (const childId of node.children) writeNode(childId, depth + 1)
-    })
-  }
-
-  writeNode(doc.rootId, 1)
+  writeItem(exportTree(doc), 1)
   lines.push('</roblox>')
   return lines.join('\n') + '\n'
 }

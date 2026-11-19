@@ -2,6 +2,8 @@
 // ("Vertical"); the .rbxmx file stores the number ("token"), as Roblox does.
 // Each table maps name -> number, matching Studio's own files.
 
+// How siblings stack. Sibling: children draw above their parent.
+export const Z_INDEX_BEHAVIOR = { Global: 0, Sibling: 1 } as const
 export const FILL_DIRECTION = { Horizontal: 0, Vertical: 1 } as const
 export const HORIZONTAL_ALIGNMENT = { Center: 0, Left: 1, Right: 2 } as const
 export const VERTICAL_ALIGNMENT = { Center: 0, Top: 1, Bottom: 2 } as const

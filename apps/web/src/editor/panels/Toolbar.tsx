@@ -1,4 +1,5 @@
-import { type ChangeEvent, useRef } from 'react'
+import { type ChangeEvent, useRef, useState } from 'react'
+import { documentToLuau } from '../../export/luau.ts'
 import { documentToRbxmx } from '../../export/rbxmx.ts'
 import { downloadTextFile } from '../../lib/download.ts'
 import { createEmptyDocument } from '../../model/document.ts'
@@ -89,6 +90,21 @@ export function Toolbar() {
   // A hidden file picker. The Open button clicks it, because a real
   // <input type="file"> can't be styled like the other buttons.
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // True for a moment after copying, to show "Copied!" on the button.
+  const [copied, setCopied] = useState(false)
+
+  async function copyLuau() {
+    const script = documentToLuau(useDocumentStore.getState().document)
+    try {
+      // The clipboard API needs a secure page (https or localhost), which
+      // both the dev server and Vercel are.
+      await navigator.clipboard.writeText(script)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      window.alert('Couldn’t copy to the clipboard. Try the .rbxmx download.')
+    }
+  }
 
   function onFilePicked(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -155,13 +171,25 @@ export function Toolbar() {
           </button>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={downloadRbxmx}
-        className="rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-      >
-        Download .rbxmx
-      </button>
+      {/* The two ways into Studio: a script for the Command Bar, or a file. */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={copyLuau}
+          title="Copy a script that builds this UI. Paste it into Studio's Command Bar (View > Command Bar) and press Enter."
+          className="w-28 rounded px-3 py-1 text-sm text-zinc-200 ring-1 ring-zinc-700 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-blue-500"
+        >
+          {copied ? 'Copied!' : 'Copy Luau'}
+        </button>
+        <button
+          type="button"
+          onClick={downloadRbxmx}
+          title="Download a file for Studio: right-click StarterGui > Insert from File"
+          className="rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+        >
+          Download .rbxmx
+        </button>
+      </div>
     </header>
   )
 }
