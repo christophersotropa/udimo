@@ -75,7 +75,8 @@ function resizeForFrame(
 }
 
 // What wrapping the selection would do, or null if it can't be wrapped:
-// nothing selected, or elements with different parents.
+// nothing selected, elements with different parents, or a parent with a
+// layout.
 export function planWrap(
   doc: UiDocument,
   selection: NodeId[],
@@ -86,6 +87,10 @@ export function planWrap(
   const parentId = doc.nodes[ids[0]].parentId
   if (parentId === null) return null
   if (ids.some((id) => doc.nodes[id].parentId !== parentId)) return null
+  // Inside a UIListLayout or UIGridLayout, the layout would move the new
+  // Frame, so "nothing moves on screen" can't be kept. Not supported (yet).
+  const { modifiers } = doc.nodes[parentId]
+  if (modifiers?.UIListLayout || modifiers?.UIGridLayout) return null
 
   // The area the elements are laid out in now: the parent, its scrollable
   // canvas, minus padding (see contentArea). Positions here are measured

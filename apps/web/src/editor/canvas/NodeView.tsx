@@ -3,9 +3,11 @@ import { color3ToCss } from '../../lib/color.ts'
 import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
+import { useShallow } from 'zustand/react/shallow'
 import {
   absoluteBox,
   cornerRadiusPixels,
+  layoutSlot,
   visibleFraction,
 } from '../../model/layout.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
@@ -36,16 +38,22 @@ export function NodeView({ id }: { id: NodeId }) {
       ? cornerRadiusPixels(state.document, id, SCREEN)
       : 0,
   )
-  // Same for the size a UIAspectRatioConstraint forces (null without one).
-  const aspectWidth = useDocumentStore((state) =>
-    state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint
-      ? absoluteBox(state.document, id, SCREEN).width
-      : null,
+  // The size a UIAspectRatioConstraint forces, and the box a parent's
+  // layout gives this element (each null if there's none). useShallow lets
+  // a selector return a small object: the component only re-renders when
+  // one of its values changes, not every time a new, identical object is
+  // made.
+  const aspectSize = useDocumentStore(
+    useShallow((state) => {
+      if (!state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint) {
+        return null
+      }
+      const { width, height } = absoluteBox(state.document, id, SCREEN)
+      return { width, height }
+    }),
   )
-  const aspectHeight = useDocumentStore((state) =>
-    state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint
-      ? absoluteBox(state.document, id, SCREEN).height
-      : null,
+  const slot = useDocumentStore(
+    useShallow((state) => layoutSlot(state.document, id, SCREEN)),
   )
   if (!node) return null
 
@@ -58,13 +66,7 @@ export function NodeView({ id }: { id: NodeId }) {
     return <div className="absolute inset-0">{children}</div>
   }
 
-  const pixels = {
-    cornerRadius,
-    aspectSize:
-      aspectWidth !== null && aspectHeight !== null
-        ? { width: aspectWidth, height: aspectHeight }
-        : null,
-  }
+  const pixels = { cornerRadius, aspectSize, slot }
   // An outline is drawn outside the element without changing its size,
   // so selecting never shifts the layout.
   const style = isSelected

@@ -316,3 +316,16 @@ describe('copies keep their modifiers', () => {
     expect(doc().nodes[selection()[0]].modifiers?.UICorner).toBeDefined()
   })
 })
+
+describe('elements placed by a layout', () => {
+  it('are skipped by nudging, since the layout ignores Position', () => {
+    const { store, doc, panel, button, coins } = setup()
+    store.getState().addModifier(panel, 'UIListLayout')
+    store.getState().select(button)
+    store.getState().select(coins, true)
+
+    nudgeSelection(store, 5, 0)
+    expect(doc().nodes[button].props.Position).toBeUndefined()
+    expect(doc().nodes[coins].props.Position?.xo).toBe(15) // not laid out
+  })
+})

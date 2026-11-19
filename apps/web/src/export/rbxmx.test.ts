@@ -10,6 +10,8 @@ import imageReference from '../../../../docs/reference/image-classes.rbxmx?raw'
 import modifierReference from '../../../../docs/reference/corner-stroke.rbxmx?raw'
 // ScreenGui > Frame > UIGradient, UIPadding and UIAspectRatioConstraint.
 import layoutModifierReference from '../../../../docs/reference/gradient-padding-aspect.rbxmx?raw'
+// ScreenGui > Frame > UIListLayout, and Frame > UIGridLayout.
+import layoutReference from '../../../../docs/reference/list-grid-layouts.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -84,6 +86,16 @@ function layoutModifierDocument() {
   return store.getState().document
 }
 
+// Two Frames, one with a default UIListLayout, one with a UIGridLayout.
+function layoutDocument() {
+  const store = createDocumentStore()
+  const { addNode, addModifier } = store.getState()
+  const rootId = store.getState().document.rootId
+  addModifier(addNode(rootId, 'Frame'), 'UIListLayout')
+  addModifier(addNode(rootId, 'Frame'), 'UIGridLayout')
+  return store.getState().document
+}
+
 // The golden test: for each class, every property we write must match, value
 // for value, what Studio wrote in the reference file.
 function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
@@ -124,6 +136,32 @@ describe('documentToRbxmx', () => {
     documentToRbxmx(layoutModifierDocument()),
     ['UIGradient', 'UIPadding', 'UIAspectRatioConstraint'],
   )
+
+  goldenTest(layoutReference, documentToRbxmx(layoutDocument()), [
+    'UIListLayout',
+    'UIGridLayout',
+  ])
+
+  it('writes layout options as enum numbers', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const frame = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(frame, 'UIListLayout')
+    updateModifier(frame, 'UIListLayout', {
+      FillDirection: 'Horizontal',
+      HorizontalAlignment: 'Center',
+      VerticalAlignment: 'Bottom',
+      SortOrder: 'Name',
+    })
+    const list = propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'UIListLayout',
+    )
+    expect(list.get('FillDirection')).toBe('token:0')
+    expect(list.get('HorizontalAlignment')).toBe('token:0')
+    expect(list.get('VerticalAlignment')).toBe('token:2')
+    expect(list.get('SortOrder')).toBe('token:0')
+  })
 
   it('writes gradient sequences as Studio does', () => {
     const store = createDocumentStore()

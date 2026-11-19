@@ -1,3 +1,10 @@
+import type {
+  FillDirection,
+  HorizontalAlignment,
+  SortOrder,
+  VerticalAlignment,
+} from './enums.ts'
+
 // The shape of an Udimo document. Plain TypeScript, no React:
 // the canvas, the exporters and (later) the AI all read and write these types.
 
@@ -118,6 +125,28 @@ export type ModifierProps = {
     // Width divided by height. The element becomes the biggest box with this
     // shape that fits inside its Size.
     AspectRatio?: number
+  }
+  // Layouts place the element's children for you, ignoring their Position.
+  // An element has at most one layout.
+  UIListLayout: {
+    // Children one after another, in a column (Vertical) or a row.
+    FillDirection?: FillDirection
+    HorizontalAlignment?: HorizontalAlignment
+    VerticalAlignment?: VerticalAlignment
+    SortOrder?: SortOrder
+    Padding?: UDim // the gap between children
+  }
+  UIGridLayout: {
+    // Children in a grid of equal cells, filling rows (Horizontal) or
+    // columns first. Each child takes the cell's size.
+    CellSize?: UDim2
+    CellPadding?: UDim2 // the gaps between cells
+    FillDirection?: FillDirection
+    // Most cells per row (or column); 0 means as many as fit.
+    FillDirectionMaxCells?: number
+    HorizontalAlignment?: HorizontalAlignment
+    VerticalAlignment?: VerticalAlignment
+    SortOrder?: SortOrder
   }
 }
 export type ModifierClass = keyof ModifierProps

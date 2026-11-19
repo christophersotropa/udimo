@@ -68,3 +68,12 @@ export function UnlockIcon({ className }: IconProps) {
     </Icon>
   )
 }
+
+// A small diamond, for modifiers in the Explorer.
+export function ModifierIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M8 3l5 5-5 5-5-5z" />
+    </Icon>
+  )
+}

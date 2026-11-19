@@ -14,7 +14,8 @@ import {
   dropPlaceAt,
 } from '../../model/drop.ts'
 import { ancestorIds } from '../../model/tree.ts'
-import type { NodeId } from '../../model/types.ts'
+import { MODIFIER_CLASSES } from '../../model/modifiers.ts'
+import type { ModifierClass, NodeId } from '../../model/types.ts'
 import {
   moveNodesTo,
   toggleLocked,
@@ -26,6 +27,7 @@ import {
   EyeIcon,
   EyeOffIcon,
   LockIcon,
+  ModifierIcon,
   UnlockIcon,
 } from './icons.tsx'
 import { Panel } from './Panel.tsx'
@@ -178,7 +180,9 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   const isRoot = node.parentId === null
   const ownHidden = !resolveProps(node).Visible
   const hidden = parentHidden || ownHidden
-  const hasChildren = node.children.length > 0
+  // Modifiers are listed first, the way Studio lists them as children.
+  const modifiers = MODIFIER_CLASSES.filter((m) => node.modifiers?.[m])
+  const hasChildren = node.children.length > 0 || modifiers.length > 0
   const open = !tree.collapsed.has(id)
   const dropPlace = tree.dropTarget?.id === id ? tree.dropTarget.place : null
 
@@ -320,6 +324,14 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
 
       {hasChildren && open && (
         <ul>
+          {modifiers.map((modifier) => (
+            <ModifierRow
+              key={modifier}
+              modifier={modifier}
+              depth={depth + 1}
+              onSelect={() => useDocumentStore.getState().select(id)}
+            />
+          ))}
           {node.children.map((childId) => (
             <TreeRow
               key={childId}
@@ -331,6 +343,34 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           ))}
         </ul>
       )}
+    </li>
+  )
+}
+
+// A modifier listed under its element. Modifiers live on the element in
+// Udimo (and become real children in the export), so clicking one selects
+// the element, where the Properties panel shows the modifier's fields.
+function ModifierRow({
+  modifier,
+  depth,
+  onSelect,
+}: {
+  modifier: ModifierClass
+  depth: number
+  onSelect: () => void
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        title="A modifier: edit it in the element's Properties"
+        style={{ paddingLeft: depth * INDENT + 18 }}
+        className="flex w-full items-center gap-1.5 rounded py-0.5 pr-1 text-left text-xs text-zinc-400 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-blue-500"
+      >
+        <ModifierIcon />
+        {modifier}
+      </button>
     </li>
   )
 }

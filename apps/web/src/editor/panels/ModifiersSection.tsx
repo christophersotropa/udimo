@@ -1,5 +1,16 @@
 import { withEnd } from '../../lib/sequence.ts'
+import {
+  enumNames,
+  FILL_DIRECTION,
+  HORIZONTAL_ALIGNMENT,
+  SORT_ORDER,
+  VERTICAL_ALIGNMENT,
+} from '../../model/enums.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
+import type {
+  HorizontalAlignment,
+  VerticalAlignment,
+} from '../../model/enums.ts'
 import type { ModifierClass, NodeId, UDim } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
@@ -8,6 +19,8 @@ import {
   NumberField,
   Row,
   Section,
+  SelectField,
+  UDim2Rows,
 } from './fields.tsx'
 
 // The Modifiers part of the Properties panel: a checkbox per modifier, and
@@ -24,6 +37,8 @@ export function ModifiersSection({ id }: { id: NodeId }) {
   const gradient = resolveModifier(node, 'UIGradient')
   const padding = resolveModifier(node, 'UIPadding')
   const aspect = resolveModifier(node, 'UIAspectRatioConstraint')
+  const list = resolveModifier(node, 'UIListLayout')
+  const grid = resolveModifier(node, 'UIGridLayout')
 
   // The on/off checkbox for one modifier.
   const toggle = (modifier: ModifierClass, on: boolean) => (
@@ -161,7 +176,134 @@ export function ModifiersSection({ id }: { id: NodeId }) {
           />
         </Row>
       )}
+
+      {/* Ticking one layout unticks the other: an element has one layout. */}
+      {toggle('UIListLayout', list !== null)}
+      {list && (
+        <>
+          <Row label="Direction">
+            <SelectField
+              label="UIListLayout FillDirection"
+              value={list.FillDirection}
+              options={enumNames(FILL_DIRECTION)}
+              onChange={(FillDirection) =>
+                update(id, 'UIListLayout', { FillDirection })
+              }
+            />
+          </Row>
+          <AlignmentRows
+            horizontal={list.HorizontalAlignment}
+            vertical={list.VerticalAlignment}
+            onChange={(change) => update(id, 'UIListLayout', change)}
+          />
+          <Row label="Sort by">
+            <SelectField
+              label="UIListLayout SortOrder"
+              value={list.SortOrder}
+              options={enumNames(SORT_ORDER)}
+              onChange={(SortOrder) =>
+                update(id, 'UIListLayout', { SortOrder })
+              }
+            />
+          </Row>
+          <UDimRow
+            label="Gap"
+            value={list.Padding}
+            onChange={(Padding) => update(id, 'UIListLayout', { Padding })}
+          />
+        </>
+      )}
+
+      {toggle('UIGridLayout', grid !== null)}
+      {grid && (
+        <>
+          <UDim2Rows
+            name="CellSize"
+            value={grid.CellSize}
+            onChange={(CellSize) => update(id, 'UIGridLayout', { CellSize })}
+          />
+          <UDim2Rows
+            name="CellPadding"
+            value={grid.CellPadding}
+            onChange={(CellPadding) =>
+              update(id, 'UIGridLayout', { CellPadding })
+            }
+          />
+          <Row label="Fill">
+            <SelectField
+              label="UIGridLayout FillDirection"
+              value={grid.FillDirection}
+              options={enumNames(FILL_DIRECTION)}
+              onChange={(FillDirection) =>
+                update(id, 'UIGridLayout', { FillDirection })
+              }
+            />
+          </Row>
+          <Row label="Max per line">
+            {/* 0 means as many as fit. */}
+            <NumberField
+              label="UIGridLayout FillDirectionMaxCells"
+              integer
+              min={0}
+              value={grid.FillDirectionMaxCells}
+              onChange={(FillDirectionMaxCells) =>
+                update(id, 'UIGridLayout', { FillDirectionMaxCells })
+              }
+            />
+          </Row>
+          <AlignmentRows
+            horizontal={grid.HorizontalAlignment}
+            vertical={grid.VerticalAlignment}
+            onChange={(change) => update(id, 'UIGridLayout', change)}
+          />
+          <Row label="Sort by">
+            <SelectField
+              label="UIGridLayout SortOrder"
+              value={grid.SortOrder}
+              options={enumNames(SORT_ORDER)}
+              onChange={(SortOrder) =>
+                update(id, 'UIGridLayout', { SortOrder })
+              }
+            />
+          </Row>
+        </>
+      )}
     </Section>
+  )
+}
+
+// A layout's horizontal and vertical alignment dropdowns.
+function AlignmentRows({
+  horizontal,
+  vertical,
+  onChange,
+}: {
+  horizontal: HorizontalAlignment
+  vertical: VerticalAlignment
+  onChange: (change: {
+    HorizontalAlignment?: HorizontalAlignment
+    VerticalAlignment?: VerticalAlignment
+  }) => void
+}) {
+  return (
+    <>
+      <Row label="Align X">
+        <SelectField
+          label="HorizontalAlignment"
+          value={horizontal}
+          options={enumNames(HORIZONTAL_ALIGNMENT)}
+          onChange={(HorizontalAlignment) => onChange({ HorizontalAlignment })}
+        />
+      </Row>
+      <Row label="Align Y">
+        <SelectField
+          label="VerticalAlignment"
+          value={vertical}
+          options={enumNames(VERTICAL_ALIGNMENT)}
+          onChange={(VerticalAlignment) => onChange({ VerticalAlignment })}
+        />
+      </Row>
+    </>
   )
 }
 

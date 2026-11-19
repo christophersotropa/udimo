@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createId } from '../lib/ids.ts'
 import { createEmptyDocument } from '../model/document.ts'
+import { LAYOUT_MODIFIERS } from '../model/modifiers.ts'
 import { isInside } from '../model/tree.ts'
 import type {
   ClassName,
@@ -259,7 +260,13 @@ export function createDocumentStore(
             assertNotRoot(doc, id, 'add a modifier to')
             const node = getNode(doc, id)
             node.modifiers ??= {} // ??= : set it only if it's missing
-            node.modifiers[modifier] ??= {}
+            if (node.modifiers[modifier]) return // already on
+            // Only one layout per element: a new one replaces the old.
+            if (LAYOUT_MODIFIERS.includes(modifier)) {
+              for (const layout of LAYOUT_MODIFIERS)
+                delete node.modifiers[layout]
+            }
+            node.modifiers[modifier] = {}
           })
         },
 

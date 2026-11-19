@@ -1,6 +1,7 @@
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import type { NodeId, Props, UDim2 } from '../../model/types.ts'
+import { isLaidOut } from '../../model/layout.ts'
+import type { NodeId, Props } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import {
   CheckboxField,
@@ -9,6 +10,7 @@ import {
   Row,
   Section,
   TextField,
+  UDim2Rows,
 } from './fields.tsx'
 import { ModifiersSection } from './ModifiersSection.tsx'
 import { Panel } from './Panel.tsx'
@@ -36,52 +38,16 @@ export function PropertiesPanel() {
   )
 }
 
-// Position and Size: Scale and Offset for X, then for Y, like Studio shows them.
-function UDim2Rows({
-  name,
-  value,
-  onChange,
-}: {
-  name: string
-  value: UDim2
-  onChange: (value: UDim2) => void
-}) {
-  return (
-    <>
-      <Row label={`${name} X`}>
-        <NumberField
-          label={`${name} X Scale`}
-          value={value.xs}
-          onChange={(xs) => onChange({ ...value, xs })}
-        />
-        <NumberField
-          label={`${name} X Offset`}
-          integer
-          value={value.xo}
-          onChange={(xo) => onChange({ ...value, xo })}
-        />
-      </Row>
-      <Row label={`${name} Y`}>
-        <NumberField
-          label={`${name} Y Scale`}
-          value={value.ys}
-          onChange={(ys) => onChange({ ...value, ys })}
-        />
-        <NumberField
-          label={`${name} Y Offset`}
-          integer
-          value={value.yo}
-          onChange={(yo) => onChange({ ...value, yo })}
-        />
-      </Row>
-    </>
-  )
-}
-
 function NodeProperties({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const renameNode = useDocumentStore((state) => state.renameNode)
   const updateProps = useDocumentStore((state) => state.updateProps)
+  // Which layout the parent uses, if this element is placed by one.
+  const parentLayout = useDocumentStore((state) => {
+    if (!isLaidOut(state.document, id)) return null
+    const parent = state.document.nodes[state.document.nodes[id].parentId!]
+    return parent.modifiers?.UIListLayout ? 'UIListLayout' : 'UIGridLayout'
+  })
   if (!node) return null
 
   // Unset properties show their Roblox defaults. Editing one saves it.
@@ -104,6 +70,13 @@ function NodeProperties({ id }: { id: NodeId }) {
       </Section>
 
       <Section title="Layout">
+        {parentLayout && (
+          <p className="text-[11px] text-amber-300/80">
+            The parent's {parentLayout} places this element, so Position
+            {parentLayout === 'UIGridLayout' ? ' and Size are' : ' is'} ignored.
+            Reorder it in the Explorer or with LayoutOrder.
+          </p>
+        )}
         <p className="grid grid-cols-[96px_1fr_1fr] gap-1 text-[10px] text-zinc-500">
           <span />
           <span>Scale</span>

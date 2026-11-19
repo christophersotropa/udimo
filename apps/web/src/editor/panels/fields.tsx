@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import { color3ToHex, hexToColor3 } from '../../lib/color.ts'
 import { clamp, formatNumber, parseNumberInput } from '../../lib/numbers.ts'
-import type { Color3 } from '../../model/types.ts'
+import type { Color3, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 
 // Small building blocks for the Properties panel.
@@ -168,5 +168,75 @@ export function ColorField({
       />
       <span className="font-mono text-xs text-zinc-400">{hex}</span>
     </label>
+  )
+}
+
+// A dropdown for one of a Roblox enum's options, like FillDirection.
+export function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: readonly T[]
+  onChange: (value: T) => void
+}) {
+  return (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+      className="min-w-0 flex-1 rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-100 ring-1 ring-zinc-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+// Position and Size: Scale and Offset for X, then for Y, like Studio shows them.
+export function UDim2Rows({
+  name,
+  value,
+  onChange,
+}: {
+  name: string
+  value: UDim2
+  onChange: (value: UDim2) => void
+}) {
+  return (
+    <>
+      <Row label={`${name} X`}>
+        <NumberField
+          label={`${name} X Scale`}
+          value={value.xs}
+          onChange={(xs) => onChange({ ...value, xs })}
+        />
+        <NumberField
+          label={`${name} X Offset`}
+          integer
+          value={value.xo}
+          onChange={(xo) => onChange({ ...value, xo })}
+        />
+      </Row>
+      <Row label={`${name} Y`}>
+        <NumberField
+          label={`${name} Y Scale`}
+          value={value.ys}
+          onChange={(ys) => onChange({ ...value, ys })}
+        />
+        <NumberField
+          label={`${name} Y Offset`}
+          integer
+          value={value.yo}
+          onChange={(yo) => onChange({ ...value, yo })}
+        />
+      </Row>
+    </>
   )
 }
