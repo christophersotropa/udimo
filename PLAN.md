@@ -30,7 +30,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 - [x] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
 - [x] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
 - [x] Snapping and alignment guides against siblings and the parent
-- [ ] Insert palette (click or drag onto the canvas)
+- [x] Insert palette (click or drag onto the canvas)
 
 **Panels**
 

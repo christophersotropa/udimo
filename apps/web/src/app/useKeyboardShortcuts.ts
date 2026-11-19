@@ -7,7 +7,7 @@ import {
   wrapSelectionInFrame,
 } from '../store/commands.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
-import { screenOf, useViewStore } from '../store/viewStore.ts'
+import { screenOf, type Tool, useViewStore } from '../store/viewStore.ts'
 
 // Arrow key -> direction. Shift makes each step bigger.
 const ARROWS: Record<string, [number, number]> = {
@@ -15,6 +15,15 @@ const ARROWS: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
   ArrowUp: [0, -1],
   ArrowDown: [0, 1],
+}
+// Single keys that pick a tool.
+const TOOL_KEYS: Record<string, Tool> = {
+  v: 'select',
+  f: 'frame',
+  t: 'text',
+  b: 'button',
+  i: 'image',
+  h: 'hand',
 }
 const NUDGE_SMALL = 1
 const NUDGE_BIG = 10
@@ -30,7 +39,7 @@ const NUDGE_BIG = 10
 //   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
 //   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
-//   Tools          V select, H hand (pan)
+//   Tools          V select, F frame, T text, B button, I image, H hand
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
 export function useKeyboardShortcuts() {
@@ -90,14 +99,20 @@ export function useKeyboardShortcuts() {
         const [x, y] = ARROWS[event.key]
         const step = event.shiftKey ? NUDGE_BIG : NUDGE_SMALL
         nudgeSelection(store, x * step, y * step)
-      } else if (!command && !event.shiftKey && (key === 'v' || key === 'h')) {
-        useViewStore.getState().setTool(key === 'v' ? 'select' : 'hand')
+      } else if (!command && !event.shiftKey && Object.hasOwn(TOOL_KEYS, key)) {
+        useViewStore.getState().setTool(TOOL_KEYS[key])
       } else if (key === 'f2') {
         const { selection } = store.getState()
         if (selection.length === 1) {
           event.preventDefault()
           useViewStore.getState().setRenamingId(selection[0])
         }
+      } else if (
+        key === 'escape' &&
+        useViewStore.getState().tool !== 'select'
+      ) {
+        // Escape first puts down a tool, then (pressed again) deselects.
+        useViewStore.getState().setTool('select')
       } else if (key === 'escape') {
         store.getState().clearSelection()
       }
