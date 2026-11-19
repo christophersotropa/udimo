@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { color3ToCss } from '../../lib/color.ts'
 import { boxCss } from '../../lib/udim2.ts'
+import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import type { UiNode } from '../../model/types.ts'
 
@@ -22,7 +23,7 @@ export function nodeStyle(node: UiNode): CSSProperties {
     pointerEvents: node.locked ? 'none' : 'auto',
   }
 
-  if (node.className === 'TextLabel') {
+  if (isTextClass(node.className)) {
     Object.assign(style, {
       // Roblox centers text both ways by default and doesn't wrap it.
       display: p.Visible ? 'flex' : 'none',

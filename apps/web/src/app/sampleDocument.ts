@@ -43,7 +43,7 @@ export function createSampleDocument(): UiDocument {
   renameNode(title, 'Title')
 
   // Scale + Offset: pinned 24 pixels in from the window's bottom-right corner.
-  const buy = addNode(shopWindow, 'TextLabel', {
+  const buy = addNode(shopWindow, 'TextButton', {
     AnchorPoint: { x: 1, y: 1 },
     Position: { xs: 1, xo: -24, ys: 1, yo: -24 },
     Size: { xs: 0, xo: 200, ys: 0, yo: 64 },

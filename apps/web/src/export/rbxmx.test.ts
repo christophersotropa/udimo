@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 // A real file saved from Roblox Studio: a ScreenGui > Frame > TextLabel with
 // every property left at its default. "?raw" makes Vite load it as a string.
 import reference from '../../../../docs/reference/defaults.rbxmx?raw'
+// ScreenGui > TextButton and TextBox, side by side, all defaults.
+import textReference from '../../../../docs/reference/text-classes.rbxmx?raw'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -33,19 +35,42 @@ function defaultDocument() {
   return store.getState().document
 }
 
-describe('documentToRbxmx', () => {
-  // The golden test: everything we write must match what Studio wrote.
-  describe.each(['ScreenGui', 'Frame', 'TextLabel'])(
+// ScreenGui > TextButton and TextBox, all defaults, like text-classes.rbxmx.
+function textDocument() {
+  const store = createDocumentStore()
+  const { addNode } = store.getState()
+  const rootId = store.getState().document.rootId
+  addNode(rootId, 'TextButton')
+  addNode(rootId, 'TextBox')
+  return store.getState().document
+}
+
+// The golden test: for each class, every property we write must match, value
+// for value, what Studio wrote in the reference file.
+function goldenTest(studioXml: string, ourXml: string, classNames: string[]) {
+  describe.each(classNames)(
     'matches the Studio reference file for a default %s',
     (className) => {
-      const ours = propertiesOf(documentToRbxmx(defaultDocument()), className)
-      const studio = propertiesOf(reference, className)
+      const ours = propertiesOf(ourXml, className)
+      const studio = propertiesOf(studioXml, className)
 
       it.each([...ours])('%s', (name, value) => {
         expect(studio.get(name)).toBe(value)
       })
     },
   )
+}
+
+describe('documentToRbxmx', () => {
+  goldenTest(reference, documentToRbxmx(defaultDocument()), [
+    'ScreenGui',
+    'Frame',
+    'TextLabel',
+  ])
+  goldenTest(textReference, documentToRbxmx(textDocument()), [
+    'TextButton',
+    'TextBox',
+  ])
 
   it('nests children inside their parent', () => {
     const xml = documentToRbxmx(defaultDocument())
@@ -86,6 +111,27 @@ describe('documentToRbxmx', () => {
 
     store.getState().setLocked(id, true)
     expect(documentToRbxmx(store.getState().document)).toBe(unlocked)
+  })
+
+  it('writes the TextButton and TextBox settings you change', () => {
+    const store = createDocumentStore()
+    const { addNode } = store.getState()
+    const rootId = store.getState().document.rootId
+    addNode(rootId, 'TextButton', { AutoButtonColor: false })
+    addNode(rootId, 'TextBox', {
+      Text: '',
+      PlaceholderText: 'Code <here>',
+      ClearTextOnFocus: false,
+    })
+    const xml = documentToRbxmx(store.getState().document)
+
+    expect(propertiesOf(xml, 'TextButton').get('AutoButtonColor')).toBe(
+      'bool:false',
+    )
+    const box = propertiesOf(xml, 'TextBox')
+    expect(box.get('PlaceholderText')).toBe('string:Code&lt;here&gt;') // spaces stripped by propertiesOf
+    expect(box.get('ClearTextOnFocus')).toBe('bool:false')
+    expect(box.get('Text')).toBe('string:')
   })
 
   it('escapes names and text that contain XML characters', () => {

@@ -18,13 +18,21 @@ const BASE_DEFAULTS: Required<Props> = {
   TextColor3: { r: 0, g: 0, b: 0 }, // black
   TextSize: 14,
   TextScaled: false,
+  AutoButtonColor: true,
+  PlaceholderText: '',
+  PlaceholderColor3: { r: 0.5, g: 0.5, b: 0.5 }, // mid grey
+  ClearTextOnFocus: true,
   Image: '',
 }
 
-// Where a class differs from the base. Only Frame and TextLabel are checked
-// against the reference file so far; other classes use the base for now.
+// Where a class differs from the base. Checked against the Studio reference
+// files so far: Frame and TextLabel (defaults.rbxmx), TextButton and TextBox
+// (text-classes.rbxmx). Image classes and ScrollingFrame come in build 23.
+const TEXT_SIZE = { xs: 0, xo: 200, ys: 0, yo: 50 }
 const CLASS_DEFAULTS: Partial<Record<ClassName, Props>> = {
-  TextLabel: { Size: { xs: 0, xo: 200, ys: 0, yo: 50 } },
+  TextLabel: { Size: TEXT_SIZE },
+  TextButton: { Size: TEXT_SIZE, Text: 'Button' },
+  TextBox: { Size: TEXT_SIZE, Text: 'TextBox' },
 }
 
 // Every supported property's default for one class.

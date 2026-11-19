@@ -93,6 +93,18 @@ function propertyTags(doc: UiDocument, id: NodeId): string[] {
     )
   }
 
+  if (node.className === 'TextButton') {
+    tags.push(bool('AutoButtonColor', p.AutoButtonColor))
+  }
+
+  if (node.className === 'TextBox') {
+    tags.push(
+      bool('ClearTextOnFocus', p.ClearTextOnFocus),
+      color3('PlaceholderColor3', p.PlaceholderColor3),
+      string('PlaceholderText', p.PlaceholderText),
+    )
+  }
+
   if (isImageClass(node.className)) {
     tags.push(content('Image', p.Image))
   }
