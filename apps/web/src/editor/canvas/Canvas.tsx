@@ -2,7 +2,8 @@ import { type CSSProperties, useLayoutEffect, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
-import { CanvasControls } from './CanvasControls.tsx'
+import { DEVICES } from '../../model/screen.ts'
+import { ZoomBar } from './ZoomBar.tsx'
 import { NodeView } from './NodeView.tsx'
 import { SnapGuides } from './SnapGuides.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
@@ -14,6 +15,7 @@ export function Canvas() {
   const areaRef = useRef<HTMLElement>(null)
   const rootId = useDocumentStore((state) => state.document.rootId)
   const screen = useViewStore(screenOf)
+  const device = useViewStore((state) => state.device)
   const view = useViewStore(useShallow(currentView))
   const { handlers, cursor } = useCanvasPointer(view.zoom)
 
@@ -98,11 +100,11 @@ export function Canvas() {
       ref={areaRef}
       {...handlers}
       style={{ cursor }}
-      className="relative min-h-0 min-w-0 touch-none overflow-hidden bg-zinc-950 select-none"
+      className="canvas-dots relative min-h-0 min-w-0 touch-none overflow-hidden select-none"
     >
       {/* This box takes the zoomed size, at the view's position. */}
       <div
-        className="absolute ring-1 ring-zinc-700"
+        className="absolute shadow-2xl ring-1 ring-line"
         style={{
           left: view.x,
           top: view.y,
@@ -110,6 +112,11 @@ export function Canvas() {
           height: screen.height * view.zoom,
         }}
       >
+        {/* The device, its size and the zoom, just above the screen. */}
+        <p className="absolute -top-6 left-0 text-xs whitespace-nowrap text-faint">
+          {DEVICES[device].label} · {screen.width} × {screen.height} ·{' '}
+          {Math.round(view.zoom * 100)}%
+        </p>
         <div
           className="relative overflow-hidden bg-zinc-800"
           style={
@@ -132,7 +139,7 @@ export function Canvas() {
         </div>
       </div>
 
-      <CanvasControls />
+      <ZoomBar />
     </main>
   )
 }

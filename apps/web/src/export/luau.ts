@@ -96,8 +96,11 @@ function propertyTable(properties: Property[]): string[] {
     .map((property) => `\t${property.name} = ${luauValue(property.value)},`)
 }
 
-export function documentToLuau(doc: UiDocument): string {
-  const tree = exportTree(doc)
+export function documentToLuau(
+  doc: UiDocument,
+  options: { resetOnSpawn?: boolean } = {},
+): string {
+  const tree = exportTree(doc, options)
   const name = doc.nodes[doc.rootId].name
   const lines = [
     '-- Made with Udimo.',
