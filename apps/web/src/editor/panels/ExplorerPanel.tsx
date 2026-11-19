@@ -3,6 +3,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -13,7 +14,7 @@ import {
   type DropPlace,
   dropPlaceAt,
 } from '../../model/drop.ts'
-import { ancestorIds } from '../../model/tree.ts'
+import { ancestorIds, filterTree } from '../../model/tree.ts'
 import { MODIFIER_CLASSES } from '../../model/modifiers.ts'
 import type { ModifierClass, NodeId } from '../../model/types.ts'
 import {
@@ -22,14 +23,11 @@ import {
   toggleVisible,
 } from '../../store/commands.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
-import {
-  ChevronIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  ModifierIcon,
-  UnlockIcon,
-} from './icons.tsx'
+import { useViewStore } from '../../store/viewStore.ts'
+import { openMenuFor } from '../menus/openMenu.ts'
+import { IconButton } from '../ui/Button.tsx'
+import { ClassBadge } from './ClassBadge.tsx'
+import { ChevronIcon, EyeOffIcon, LockIcon, PlusIcon } from './icons.tsx'
 import { Panel } from './Panel.tsx'
 
 // How far each level of the tree is indented, in pixels.
@@ -37,10 +35,13 @@ const INDENT = 12
 
 type DropTarget = { id: NodeId; place: DropPlace }
 
-// What every row needs from the panel: folding, and dragging rows around.
-// Bundled into one object so it can be handed down the tree as one prop.
+// What every row needs from the panel: folding, filtering, and dragging
+// rows around. Bundled into one object so it's handed down as one prop.
 type TreeControls = {
   collapsed: ReadonlySet<NodeId>
+  // While filtering: the rows to show (matches and their parents), all
+  // unfolded. null when not filtering.
+  filter: Set<NodeId> | null
   toggleOpen: (id: NodeId) => void
   // Where the dragged rows would land right now, to draw the marker.
   dropTarget: DropTarget | null
@@ -61,6 +62,14 @@ export function ExplorerPanel() {
   // it's React state here, not in the store (and it's never undone or saved).
   const [collapsed, setCollapsed] = useState<ReadonlySet<NodeId>>(new Set())
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null)
+  const [query, setQuery] = useState('')
+  // Only read the whole document while filtering: otherwise every edit
+  // would redraw the whole tree.
+  const filterDoc = useDocumentStore((state) => (query ? state.document : null))
+  const filter = useMemo(
+    () => (filterDoc ? filterTree(filterDoc, query) : null),
+    [filterDoc, query],
+  )
   // The rows being dragged. A ref, because changing it shouldn't redraw
   // anything: only the drop marker (dropTarget) is drawn.
   const dragIds = useRef<NodeId[]>([])
@@ -91,6 +100,7 @@ export function ExplorerPanel() {
 
   const tree: TreeControls = {
     collapsed,
+    filter,
     toggleOpen,
     dropTarget,
 
@@ -144,8 +154,41 @@ export function ExplorerPanel() {
     }
   }
 
+  // The header's "+": insert into the selected element, or the ScreenGui.
+  function insertFromHeader(event: ReactMouseEvent<HTMLButtonElement>) {
+    const box = event.currentTarget.getBoundingClientRect()
+    const target = selection.length === 1 ? selection[0] : rootId
+    openMenuFor(target, box.left, box.bottom + 4, true)
+  }
+
   return (
-    <Panel title="Explorer" side="left">
+    <Panel
+      title="Explorer"
+      side="left"
+      actions={
+        <IconButton
+          label="Insert an object"
+          onClick={insertFromHeader}
+          className="size-6"
+        >
+          <PlusIcon />
+        </IconButton>
+      }
+      footer="Right-click any object, or hover and press +, to insert a child."
+    >
+      <div className="mb-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter"
+          aria-label="Filter the Explorer"
+          className="w-full rounded-md bg-raised px-2.5 py-1.5 text-sm text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
+        />
+      </div>
+      {filter?.size === 0 && (
+        <p className="px-1 text-sm text-muted">Nothing called “{query}”.</p>
+      )}
       <ul onDragLeave={onDragLeave}>
         <TreeRow id={rootId} depth={0} parentHidden={false} tree={tree} />
       </ul>
@@ -166,7 +209,10 @@ type TreeRowProps = {
 function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const isSelected = useDocumentStore((state) => state.selection.includes(id))
-  const [renaming, setRenaming] = useState(false)
+  // Renaming is asked for in the view store (by double-click, F2 or the
+  // right-click menu), so anything can start it; the row just follows.
+  const renaming = useViewStore((state) => state.renamingId === id)
+  const setRenamingId = useViewStore((state) => state.setRenamingId)
   const rowRef = useRef<HTMLDivElement>(null)
 
   // Scroll the selected row into view, e.g. after clicking its element on
@@ -176,6 +222,8 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   }, [isSelected])
 
   if (!node) return null
+  // While filtering, rows that don't match (and hold no match) are hidden.
+  if (tree.filter && !tree.filter.has(id)) return null
 
   const isRoot = node.parentId === null
   const ownHidden = !resolveProps(node).Visible
@@ -183,7 +231,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   // Modifiers are listed first, the way Studio lists them as children.
   const modifiers = MODIFIER_CLASSES.filter((m) => node.modifiers?.[m])
   const hasChildren = node.children.length > 0 || modifiers.length > 0
-  const open = !tree.collapsed.has(id)
+  const open = tree.filter !== null || !tree.collapsed.has(id)
   const dropPlace = tree.dropTarget?.id === id ? tree.dropTarget.place : null
 
   function onSelect(event: ReactMouseEvent) {
@@ -194,7 +242,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   }
 
   function finishRename(newName: string | null) {
-    setRenaming(false)
+    setRenamingId(null)
     // null means cancelled. An empty name would be hard to find in Studio,
     // so it keeps the old name instead.
     if (newName !== null && newName.trim() !== '') {
@@ -249,20 +297,24 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
         onDragOver={onDragOver}
         onDrop={onDrop}
         onDragEnd={tree.endDrag}
-        style={{ paddingLeft: depth * INDENT }}
-        className={`group relative flex items-center gap-1 rounded pr-1 ${
+        onContextMenu={(event) => {
+          event.preventDefault() // not the browser's own menu
+          openMenuFor(id, event.clientX, event.clientY)
+        }}
+        style={{ paddingLeft: depth * INDENT + 4 }}
+        className={`group relative flex h-7 items-center gap-1.5 rounded-md pr-1 ${
           dropPlace === 'inside'
-            ? 'bg-blue-500/20 ring-1 ring-blue-500'
+            ? 'bg-accent-soft ring-1 ring-accent'
             : isSelected
-              ? 'bg-blue-600/30'
-              : 'hover:bg-zinc-800'
+              ? 'bg-accent-soft ring-1 ring-accent/40'
+              : 'hover:bg-hover'
         }`}
       >
         {/* The marker line for "drop above" or "drop below" this row,
             indented to show which level the rows will land on. */}
         {(dropPlace === 'before' || dropPlace === 'after') && (
           <span
-            className={`pointer-events-none absolute right-0 h-0.5 rounded bg-blue-500 ${
+            className={`pointer-events-none absolute right-0 h-0.5 rounded bg-accent ${
               dropPlace === 'before' ? '-top-px' : '-bottom-px'
             }`}
             style={{ left: depth * INDENT }}
@@ -274,7 +326,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             type="button"
             aria-label={open ? 'Collapse' : 'Expand'}
             onClick={() => tree.toggleOpen(id)}
-            className="shrink-0 rounded text-zinc-500 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-blue-500"
+            className="shrink-0 rounded text-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
           >
             <ChevronIcon className={open ? 'rotate-90' : undefined} />
           </button>
@@ -282,43 +334,55 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           <span className="w-3.5 shrink-0" /> // keeps names lined up
         )}
 
+        <ClassBadge className={node.className} />
         {renaming ? (
           <RenameInput name={node.name} onDone={finishRename} />
         ) : (
           <button
             type="button"
             onClick={onSelect}
-            onDoubleClick={() => setRenaming(true)}
-            title="Double-click to rename, drag to move"
-            className={`flex min-w-0 flex-1 items-baseline gap-1.5 py-1 text-left text-sm focus-visible:outline-2 focus-visible:outline-blue-500 ${
-              hidden ? 'text-zinc-500' : 'text-zinc-100'
+            onDoubleClick={() => setRenamingId(id)}
+            title="Double-click to rename, drag to move, right-click for more"
+            className={`flex min-w-0 flex-1 items-baseline gap-1.5 text-left text-sm focus-visible:outline-2 focus-visible:outline-accent ${
+              hidden ? 'text-faint' : 'text-ink'
             }`}
           >
             <span className="truncate">{node.name}</span>
-            <span className="shrink-0 text-[11px] text-zinc-500">
+            <span className="shrink-0 truncate text-xs text-faint">
               {node.className}
             </span>
           </button>
         )}
 
-        {/* The ScreenGui has no Visible property and can't be dragged. */}
-        {!isRoot && (
-          <>
-            <RowToggle
-              active={ownHidden}
-              label={ownHidden ? 'Show' : 'Hide'}
-              onClick={() => toggleVisible(useDocumentStore, id)}
-            >
-              {ownHidden ? <EyeOffIcon /> : <EyeIcon />}
-            </RowToggle>
-            <RowToggle
-              active={node.locked === true}
-              label={node.locked ? 'Unlock' : 'Lock'}
-              onClick={() => toggleLocked(useDocumentStore, id)}
-            >
-              {node.locked ? <LockIcon /> : <UnlockIcon />}
-            </RowToggle>
-          </>
+        {/* Insert a child: shows while the row is hovered. */}
+        <RowButton
+          label={`Insert into ${node.name}`}
+          onClick={(event) => {
+            const box = event.currentTarget.getBoundingClientRect()
+            openMenuFor(id, box.left, box.bottom + 4, true)
+          }}
+        >
+          <PlusIcon />
+        </RowButton>
+        {/* Hidden and locked rows show it, and clicking undoes it. (Hide
+            and Lock themselves are in the right-click menu.) */}
+        {!isRoot && ownHidden && (
+          <RowButton
+            shown
+            label="Show"
+            onClick={() => toggleVisible(useDocumentStore, id)}
+          >
+            <EyeOffIcon />
+          </RowButton>
+        )}
+        {!isRoot && node.locked && (
+          <RowButton
+            shown
+            label="Unlock"
+            onClick={() => toggleLocked(useDocumentStore, id)}
+          >
+            <LockIcon />
+          </RowButton>
         )}
       </div>
 
@@ -330,6 +394,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
               modifier={modifier}
               depth={depth + 1}
               onSelect={() => useDocumentStore.getState().select(id)}
+              onMenu={(x, y) => openMenuFor(id, x, y)}
             />
           ))}
           {node.children.map((childId) => (
@@ -354,38 +419,44 @@ function ModifierRow({
   modifier,
   depth,
   onSelect,
+  onMenu,
 }: {
   modifier: ModifierClass
   depth: number
   onSelect: () => void
+  onMenu: (x: number, y: number) => void // right-click: the element's menu
 }) {
   return (
     <li>
       <button
         type="button"
         onClick={onSelect}
+        onContextMenu={(event) => {
+          event.preventDefault()
+          onMenu(event.clientX, event.clientY)
+        }}
         title="A modifier: edit it in the element's Properties"
-        style={{ paddingLeft: depth * INDENT + 18 }}
-        className="flex w-full items-center gap-1.5 rounded py-0.5 pr-1 text-left text-xs text-zinc-400 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-blue-500"
+        style={{ paddingLeft: depth * INDENT + 4 + 18 }}
+        className="flex h-7 w-full items-center gap-1.5 rounded-md pr-1 text-left text-sm text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
       >
-        <ModifierIcon />
+        <ClassBadge className={modifier} />
         {modifier}
       </button>
     </li>
   )
 }
 
-// The eye and lock buttons. They only show when you hover the row, unless
-// they're switched on: then they stay, so you can spot hidden or locked rows.
-function RowToggle({
-  active,
+// A small icon button at the end of a row. Unless `shown`, it only appears
+// while the row is hovered (or the button has keyboard focus).
+function RowButton({
   label,
   onClick,
+  shown = false,
   children,
 }: {
-  active: boolean
   label: string
-  onClick: () => void
+  onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void
+  shown?: boolean
   children: ReactNode
 }) {
   return (
@@ -394,8 +465,8 @@ function RowToggle({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`shrink-0 rounded p-0.5 text-zinc-400 hover:text-zinc-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-blue-500 ${
-        active ? '' : 'opacity-0 group-hover:opacity-100'
+      className={`shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-ink focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent ${
+        shown ? '' : 'opacity-0 group-hover:opacity-100'
       }`}
     >
       {children}
@@ -432,7 +503,7 @@ function RenameInput({
           event.currentTarget.blur()
         }
       }}
-      className="min-w-0 flex-1 rounded bg-zinc-950 px-1 py-0.5 text-sm text-zinc-100 outline-1 outline-blue-500"
+      className="min-w-0 flex-1 rounded bg-app px-1 py-0.5 text-sm text-ink outline-1 outline-accent"
     />
   )
 }

@@ -37,15 +37,6 @@ export function ChevronIcon({ className }: IconProps) {
   )
 }
 
-export function EyeIcon({ className }: IconProps) {
-  return (
-    <Icon className={className}>
-      <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" />
-      <circle cx="8" cy="8" r="2" />
-    </Icon>
-  )
-}
-
 export function EyeOffIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -60,24 +51,6 @@ export function LockIcon({ className }: IconProps) {
     <Icon className={className}>
       <rect x="3.5" y="7" width="9" height="6.5" rx="1" />
       <path d="M5.5 7V5a2.5 2.5 0 015 0v2" />
-    </Icon>
-  )
-}
-
-export function UnlockIcon({ className }: IconProps) {
-  return (
-    <Icon className={className}>
-      <rect x="3.5" y="7" width="9" height="6.5" rx="1" />
-      <path d="M5.5 7V5a2.5 2.5 0 014.9-.7" />
-    </Icon>
-  )
-}
-
-// A small diamond, for modifiers in the Explorer.
-export function ModifierIcon({ className }: IconProps) {
-  return (
-    <Icon className={className}>
-      <path d="M8 3l5 5-5 5-5-5z" />
     </Icon>
   )
 }
@@ -160,6 +133,14 @@ export function LogoIcon(props: IconProps) {
     <Icon {...props}>
       <rect x="2" y="3" width="12" height="9" rx="2" />
       <path d="M5 14h6M5.5 6.5h5M5.5 9h3" />
+    </Icon>
+  )
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8 3v10M3 8h10" />
     </Icon>
   )
 }

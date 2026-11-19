@@ -4,6 +4,7 @@ import { useDocumentStore } from '../../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
 import { DEVICES } from '../../model/screen.ts'
 import { ZoomBar } from './ZoomBar.tsx'
+import { openMenuFor } from '../menus/openMenu.ts'
 import { NodeView } from './NodeView.tsx'
 import { SnapGuides } from './SnapGuides.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
@@ -99,6 +100,20 @@ export function Canvas() {
     <main
       ref={areaRef}
       {...handlers}
+      // Right-click: the menu for the element under the pointer, or for
+      // the ScreenGui on empty canvas. (Locked elements let the click
+      // through, like a left click.)
+      onContextMenu={(event) => {
+        event.preventDefault()
+        const element = (event.target as Element).closest<HTMLElement>(
+          '[data-node-id]',
+        )
+        openMenuFor(
+          element?.dataset.nodeId ?? rootId,
+          event.clientX,
+          event.clientY,
+        )
+      }}
       style={{ cursor }}
       className="canvas-dots relative min-h-0 min-w-0 touch-none overflow-hidden select-none"
     >
