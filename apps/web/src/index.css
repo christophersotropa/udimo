@@ -46,6 +46,19 @@
   background-size: 24px 24px;
 }
 
+/* The page itself never scrolls: the app is exactly the window's height
+   (App.tsx), and only the panels scroll inside it. overscroll-behavior
+   stops the Mac "rubber band" bounce at the end of a scroll, which pulled
+   the whole page and showed the browser's white background behind it;
+   the dark background is a second guard in case anything still shows. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--color-app);
+}
+
 /* Native <dialog>: the dimmed layer behind it. */
 dialog::backdrop {
   background: rgb(0 0 0 / 0.6);

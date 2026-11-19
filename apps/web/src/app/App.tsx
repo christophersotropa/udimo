@@ -14,7 +14,7 @@ function App() {
   useKeyboardShortcuts()
 
   return (
-    <div className="grid h-svh grid-rows-[auto_1fr_auto] bg-app text-ink">
+    <div className="grid h-svh grid-rows-[auto_1fr_auto] overflow-hidden bg-app text-ink">
       <TopBar />
       <div className="grid min-h-0 grid-cols-[240px_1fr_280px]">
         <ExplorerPanel />
