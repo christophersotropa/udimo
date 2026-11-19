@@ -14,10 +14,12 @@ import {
 } from './fields.tsx'
 import { ModifiersSection } from './ModifiersSection.tsx'
 import { Panel } from './Panel.tsx'
+import { ResponsiveButtons } from './ResponsiveButtons.tsx'
 
 // Shows and edits the properties of the selected element.
 export function PropertiesPanel() {
-  const selectionCount = useDocumentStore((state) => state.selection.length)
+  const selection = useDocumentStore((state) => state.selection)
+  const selectionCount = selection.length
   const selectedId = useDocumentStore((state) =>
     state.selection.length === 1 ? state.selection[0] : null,
   )
@@ -28,11 +30,14 @@ export function PropertiesPanel() {
         // key: a different element gets fresh inputs, never leftover drafts.
         <NodeProperties key={selectedId} id={selectedId} />
       ) : (
-        <p className="text-sm text-zinc-500">
-          {selectionCount > 1
-            ? `${selectionCount} elements selected. Select one to edit its properties.`
-            : 'Select an element to edit its properties.'}
-        </p>
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-500">
+            {selectionCount > 1
+              ? `${selectionCount} elements selected. Select one to edit its properties.`
+              : 'Select an element to edit its properties.'}
+          </p>
+          {selectionCount > 1 && <ResponsiveButtons ids={selection} />}
+        </div>
       )}
     </Panel>
   )
@@ -104,6 +109,7 @@ function NodeProperties({ id }: { id: NodeId }) {
             onChange={(y) => set({ AnchorPoint: { ...p.AnchorPoint, y } })}
           />
         </Row>
+        <ResponsiveButtons ids={[id]} />
       </Section>
 
       <Section title="Appearance">

@@ -13,7 +13,12 @@ export const MODIFIER_DEFAULTS: {
   [K in ModifierClass]: Required<ModifierProps[K]>
 } = {
   UICorner: { CornerRadius: { s: 0, o: 8 } },
-  UIStroke: { Color: { r: 0, g: 0, b: 0 }, Thickness: 1, Transparency: 0 },
+  UIStroke: {
+    Color: { r: 0, g: 0, b: 0 },
+    Thickness: 1,
+    Transparency: 0,
+    ApplyStrokeMode: 'Contextual',
+  },
   UIGradient: {
     Color: [
       { time: 0, color: WHITE },

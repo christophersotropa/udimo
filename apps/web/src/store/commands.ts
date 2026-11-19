@@ -6,6 +6,7 @@ import { cascadeShift } from '../model/insert.ts'
 import { isLaidOut } from '../model/layout.ts'
 import { SCREEN, type ScreenSize } from '../model/screen.ts'
 import { inTreeOrder, topLevelNodes } from '../model/tree.ts'
+import { planUnitConversion, type Units } from '../model/responsive.ts'
 import { planWrap } from '../model/wrap.ts'
 import { MODIFIER_CLASSES } from '../model/modifiers.ts'
 import type { NodeId, UiDocument, UiNode } from '../model/types.ts'
@@ -259,4 +260,24 @@ export function wrapSelectionInFrame(
     select(frameId)
   })
   return true
+}
+
+// ---------- Make responsive ----------
+
+// Converts the Position and Size of the elements `ids`, and everything
+// inside them, to Scale ("make responsive") or Offset ("use pixels"), as one
+// undo step. They look the same on `screen` afterwards (see
+// model/responsive.ts).
+export function convertUnits(
+  store: DocumentStore,
+  ids: NodeId[],
+  to: Units,
+  screen: ScreenSize = SCREEN,
+) {
+  const plan = planUnitConversion(store.getState().document, ids, to, screen)
+  if (plan.size === 0) return
+  asOneStep(store, () => {
+    const { updateProps } = store.getState()
+    for (const [id, props] of plan) updateProps(id, props)
+  })
 }

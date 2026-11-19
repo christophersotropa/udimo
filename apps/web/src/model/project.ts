@@ -1,5 +1,6 @@
 import { isValidTimeline } from '../lib/sequence.ts'
 import {
+  APPLY_STROKE_MODE,
   FILL_DIRECTION,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
@@ -120,7 +121,12 @@ const MODIFIER_CHECKS: {
   [K in ModifierClass]: Record<keyof ModifierProps[K], Check>
 } = {
   UICorner: { CornerRadius: isUDim },
-  UIStroke: { Color: isColor3, Thickness: isNumber, Transparency: isNumber },
+  UIStroke: {
+    Color: isColor3,
+    Thickness: isNumber,
+    Transparency: isNumber,
+    ApplyStrokeMode: isOneOf(APPLY_STROKE_MODE),
+  },
   UIGradient: {
     Color: isColorSequence,
     Transparency: isNumberSequence,

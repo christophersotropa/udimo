@@ -1,6 +1,7 @@
 import { toContentUri } from '../lib/assets.ts'
 import { isImageClass, isTextClass } from '../model/classes.ts'
 import {
+  APPLY_STROKE_MODE,
   FILL_DIRECTION,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
@@ -162,7 +163,8 @@ const MODIFIER_TAGS: {
     udim('TopLeftRadius', CornerRadius),
     udim('TopRightRadius', CornerRadius),
   ],
-  UIStroke: ({ Color, Thickness, Transparency }) => [
+  UIStroke: ({ Color, Thickness, Transparency, ApplyStrokeMode }) => [
+    token('ApplyStrokeMode', APPLY_STROKE_MODE[ApplyStrokeMode]),
     color3('Color', Color),
     float('Thickness', Thickness),
     float('Transparency', Transparency),
