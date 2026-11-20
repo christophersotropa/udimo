@@ -86,6 +86,27 @@ function MenuBox({ menu }: { menu: ContextMenuState }) {
     }
   }, [close])
 
+  // When the menu closes, give keyboard focus back to whatever had it when
+  // it opened (say, the Explorer tree, after the menu key), so the keyboard
+  // can carry on there. Only if focus fell back to the page itself: if
+  // something else took it (the rename box, after Rename), leave it there.
+  // What had focus is noted while the menu is first drawn, before anything
+  // moves it. (Not in the effect: in development React runs effects twice
+  // to catch mistakes, and the second run would find the menu's own item.)
+  const [before] = useState(() => document.activeElement)
+  useEffect(() => {
+    return () => {
+      const now = document.activeElement
+      if (
+        before instanceof HTMLElement &&
+        before.isConnected &&
+        (now === null || now === document.body)
+      ) {
+        before.focus({ preventScroll: true })
+      }
+    }
+  }, [before])
+
   // The main menu starts with its first item focused, for the keyboard.
   useEffect(() => {
     if (!menu.insertOnly) {

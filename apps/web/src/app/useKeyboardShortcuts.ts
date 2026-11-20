@@ -43,7 +43,9 @@ const NUDGE_BIG = 10
 //   Wrap in Frame  Cmd+G / Ctrl+G
 //   Zoom           Cmd+= / Cmd+- (Ctrl on Windows), Cmd+0 to fit
 //   Delete         Delete or Backspace
-//   Nudge          Arrow keys (1 px), Shift + arrows (10 px)
+//   Nudge          Arrow keys (1 px), Shift + arrows (10 px). In the
+//                  Explorer the arrows move through the tree instead
+//                  (treeKeys.ts); click the canvas to nudge again.
 //   Tools          V select, H hand (pan)
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
