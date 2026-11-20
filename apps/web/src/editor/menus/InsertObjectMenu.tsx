@@ -60,7 +60,7 @@ export function InsertObjectMenu({
           }}
           placeholder="Search objects"
           aria-label="Search objects"
-          className="h-7 w-full rounded-sm bg-app px-2 text-[13px] text-ink ring-1 ring-accent outline-none placeholder:text-faint"
+          className="h-7 w-full rounded-sm bg-app px-2 text-body text-ink ring-1 ring-accent outline-none placeholder:text-muted"
         />
       </div>
       <div className="max-h-80 overflow-y-auto pb-1">
@@ -73,7 +73,7 @@ export function InsertObjectMenu({
           <div key={entry.className}>
             {/* A group heading before the first entry of each group. */}
             {entry.group !== entries[i - 1]?.group && (
-              <p className="px-3 pt-1.5 pb-0.5 text-[11px] text-faint">
+              <p className="px-3 pt-1.5 pb-0.5 text-note text-muted">
                 {entry.group}
               </p>
             )}
@@ -82,20 +82,20 @@ export function InsertObjectMenu({
               disabled={has(entry)}
               onClick={() => add(entry)}
               onPointerEnter={() => setHighlight(i)}
-              className={`flex h-6 w-full items-center gap-2 px-3 text-left text-[13px] disabled:opacity-35 ${
+              className={`flex h-6 w-full items-center gap-2 px-3 text-left text-body disabled:opacity-35 ${
                 i === highlight ? 'bg-accent-soft text-ink' : 'text-ink'
               }`}
             >
               <ClassIcon className={entry.className} />
               <span className="flex-1">{entry.className}</span>
               {has(entry) && (
-                <span className="text-[11px] text-faint">added</span>
+                <span className="text-note text-muted">added</span>
               )}
             </button>
           </div>
         ))}
       </div>
-      <p className="flex justify-between border-t border-line px-3 pt-1.5 pb-0.5 text-[11px] text-faint">
+      <p className="flex justify-between border-t border-line px-3 pt-1.5 pb-0.5 text-note text-muted">
         <span>
           Into <span className="text-muted">{parentName}</span>
         </span>

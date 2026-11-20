@@ -112,7 +112,7 @@ export function ModifiersSection({ id }: { id: NodeId }) {
       }
     >
       {on.length === 0 && (
-        <p className="py-0.5 text-xs text-faint">
+        <p className="py-0.5 text-xs text-muted">
           None yet. Add rounded corners, an outline, a layout...
         </p>
       )}
@@ -128,7 +128,7 @@ export function ModifiersSection({ id }: { id: NodeId }) {
                 className="flex items-center gap-0.5 truncate text-left text-xs text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <ChevronIcon
-                  className={`-ml-0.5 shrink-0 text-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                  className={`-ml-0.5 shrink-0 text-muted transition-transform ${isOpen ? 'rotate-90' : ''}`}
                 />
                 {m}
               </button>
@@ -144,7 +144,7 @@ export function ModifiersSection({ id }: { id: NodeId }) {
                 aria-label={`Remove ${m}`}
                 title={`Remove ${m}`}
                 onClick={() => removeModifier(id, m)}
-                className="rounded p-0.5 text-faint opacity-0 group-hover:opacity-100 hover:text-danger focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
+                className="rounded p-0.5 text-muted opacity-0 group-hover:opacity-100 hover:text-danger focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <CloseIcon size={12} />
               </button>

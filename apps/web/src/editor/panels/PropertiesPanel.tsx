@@ -89,7 +89,7 @@ export function PropertiesPanel() {
         </PropertyFilter>
       ) : selection.length > 1 ? (
         <div className="space-y-2 px-3 py-3">
-          <p className="text-[13px] text-ink">{selection.length} selected</p>
+          <p className="text-body text-ink">{selection.length} selected</p>
           <p className="text-xs text-muted">
             Select one to edit its properties, or convert them all, with
             everything inside:
@@ -104,7 +104,7 @@ export function PropertiesPanel() {
           </div>
         </div>
       ) : (
-        <p className="px-3 py-3 text-xs text-muted">
+        <p className="px-3 py-3 text-xs text-pretty text-muted">
           Select an element to see its properties. Right-click the canvas or the
           Explorer to add one.
         </p>
@@ -162,7 +162,7 @@ function NodeProperties({
             }
             useDocumentStore.getState().endGroup()
           }}
-          className="-mx-1 min-w-0 flex-1 rounded-sm px-1 text-[13px] font-semibold text-ink outline-none hover:bg-raised focus:bg-raised focus:ring-1 focus:ring-accent"
+          className="-mx-1 min-w-0 flex-1 rounded-sm px-1 text-body font-semibold text-ink outline-none hover:bg-raised focus:bg-raised focus:ring-1 focus:ring-accent"
         />
         <span className="shrink-0 text-xs text-muted">{node.className}</span>
         <Popover
@@ -232,7 +232,7 @@ function NodeProperties({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Filter properties"
           aria-label="Filter properties"
-          className="h-7 w-full rounded bg-app px-2 text-[13px] text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
+          className="h-7 w-full rounded bg-app px-2 text-body text-ink ring-1 ring-line outline-none placeholder:text-muted focus:ring-accent"
         />
       </div>
 
@@ -416,7 +416,7 @@ function NodeProperties({
                   })
                 }
               >
-                <span className="font-sans text-[13px] font-bold">B</span>
+                <span className="font-sans text-body font-bold">B</span>
               </IconButton>
               {/* Italic: switches between Italic and Normal. */}
               <IconButton
@@ -431,7 +431,7 @@ function NodeProperties({
                   })
                 }
               >
-                <span className="font-serif text-[13px] italic">I</span>
+                <span className="font-serif text-body italic">I</span>
               </IconButton>
             </div>
           </Row>

@@ -22,7 +22,7 @@ export function Checkbox({
         className="check-box mt-0.5 size-4 shrink-0"
       />
       <span>
-        <span className="block text-[13px] text-ink">{children}</span>
+        <span className="block text-body text-ink">{children}</span>
         {description && (
           <span className="block text-xs text-muted">{description}</span>
         )}

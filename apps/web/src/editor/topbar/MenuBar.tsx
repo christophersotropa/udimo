@@ -209,7 +209,7 @@ export function MenuBar() {
               onClick={toggle}
               aria-expanded={open}
               aria-haspopup="menu"
-              className={`h-7 rounded px-2.5 text-[13px] focus-visible:outline-2 focus-visible:outline-accent ${
+              className={`h-7 rounded px-2.5 text-body focus-visible:outline-2 focus-visible:outline-accent ${
                 open
                   ? 'bg-hover text-ink'
                   : 'text-muted hover:bg-hover hover:text-ink'

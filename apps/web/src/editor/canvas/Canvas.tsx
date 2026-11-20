@@ -194,7 +194,7 @@ export function Canvas() {
       >
         {/* Above the screen: the ScreenGui's name on the left, the screen
             size on the right (the zoom is in the zoom bar). */}
-        <p className="absolute -top-6 right-0 left-0 flex justify-between gap-3 font-mono text-[11px] whitespace-nowrap text-faint">
+        <p className="absolute -top-6 right-0 left-0 flex justify-between gap-3 font-mono text-note whitespace-nowrap text-muted">
           <span className="truncate">{rootName}</span>
           <span>
             {screen.width} × {screen.height}

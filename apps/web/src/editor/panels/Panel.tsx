@@ -57,7 +57,7 @@ export function Panel({
           beingDragged ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
-        <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
+        <h2 className="text-body font-semibold text-ink">{title}</h2>
         {actions}
       </div>
       {/* overflow-x-hidden: only up and down scrolling in a panel. */}
@@ -68,7 +68,7 @@ export function Panel({
         {children}
       </div>
       {footer && (
-        <p className="border-t border-line px-3.5 py-3 text-xs text-faint">
+        <p className="border-t border-line px-3.5 py-3 text-xs text-pretty text-muted">
           {footer}
         </p>
       )}

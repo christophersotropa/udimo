@@ -30,7 +30,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex h-7 items-center justify-center gap-1.5 rounded px-3 text-[13px] disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${FOCUS} ${className}`}
+      className={`inline-flex h-7 items-center justify-center gap-1.5 rounded px-3 text-body disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${FOCUS} ${className}`}
       {...rest}
     >
       {icon}

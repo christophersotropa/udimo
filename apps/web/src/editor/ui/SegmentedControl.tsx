@@ -24,7 +24,7 @@ export function SegmentedControl<T extends string>({
           role="radio"
           aria-checked={option.value === value}
           onClick={() => onChange(option.value)}
-          className={`h-6 rounded-sm px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-accent ${
+          className={`h-6 rounded-sm px-3 text-body focus-visible:outline-2 focus-visible:outline-accent ${
             option.value === value
               ? 'bg-hover text-ink'
               : 'text-muted hover:text-ink'

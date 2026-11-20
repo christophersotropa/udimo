@@ -134,7 +134,7 @@ function ExportContent({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-line py-2.5 pr-3 pl-5">
         <h2 className="flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold">Export</span>
+          <span className="text-title font-semibold">Export</span>
           <span className="font-mono text-xs text-muted">
             {rootName} · {instances} instance{instances === 1 ? '' : 's'}
           </span>
@@ -170,7 +170,7 @@ function ExportContent({
                 <input
                   value={name}
                   onChange={(event) => change({ fileName: event.target.value })}
-                  className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-[13px] outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-2.5 font-mono text-body outline-none"
                 />
                 <span className="flex items-center border-l border-line px-2.5 font-mono text-xs text-muted">
                   .rbxmx
@@ -212,7 +212,7 @@ function ExportContent({
         <div className="space-y-5 p-5">
           <div className="space-y-2">
             <Label>In Roblox Studio</Label>
-            <ol className="space-y-2 text-[13px]">
+            <ol className="space-y-2 text-body">
               {(format === 'rbxmx'
                 ? [
                     <>
@@ -257,7 +257,7 @@ function ExportContent({
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-4 border-t border-line px-5 py-3">
-        <p className="text-xs text-faint">
+        <p className="text-xs text-muted">
           Generated in your browser. Nothing is uploaded.
         </p>
         <div className="flex gap-2">
@@ -315,14 +315,14 @@ function FormatCard({
       <span
         aria-hidden="true"
         className={`mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full ring-1 ${
-          selected ? 'ring-accent' : 'ring-faint'
+          selected ? 'ring-accent' : 'ring-muted'
         }`}
       >
         {selected && <span className="size-2 rounded-full bg-accent" />}
       </span>
       <span>
         <span
-          className={`block text-[13px] font-semibold ${selected ? 'text-accent' : 'text-ink'}`}
+          className={`block text-body font-semibold ${selected ? 'text-accent' : 'text-ink'}`}
         >
           {title}
         </span>
@@ -354,7 +354,7 @@ function Checks({
         </span>
       </div>
       {warnings.length === 0 ? (
-        <p className="border-t border-line pt-2 text-[13px] text-muted">
+        <p className="border-t border-line pt-2 text-body text-muted">
           ✓ Nothing to fix. Ready for Studio.
         </p>
       ) : (
@@ -367,7 +367,7 @@ function Checks({
               <span
                 aria-hidden="true"
                 className={
-                  warning.level === 'warning' ? 'text-warn' : 'text-faint'
+                  warning.level === 'warning' ? 'text-warn' : 'text-muted'
                 }
               >
                 {warning.level === 'warning' ? '⚠' : 'ⓘ'}
