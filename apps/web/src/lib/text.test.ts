@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_TEXT_SIZE, scaledTextSize } from './text.ts'
+import {
+  MAX_TEXT_SIZE,
+  scaledTextSize,
+  scaledWrappedTextSize,
+  wrappedLineCount,
+} from './text.ts'
 
 describe('scaledTextSize', () => {
   it('fills the height when the text is short', () => {
@@ -27,5 +32,44 @@ describe('scaledTextSize', () => {
       MAX_TEXT_SIZE,
     )
     expect(scaledTextSize(50, 1, { width: 10, height: 10 })).toBe(1)
+  })
+})
+
+describe('wrappedLineCount', () => {
+  it('fits as many words as it can on each line', () => {
+    // Words 40 wide with 10 gaps: two fit in 100 (40 + 10 + 40 = 90).
+    expect(wrappedLineCount([40, 40, 40, 40, 40], 10, 100)).toBe(3)
+  })
+
+  it('gives a word wider than the line a line of its own', () => {
+    expect(wrappedLineCount([20, 300, 20], 5, 100)).toBe(3)
+  })
+
+  it('is one line for nothing at all', () => {
+    expect(wrappedLineCount([], 5, 100)).toBe(1)
+  })
+})
+
+describe('scaledWrappedTextSize', () => {
+  it('wraps instead of shrinking when there is room below', () => {
+    // Two words, each 2 wide per pixel, in a 100 × 100 box. On one line
+    // they'd need size 100 / 5 = 20; wrapped onto two lines, 50 fits
+    // (each word 100 wide, two lines 50 tall).
+    expect(
+      scaledWrappedTextSize([[2, 2]], 1, { width: 100, height: 100 }),
+    ).toBe(50)
+  })
+
+  it('keeps every word whole', () => {
+    // One long word, 10 wide per pixel, in a box 100 wide: size 10.
+    expect(scaledWrappedTextSize([[10]], 1, { width: 100, height: 500 })).toBe(
+      10,
+    )
+  })
+
+  it('counts each typed line', () => {
+    expect(
+      scaledWrappedTextSize([[1], [1], [1]], 1, { width: 1000, height: 90 }),
+    ).toBe(30)
   })
 })

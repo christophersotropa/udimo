@@ -10,7 +10,13 @@ import {
   WEIGHT_LABELS,
 } from '../../model/fonts.ts'
 import { isLaidOut } from '../../model/layout.ts'
-import type { FontWeight } from '../../model/enums.ts'
+import {
+  enumNames,
+  type FontWeight,
+  TEXT_TRUNCATE,
+  TEXT_X_ALIGNMENT,
+  TEXT_Y_ALIGNMENT,
+} from '../../model/enums.ts'
 import type { NodeId, Props } from '../../model/types.ts'
 import {
   convertUnits,
@@ -452,6 +458,70 @@ function NodeProperties({
             <Hint>
               TextScaled is on, so the text fills its box and TextSize is
               ignored.
+            </Hint>
+          )}
+          <Row label="TextWrapped">
+            <ToggleField
+              label="TextWrapped"
+              value={p.TextWrapped}
+              onChange={(TextWrapped) => set({ TextWrapped })}
+            />
+          </Row>
+          <Row label="TextXAlignment">
+            <SelectField
+              label="TextXAlignment"
+              value={p.TextXAlignment}
+              options={enumNames(TEXT_X_ALIGNMENT)}
+              onChange={(TextXAlignment) => set({ TextXAlignment })}
+            />
+          </Row>
+          <Row label="TextYAlignment">
+            <SelectField
+              label="TextYAlignment"
+              value={p.TextYAlignment}
+              options={enumNames(TEXT_Y_ALIGNMENT)}
+              onChange={(TextYAlignment) => set({ TextYAlignment })}
+            />
+          </Row>
+          <Row label="TextTransparency">
+            <NumberField
+              label="TextTransparency"
+              min={0}
+              max={1}
+              value={p.TextTransparency}
+              onChange={(TextTransparency) => set({ TextTransparency })}
+            />
+          </Row>
+          <Row label="LineHeight">
+            {/* Roblox keeps it between 1 and 3 */}
+            <NumberField
+              label="LineHeight"
+              min={1}
+              max={3}
+              value={p.LineHeight}
+              onChange={(LineHeight) => set({ LineHeight })}
+            />
+          </Row>
+          <Row label="TextTruncate">
+            <SelectField
+              label="TextTruncate"
+              value={p.TextTruncate}
+              options={enumNames(TEXT_TRUNCATE)}
+              onChange={(TextTruncate) => set({ TextTruncate })}
+            />
+          </Row>
+          <Row label="RichText">
+            <ToggleField
+              label="RichText"
+              value={p.RichText}
+              onChange={(RichText) => set({ RichText })}
+            />
+          </Row>
+          {p.RichText && (
+            <Hint>
+              Style parts of the text with tags: &lt;b&gt;, &lt;i&gt;,
+              &lt;u&gt;, &lt;s&gt;, &lt;br/&gt;, &lt;font color="#FFD700"
+              size="30"&gt;, &lt;mark&gt;, &lt;uc&gt;.
             </Hint>
           )}
         </Section>

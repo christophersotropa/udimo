@@ -107,6 +107,21 @@ describe('documentToLuau', () => {
     )
   })
 
+  it('writes text options, enums by name', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'TextLabel', {
+      TextXAlignment: 'Left',
+      TextTruncate: 'AtEnd',
+      TextWrapped: true,
+      LineHeight: 1.5,
+    })
+    const luau = documentToLuau(store.getState().document)
+    expect(luau).toContain('TextXAlignment = Enum.TextXAlignment.Left,')
+    expect(luau).toContain('TextTruncate = Enum.TextTruncate.AtEnd,')
+    expect(luau).toContain('TextWrapped = true,')
+    expect(luau).toContain('LineHeight = 1.5,')
+  })
+
   it('keeps working past 200 elements (Luau allows 200 local variables)', () => {
     const store = createDocumentStore()
     const { addNode } = store.getState()

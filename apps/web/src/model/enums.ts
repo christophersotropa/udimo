@@ -28,6 +28,13 @@ export const FONT_WEIGHT = {
   ExtraBold: 800,
   Heavy: 900,
 } as const
+// Where text sits in its box, across and down. Roblox centers both by
+// default. (Numbered as Studio saves them: docs/reference/text-options.rbxmx.)
+export const TEXT_X_ALIGNMENT = { Left: 0, Right: 1, Center: 2 } as const
+export const TEXT_Y_ALIGNMENT = { Top: 0, Center: 1, Bottom: 2 } as const
+// Text that doesn't fit is cut off with "…": never, at the end of a word,
+// or partway through a word.
+export const TEXT_TRUNCATE = { None: 0, AtEnd: 1, SplitWord: 2 } as const
 // Upright or slanted text (Roblox's FontStyle).
 export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
@@ -40,6 +47,9 @@ export type SortOrder = keyof typeof SORT_ORDER
 export type ApplyStrokeMode = keyof typeof APPLY_STROKE_MODE
 export type FontWeight = keyof typeof FONT_WEIGHT
 export type FontStyle = keyof typeof FONT_STYLE
+export type TextXAlignment = keyof typeof TEXT_X_ALIGNMENT
+export type TextYAlignment = keyof typeof TEXT_Y_ALIGNMENT
+export type TextTruncate = keyof typeof TEXT_TRUNCATE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

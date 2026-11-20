@@ -14,6 +14,9 @@ import layoutModifierReference from '../../../../docs/reference/gradient-padding
 import layoutReference from '../../../../docs/reference/list-grid-layouts.rbxmx?raw'
 // ScreenGui > TextLabels named after their fonts.
 import fontReference from '../../../../docs/reference/fonts.rbxmx?raw'
+// Seven TextLabels, each with one text option changed (build 49).
+import textOptionsReference from '../../../../docs/reference/text-options.rbxmx?raw'
+import type { Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 
@@ -113,6 +116,36 @@ function propertiesOfNamed(xml: string, name: string): Map<string, string> {
   throw new Error(`No item named ${name} in file`)
 }
 
+// Every <Item> of `className` in an .rbxmx file, in file order, each as
+// propertiesOf gives it.
+function allPropertiesOf(
+  xml: string,
+  className: string,
+): Map<string, string>[] {
+  return [
+    ...xml.matchAll(
+      new RegExp(
+        `<Item class="${className}"[^>]*>\\s*<Properties>([\\s\\S]*?)</Properties>`,
+        'g',
+      ),
+    ),
+  ].map(([, body]) =>
+    propertiesOf(`<Item class="X"><Properties>${body}</Properties>`, 'X'),
+  )
+}
+
+// The TextLabels in text-options.rbxmx, in file order: what each one has
+// changed from the defaults.
+const TEXT_OPTION_LABELS: [string, Props][] = [
+  ['TextXAlignment Left', { TextXAlignment: 'Left' }],
+  ['TextYAlignment Top', { TextYAlignment: 'Top' }],
+  ['TextTransparency 0.5', { TextTransparency: 0.5 }],
+  ['RichText', { RichText: true, Text: '<b>bold</b>' }],
+  ['TextTruncate AtEnd', { TextTruncate: 'AtEnd' }],
+  ['LineHeight 1.5', { LineHeight: 1.5 }],
+  ['TextWrapped', { TextWrapped: true }],
+]
+
 // The labels in fonts.rbxmx: name -> font.
 const FONT_LABELS = {
   BuilderSans: 'BuilderSans',
@@ -167,6 +200,31 @@ describe('documentToRbxmx', () => {
     'UIListLayout',
     'UIGridLayout',
   ])
+
+  describe('matches the Studio reference file for text options', () => {
+    const store = createDocumentStore()
+    const rootId = store.getState().document.rootId
+    for (const [, props] of TEXT_OPTION_LABELS) {
+      store.getState().addNode(rootId, 'TextLabel', props)
+    }
+    const ours = allPropertiesOf(
+      documentToRbxmx(store.getState().document),
+      'TextLabel',
+    )
+    const studio = allPropertiesOf(textOptionsReference, 'TextLabel')
+
+    it('has the same seven labels', () => {
+      expect(studio).toHaveLength(TEXT_OPTION_LABELS.length)
+    })
+    describe.each(TEXT_OPTION_LABELS.map(([name], i) => [name, i] as const))(
+      '%s',
+      (_name, i) => {
+        it.each([...ours[i]])('%s', (prop, value) => {
+          expect(studio[i].get(prop)).toBe(value)
+        })
+      },
+    )
+  })
 
   describe.each(Object.entries(FONT_LABELS))(
     'matches the Studio reference file for a TextLabel in %s',

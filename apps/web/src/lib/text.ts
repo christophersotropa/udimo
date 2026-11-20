@@ -23,6 +23,59 @@ export function scaledTextSize(
   return Math.max(1, Math.floor(Math.min(MAX_TEXT_SIZE, byHeight, byWidth)))
 }
 
+// How many lines some words take when wrapped to `maxWidth`, the way
+// TextWrapped does it: as many words as fit on each line, then the next
+// line. `wordWidths` are the words' widths and `spaceWidth` the gap between
+// them, all at the same text size. A word wider than the line gets a line
+// of its own.
+export function wrappedLineCount(
+  wordWidths: number[],
+  spaceWidth: number,
+  maxWidth: number,
+): number {
+  let lines = 1
+  let used = 0
+  for (const width of wordWidths) {
+    const needed = used === 0 ? width : used + spaceWidth + width
+    if (used > 0 && needed > maxWidth + 0.01) {
+      lines++
+      used = width
+    } else {
+      used = needed
+    }
+  }
+  return lines
+}
+
+// TextScaled with TextWrapped on: the biggest whole text size at which the
+// text, wrapped to the area's width, fits the area's height, with every
+// word fitting on a line. `paragraphs` has, for each line you typed, its
+// words' widths at text size 1; `spaceWidth` is a space's width at size 1.
+// `lineHeight`: one line's height per pixel of text size (see above).
+export function scaledWrappedTextSize(
+  paragraphs: number[][],
+  spaceWidth: number,
+  area: ScreenSize,
+  lineHeight = 1,
+): number {
+  const widestWord = Math.max(0, ...paragraphs.flat())
+  for (let size = MAX_TEXT_SIZE; size > 1; size--) {
+    if (widestWord * size > area.width) continue
+    const lines = paragraphs.reduce(
+      (total, words) =>
+        total +
+        wrappedLineCount(
+          words.map((width) => width * size),
+          spaceWidth * size,
+          area.width,
+        ),
+      0,
+    )
+    if (lines * lineHeight * size <= area.height) return size
+  }
+  return 1
+}
+
 // How wide `text` is in a CSS font like "700 100px Roboto", measured with
 // an off-screen <canvas> (browsers only). Made once and reused.
 let measurer: CanvasRenderingContext2D | null = null

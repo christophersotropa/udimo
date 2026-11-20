@@ -28,6 +28,13 @@ const BASE_DEFAULTS: Required<Props> = {
   TextColor3: { r: 0, g: 0, b: 0 }, // black
   TextSize: 14,
   TextScaled: false,
+  TextWrapped: false,
+  TextXAlignment: 'Center',
+  TextYAlignment: 'Center',
+  TextTransparency: 0,
+  RichText: false,
+  TextTruncate: 'None',
+  LineHeight: 1,
   AutoButtonColor: true,
   PlaceholderText: '',
   PlaceholderColor3: { r: 0.5, g: 0.5, b: 0.5 }, // mid grey

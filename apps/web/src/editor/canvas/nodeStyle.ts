@@ -22,6 +22,9 @@ export type NodePixels = {
 }
 
 // The CSS for one Roblox element on the canvas.
+// TextXAlignment as CSS text-align, for text over several lines.
+const TEXT_ALIGN = { Left: 'left', Right: 'right', Center: 'center' } as const
+
 export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
   const p = resolveProps(node)
 
@@ -100,12 +103,16 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
   }
 
   if (isTextClass(node.className)) {
-    // Roblox centers text both ways by default (NodeView's content area does
-    // the centering) and doesn't wrap it. These are inherited by the text.
+    // Where the text sits in its box is done by NodeView's content area;
+    // the rest is inherited by the text. Lines are wrapped only with
+    // TextWrapped (pre-wrap: wrap, but keep spaces and line breaks as
+    // typed), and spaced by LineHeight.
     Object.assign(style, {
-      whiteSpace: 'pre',
-      lineHeight: 1,
-      color: color3ToCss(p.TextColor3),
+      whiteSpace: p.TextWrapped ? 'pre-wrap' : 'pre',
+      overflowWrap: p.TextWrapped ? 'break-word' : undefined,
+      textAlign: TEXT_ALIGN[p.TextXAlignment],
+      lineHeight: p.LineHeight,
+      color: color3ToCss(p.TextColor3, p.TextTransparency),
       fontSize: p.TextSize, // NodeText overrides this for TextScaled
       fontFamily: FONTS[p.FontFace.family].css,
       // The weight the font really has (see closestWeight), like Roblox.
