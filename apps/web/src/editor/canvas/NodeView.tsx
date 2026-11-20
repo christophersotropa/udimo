@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { toContentUri } from '../../lib/assets.ts'
 import { richTextPlain } from '../../lib/richText.ts'
+import { isWhite, tintImage } from '../../lib/tintImage.ts'
 import { color3ToCss } from '../../lib/color.ts'
 import {
   measureLineHeight,
@@ -27,12 +28,13 @@ import {
   visibleFraction,
 } from '../../model/layout.ts'
 import { resolveModifier } from '../../model/modifiers.ts'
-import type { NodeId, UiNode } from '../../model/types.ts'
+import type { Color3, NodeId, PreviewImage, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { nodeStyle } from './nodeStyle.ts'
 import { ResizeHandles } from './ResizeHandles.tsx'
 import { RichTextView } from './RichTextView.tsx'
+import { imageLayerStyle } from './imageStyle.ts'
 
 // Draws one node, then draws each of its children inside it, and so on down
 // the tree. A component that renders itself like this is called recursive.
@@ -367,18 +369,58 @@ function ImageContent({ node }: { node: UiNode }) {
     node.previewImage ? state.document.images?.[node.previewImage] : undefined,
   )
   if (!preview) return <ImagePlaceholder node={node} />
+  return <PreviewPicture node={node} preview={preview} />
+}
+
+// A preview picture, drawn the way ScaleType says (see imageStyle.ts),
+// tinted by ImageColor3 and faded by ImageTransparency, over the
+// background. The outer box clips it to the element's rounded corners
+// (UICorner), which CSS's 9-slice wouldn't do by itself.
+function PreviewPicture({
+  node,
+  preview,
+}: {
+  node: UiNode
+  preview: PreviewImage
+}) {
+  const p = resolveProps(node)
+  const url = useTintedImage(preview.dataUrl, p.ImageColor3, node.previewImage!)
   return (
-    // Stretched to fill the element (Roblox's default ScaleType, Stretch),
-    // over the background, rounded with the element's corners. draggable
-    // false: dragging it moves the element, not the picture.
-    <img
-      src={preview.dataUrl}
-      alt=""
-      draggable={false}
-      className="pointer-events-none absolute inset-0 size-full object-fill select-none"
-      style={{ borderRadius: 'inherit' }}
-    />
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{ borderRadius: 'inherit', opacity: 1 - p.ImageTransparency }}
+    >
+      <div
+        className="absolute inset-0"
+        style={imageLayerStyle(p, url, preview.width, preview.height)}
+      />
+    </div>
   )
+}
+
+// The picture tinted by ImageColor3 (see lib/tintImage.ts). Tinting takes
+// a moment, so until it's ready (or for white, which changes nothing) the
+// picture is shown as it is.
+function useTintedImage(src: string, color: Color3, imageKey: string): string {
+  const { r, g, b } = color
+  const tintKey = isWhite(color) ? null : `${imageKey}:${r},${g},${b}`
+  const [tinted, setTinted] = useState<{ key: string; url: string } | null>(
+    null,
+  )
+  useEffect(() => {
+    if (!tintKey) return
+    let current = true // false once a newer colour or picture comes along
+    tintImage(src, { r, g, b }, imageKey)
+      .then((url) => {
+        if (current) setTinted({ key: tintKey, url })
+      })
+      .catch(() => {}) // can't tint: the plain picture stays
+    return () => {
+      current = false
+    }
+  }, [tintKey, src, r, g, b, imageKey])
+  return tintKey && tinted?.key === tintKey ? tinted.url : src
 }
 
 // Studio's placeholder is itself a picture: a white square with a grey
@@ -390,7 +432,8 @@ function ImageContent({ node }: { node: UiNode }) {
 // Roblox's servers), so those get just the grey icon, over the background.
 // Pick a preview picture to see the real thing.
 function ImagePlaceholder({ node }: { node: UiNode }) {
-  const uri = toContentUri(resolveProps(node).Image)
+  const p = resolveProps(node)
+  const uri = toContentUri(p.Image)
   if (uri === '') return null
   const icon = (
     <svg
@@ -407,10 +450,21 @@ function ImagePlaceholder({ node }: { node: UiNode }) {
     </svg>
   )
   if (uri !== PLACEHOLDER_IMAGE) return icon
+  // The placeholder is a picture too: ImageColor3 tints its near-white
+  // square and ImageTransparency fades it, like any image.
+  const tint = (channel: number) => (channel * 245) / 255
   return (
     <div
-      className="absolute inset-0 bg-[rgb(245_245_245)]"
-      style={{ borderRadius: 'inherit' }}
+      className="absolute inset-0"
+      style={{
+        borderRadius: 'inherit',
+        backgroundColor: color3ToCss({
+          r: tint(p.ImageColor3.r),
+          g: tint(p.ImageColor3.g),
+          b: tint(p.ImageColor3.b),
+        }),
+        opacity: 1 - p.ImageTransparency,
+      }}
     >
       {icon}
     </div>

@@ -35,6 +35,16 @@ export const TEXT_Y_ALIGNMENT = { Top: 0, Center: 1, Bottom: 2 } as const
 // Text that doesn't fit is cut off with "…": never, at the end of a word,
 // or partway through a word.
 export const TEXT_TRUNCATE = { None: 0, AtEnd: 1, SplitWord: 2 } as const
+// How an image fills its element (docs/reference/image-options.rbxmx):
+// stretched to fill, 9-slice (corners kept, middle stretched), tiled,
+// fitted inside (whole image, keeping its shape) or cropped to cover.
+export const SCALE_TYPE = {
+  Stretch: 0,
+  Slice: 1,
+  Tile: 2,
+  Fit: 3,
+  Crop: 4,
+} as const
 // Upright or slanted text (Roblox's FontStyle).
 export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
@@ -50,6 +60,7 @@ export type FontStyle = keyof typeof FONT_STYLE
 export type TextXAlignment = keyof typeof TEXT_X_ALIGNMENT
 export type TextYAlignment = keyof typeof TEXT_Y_ALIGNMENT
 export type TextTruncate = keyof typeof TEXT_TRUNCATE
+export type ScaleType = keyof typeof SCALE_TYPE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

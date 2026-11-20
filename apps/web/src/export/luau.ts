@@ -51,6 +51,10 @@ function luauValue(value: Value): string {
     }
     case 'Vector2':
       return `Vector2.new(${num(value.value.x)}, ${num(value.value.y)})`
+    case 'Rect': {
+      const r = value.value
+      return `Rect.new(${num(r.minX)}, ${num(r.minY)}, ${num(r.maxX)}, ${num(r.maxY)})`
+    }
     case 'Color3':
       return luauColor(value.value)
     case 'Font':

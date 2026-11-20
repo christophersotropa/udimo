@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { formatVector2, parseVector2 } from '../../lib/robloxText.ts'
+import {
+  formatRect,
+  formatVector2,
+  parseRect,
+  parseVector2,
+} from '../../lib/robloxText.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import {
@@ -13,6 +18,7 @@ import { isLaidOut } from '../../model/layout.ts'
 import {
   enumNames,
   type FontWeight,
+  SCALE_TYPE,
   TEXT_TRUNCATE,
   TEXT_X_ALIGNMENT,
   TEXT_Y_ALIGNMENT,
@@ -580,6 +586,59 @@ function NodeProperties({
             Paste the image’s Roblox asset ID or link: that’s what exports.
           </Hint>
           <PreviewRow id={id} previewKey={node.previewImage} />
+          <Row label="ImageColor3">
+            <ColorField
+              label="ImageColor3"
+              value={p.ImageColor3}
+              onChange={(ImageColor3) => set({ ImageColor3 })}
+            />
+          </Row>
+          <Row label="ImageTransparency">
+            <NumberField
+              label="ImageTransparency"
+              min={0}
+              max={1}
+              value={p.ImageTransparency}
+              onChange={(ImageTransparency) => set({ ImageTransparency })}
+            />
+          </Row>
+          <Row label="ScaleType">
+            <SelectField
+              label="ScaleType"
+              value={p.ScaleType}
+              options={enumNames(SCALE_TYPE)}
+              onChange={(ScaleType) => set({ ScaleType })}
+            />
+          </Row>
+          {p.ScaleType === 'Tile' && (
+            <UDim2Row
+              label="TileSize"
+              value={p.TileSize}
+              onChange={(TileSize) => set({ TileSize })}
+            />
+          )}
+          {p.ScaleType === 'Slice' && (
+            <>
+              <Row label="SliceCenter">
+                <TextValueField
+                  label="SliceCenter"
+                  value={p.SliceCenter}
+                  format={formatRect}
+                  parse={parseRect}
+                  onChange={(SliceCenter) => set({ SliceCenter })}
+                />
+              </Row>
+              <Row label="SliceScale">
+                <NumberField
+                  label="SliceScale"
+                  min={0}
+                  value={p.SliceScale}
+                  onChange={(SliceScale) => set({ SliceScale })}
+                />
+              </Row>
+              <SliceHint previewKey={node.previewImage} />
+            </>
+          )}
         </Section>
       )}
 
@@ -669,5 +728,20 @@ function PreviewRow({
         </Hint>
       )}
     </>
+  )
+}
+
+// Under SliceCenter: what its four numbers mean, and the preview
+// picture's size to measure them against.
+function SliceHint({ previewKey }: { previewKey: string | undefined }) {
+  const preview = useDocumentStore((state) =>
+    previewKey ? state.document.images?.[previewKey] : undefined,
+  )
+  return (
+    <Hint>
+      SliceCenter is the stretchy middle of the image, in its own pixels: left,
+      top, right, bottom. Corners and edges keep their size.
+      {preview && ` This image is ${preview.width} × ${preview.height}.`}
+    </Hint>
   )
 }

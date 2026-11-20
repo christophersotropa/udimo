@@ -122,6 +122,19 @@ describe('documentToLuau', () => {
     expect(luau).toContain('LineHeight = 1.5,')
   })
 
+  it('writes image options, SliceCenter as a Rect', () => {
+    const store = createDocumentStore()
+    store.getState().addNode(store.getState().document.rootId, 'ImageLabel', {
+      ScaleType: 'Slice',
+      SliceCenter: { minX: 10, minY: 10, maxX: 54, maxY: 54 },
+      ImageColor3: { r: 1, g: 0, b: 0 },
+    })
+    const luau = documentToLuau(store.getState().document)
+    expect(luau).toContain('ScaleType = Enum.ScaleType.Slice,')
+    expect(luau).toContain('SliceCenter = Rect.new(10, 10, 54, 54),')
+    expect(luau).toContain('ImageColor3 = Color3.fromRGB(255, 0, 0),')
+  })
+
   it('keeps working past 200 elements (Luau allows 200 local variables)', () => {
     const store = createDocumentStore()
     const { addNode } = store.getState()
