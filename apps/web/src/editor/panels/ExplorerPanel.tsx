@@ -1,4 +1,5 @@
 import {
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -29,6 +30,12 @@ import {
   PlusIcon,
 } from './icons.tsx'
 import { Panel } from './Panel.tsx'
+import {
+  type ActiveLine,
+  followSelection,
+  lineDomId,
+  treeKeyAction,
+} from './treeKeys.ts'
 import { type DropTarget, useExplorerDrag } from './useExplorerDrag.ts'
 
 // How far each level of the tree is indented, in pixels.
@@ -48,6 +55,15 @@ type TreeControls = {
   dragIds: ReadonlySet<NodeId>
   dropTarget: DropTarget | null
   onRowPointerDown: (event: ReactPointerEvent<HTMLElement>, id: NodeId) => void
+  // The keyboard's current line (see treeKeys.ts), and whether to outline
+  // it: while the tree has focus, so you can see the arrow keys will move
+  // through the tree (and not nudge the element on the canvas).
+  active: ActiveLine
+  showActive: boolean
+  // A click on a line makes it current and puts keyboard focus in the
+  // tree, so the arrow keys carry on from there.
+  activate: (line: ActiveLine) => void
+  focusTree: () => void
 }
 
 // The instance tree, like Roblox Studio's Explorer: ScreenGui > Frame > ...
@@ -110,6 +126,74 @@ export function ExplorerPanel() {
     })
   }
 
+  // Keyboard use. The tree is one stop for the Tab key; inside it the arrow
+  // keys move from line to line. Focus stays on the list itself, and
+  // aria-activedescendant tells screen readers which line is current. (The
+  // other way, moving focus onto each line, gets tangled up with the
+  // buttons inside the lines.)
+  const [lastActive, setLastActive] = useState<ActiveLine | null>(null)
+  const active = followSelection(lastActive, selection, rootId)
+  const [treeFocused, setTreeFocused] = useState(false)
+
+  function focusTree() {
+    listRef.current?.focus({ preventScroll: true })
+  }
+
+  // Moves to a line, selecting it the way a click would. With Shift, the
+  // line is added to the selection instead.
+  function goTo(line: HTMLElement, extend: boolean) {
+    const store = useDocumentStore.getState()
+    // Element lines carry data-row-id; modifier lines, their element's id.
+    const id = (line.dataset.rowId ?? line.dataset.ownerId) as NodeId
+    const modifier = line.dataset.modifier as ModifierClass | undefined
+    setLastActive({ id, modifier })
+    if (id === rootId) {
+      if (!extend) store.clearSelection()
+    } else if (!extend) {
+      store.select(id)
+    } else if (!store.selection.includes(id)) {
+      store.select(id, true)
+    }
+    line.scrollIntoView({ block: 'nearest' })
+  }
+
+  function onTreeKeyDown(event: ReactKeyboardEvent<HTMLUListElement>) {
+    // The rename box handles its own keys.
+    if ((event.target as Element).closest('input')) return
+    const elements = [
+      ...(listRef.current?.querySelectorAll<HTMLElement>('[role="treeitem"]') ??
+        []),
+    ]
+    const lines = elements.map((element) => {
+      const expanded = element.getAttribute('aria-expanded')
+      return {
+        level: Number(element.getAttribute('aria-level')),
+        expanded: expanded === null ? null : expanded === 'true',
+      }
+    })
+    const current = elements.findIndex(
+      (element) => element.id === lineDomId(active),
+    )
+    const action = treeKeyAction(lines, current, event.key, event.shiftKey)
+    if (!action) return // Delete, F2, ⌘C...: the editor's shortcuts
+    // Handled here: keep it from the editor's shortcuts (an arrow would
+    // nudge the selection on the canvas) and from the page (scrolling).
+    event.preventDefault()
+    event.stopPropagation()
+    if (action.kind === 'none') return
+
+    const line = elements[action.index]
+    const id = (line.dataset.rowId ?? line.dataset.ownerId) as NodeId
+    if (action.kind === 'focus') goTo(line, event.shiftKey)
+    else if (action.kind === 'select') goTo(line, false)
+    else if (action.kind === 'expand' || action.kind === 'collapse') {
+      toggleOpen(id)
+    } else {
+      const box = line.getBoundingClientRect()
+      openMenuFor(id, box.left + 24, box.bottom)
+    }
+  }
+
   const tree: TreeControls = {
     collapsed,
     filter,
@@ -118,6 +202,10 @@ export function ExplorerPanel() {
     dragIds,
     dropTarget,
     onRowPointerDown,
+    active,
+    showActive: treeFocused,
+    activate: setLastActive,
+    focusTree,
   }
 
   // Folds every row shut except the ScreenGui, so you see the top level.
@@ -176,7 +264,26 @@ export function ExplorerPanel() {
       {filter?.size === 0 && (
         <p className="px-1 text-sm text-muted">Nothing called “{query}”.</p>
       )}
-      <ul ref={listRef}>
+      {/* role="tree": a screen reader announces the lines as a tree, with
+          their level and whether each is selected and unfolded. */}
+      <ul
+        ref={listRef}
+        role="tree"
+        aria-label="Explorer"
+        aria-multiselectable="true"
+        aria-activedescendant={lineDomId(active)}
+        tabIndex={filter?.size === 0 ? -1 : 0}
+        onKeyDown={onTreeKeyDown}
+        // React's onFocus/onBlur also fire for the buttons inside, so these
+        // track focus anywhere in the tree.
+        onFocus={() => setTreeFocused(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setTreeFocused(false)
+          }
+        }}
+        className="outline-none"
+      >
         <TreeRow id={rootId} depth={0} parentHidden={false} tree={tree} />
       </ul>
     </Panel>
@@ -228,6 +335,17 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
     else store.select(id, event.shiftKey)
   }
 
+  // The line is current for the keyboard (outlined only while you use it).
+  const isActive = tree.active.id === id && !tree.active.modifier
+
+  // A click on the name: select, like before, and leave keyboard focus in
+  // the tree so the arrow keys carry on from this line.
+  function onNameClick(event: ReactMouseEvent) {
+    onSelect(event)
+    tree.activate({ id })
+    tree.focusTree()
+  }
+
   function finishRename(newName: string | null) {
     setRenamingId(null)
     // null means cancelled. An empty name would be hard to find in Studio,
@@ -240,13 +358,30 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
   return (
     // Other selected rows being moved along dim in place (the grabbed one
     // is lifted and follows the pointer instead).
+    // role="none" on the <li> and <ul>s: for screen readers the tree is a
+    // flat list of lines (the row <div>s), each saying its own level.
     <li
+      role="none"
       className={`transition-opacity duration-150 ${
         tree.dragIds.has(id) ? 'opacity-40' : ''
       }`}
     >
       <div
         ref={rowRef}
+        id={lineDomId({ id })}
+        role="treeitem"
+        // What a screen reader says: "Window, Frame, hidden".
+        aria-label={[
+          node.name,
+          node.className,
+          hidden && 'hidden',
+          node.locked && 'locked',
+        ]
+          .filter(Boolean)
+          .join(', ')}
+        aria-level={depth + 1}
+        aria-selected={isSelected}
+        aria-expanded={hasChildren ? open : undefined}
         // For the drag: one line of the tree, which row, and how deep.
         data-tree-line
         data-row-id={id}
@@ -263,6 +398,10 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
         style={{ paddingLeft: depth * INDENT + 4 }}
         title={node.className}
         className={`group relative flex h-6 items-center gap-1.5 rounded-sm pr-1 transition-colors duration-100 ${
+          isActive && tree.showActive
+            ? 'outline-1 -outline-offset-1 outline-accent'
+            : ''
+        } ${
           dropPlace === 'inside'
             ? 'bg-accent-soft ring-1 ring-accent'
             : isSelected
@@ -292,6 +431,8 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           <button
             type="button"
             data-no-drag // pressing it folds, never drags
+            // Not a Tab stop of its own: the arrow keys fold and unfold.
+            tabIndex={-1}
             aria-label={open ? 'Collapse' : 'Expand'}
             onClick={() => tree.toggleOpen(id)}
             className="shrink-0 rounded text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
@@ -304,11 +445,16 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
 
         <ClassIcon className={node.className} />
         {renaming ? (
-          <RenameInput name={node.name} onDone={finishRename} />
+          <RenameInput
+            name={node.name}
+            onDone={finishRename}
+            onKeyedDone={tree.focusTree}
+          />
         ) : (
           <button
             type="button"
-            onClick={onSelect}
+            tabIndex={-1} // the arrow keys reach it instead
+            onClick={onNameClick}
             onDoubleClick={() => setRenamingId(id)}
             title={`${node.className} · double-click to rename, drag to move, right-click for more`}
             className={`min-w-0 flex-1 truncate text-left text-body focus-visible:outline-2 focus-visible:outline-accent ${
@@ -364,14 +510,23 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
       </div>
 
       {hasChildren && open && (
-        <ul>
+        <ul role="none">
           {modifiers.map((modifier) => (
             <ModifierRow
               key={modifier}
               ownerId={id}
               modifier={modifier}
               depth={depth + 1}
-              onSelect={() => useDocumentStore.getState().select(id)}
+              outlined={
+                tree.showActive &&
+                tree.active.id === id &&
+                tree.active.modifier === modifier
+              }
+              onSelect={() => {
+                useDocumentStore.getState().select(id)
+                tree.activate({ id, modifier })
+                tree.focusTree()
+              }}
               onMenu={(x, y) => openMenuFor(id, x, y)}
             />
           ))}
@@ -397,22 +552,32 @@ function ModifierRow({
   ownerId,
   modifier,
   depth,
+  outlined,
   onSelect,
   onMenu,
 }: {
   ownerId: NodeId // the element it's on
   modifier: ModifierClass
   depth: number
+  outlined: boolean // the keyboard's current line, while you use it
   onSelect: () => void
   onMenu: (x: number, y: number) => void // right-click: the element's menu
 }) {
   return (
-    <li>
+    <li role="none">
       <button
         type="button"
+        id={lineDomId({ id: ownerId, modifier })}
+        role="treeitem"
+        aria-label={`${modifier}, modifier`}
+        aria-level={depth + 1}
+        // Selecting it selects the element, so the line itself never is.
+        aria-selected={false}
+        tabIndex={-1} // the arrow keys reach it instead
         // A line of the tree, for the drag to measure and slide aside.
         data-tree-line
         data-owner-id={ownerId}
+        data-modifier={modifier}
         data-depth={depth}
         onClick={onSelect}
         onContextMenu={(event) => {
@@ -421,7 +586,9 @@ function ModifierRow({
         }}
         title="A modifier: edit it in the element's Properties"
         style={{ paddingLeft: depth * INDENT + 4 + 18 }}
-        className="flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
+        className={`flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-body text-muted hover:bg-hover ${
+          outlined ? 'outline-1 -outline-offset-1 outline-accent' : ''
+        }`}
       >
         <ClassIcon className={modifier} />
         {modifier}
@@ -447,6 +614,9 @@ function RowButton({
     <button
       type="button"
       data-no-drag
+      // Not a Tab stop: from the keyboard, the right-click menu (menu key
+      // or Shift+F10) inserts, and ⌘⇧H / ⌘⇧L show and unlock.
+      tabIndex={-1}
       aria-label={label}
       title={label}
       onClick={onClick}
@@ -464,9 +634,13 @@ function RowButton({
 function RenameInput({
   name,
   onDone,
+  onKeyedDone,
 }: {
   name: string
   onDone: (newName: string | null) => void
+  // After Enter or Escape (not a click elsewhere): hands keyboard focus
+  // back to the tree, so you can carry on with the arrow keys.
+  onKeyedDone: () => void
 }) {
   const [draft, setDraft] = useState(name)
   // A ref, not state: it must be readable in onBlur right away, before
@@ -483,11 +657,10 @@ function RenameInput({
       onFocus={(event) => event.target.select()} // select all, ready to type over
       onBlur={() => onDone(cancelled.current ? null : draft)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter') event.currentTarget.blur()
-        if (event.key === 'Escape') {
-          cancelled.current = true
-          event.currentTarget.blur()
-        }
+        if (event.key !== 'Enter' && event.key !== 'Escape') return
+        if (event.key === 'Escape') cancelled.current = true
+        event.currentTarget.blur() // saves (or cancels) through onBlur
+        onKeyedDone()
       }}
       className="min-w-0 flex-1 rounded bg-app px-1 py-0.5 text-sm text-ink outline-1 outline-accent"
     />
