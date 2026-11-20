@@ -38,7 +38,7 @@ export function ZoomBar() {
         type="button"
         title="Fit the screen in view (⌘0)"
         onClick={fit}
-        className="h-7 rounded px-2 text-[13px] text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
+        className="h-7 rounded px-2 text-body text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
       >
         Fit
       </button>

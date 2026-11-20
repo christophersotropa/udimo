@@ -163,3 +163,6 @@ vite.config.ts.timestamp-*
 .env
 .env.*
 !.env.example
+
+# Impeccable (design tool) reports: personal notes, not part of the project
+.impeccable/

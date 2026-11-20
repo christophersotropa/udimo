@@ -170,7 +170,7 @@ export function ExplorerPanel() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Filter (⌘⇧X)"
           aria-label="Filter the Explorer"
-          className="h-7 w-full rounded bg-app px-2 text-[13px] text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
+          className="h-7 w-full rounded bg-app px-2 text-body text-ink ring-1 ring-line outline-none placeholder:text-muted focus:ring-accent"
         />
       </div>
       {filter?.size === 0 && (
@@ -294,7 +294,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             data-no-drag // pressing it folds, never drags
             aria-label={open ? 'Collapse' : 'Expand'}
             onClick={() => tree.toggleOpen(id)}
-            className="shrink-0 rounded text-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
+            className="shrink-0 rounded text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
           >
             <ChevronIcon className={open ? 'rotate-90' : undefined} />
           </button>
@@ -311,7 +311,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             onClick={onSelect}
             onDoubleClick={() => setRenamingId(id)}
             title={`${node.className} · double-click to rename, drag to move, right-click for more`}
-            className={`min-w-0 flex-1 truncate text-left text-[13px] focus-visible:outline-2 focus-visible:outline-accent ${
+            className={`min-w-0 flex-1 truncate text-left text-body focus-visible:outline-2 focus-visible:outline-accent ${
               hidden ? 'text-faint' : isSelected ? 'text-accent' : 'text-ink'
             }`}
           >
@@ -320,13 +320,13 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
         )}
         {/* Dragging several rows: the grabbed one says how many more. */}
         {tree.lifted?.id === id && tree.lifted.count > 1 && (
-          <span className="shrink-0 rounded-sm bg-accent px-1 font-mono text-[10px] font-semibold text-accent-ink">
+          <span className="shrink-0 rounded-sm bg-accent px-1 font-mono text-badge font-semibold text-accent-ink">
             +{tree.lifted.count - 1}
           </span>
         )}
         {/* Folded rows say how much is inside, so nothing is out of mind. */}
         {hasChildren && !open && !renaming && (
-          <span className="shrink-0 rounded-sm bg-raised px-1 font-mono text-[10px] text-faint">
+          <span className="shrink-0 rounded-sm bg-raised px-1 font-mono text-badge text-muted">
             {node.children.length + modifiers.length}
           </span>
         )}
@@ -421,7 +421,7 @@ function ModifierRow({
         }}
         title="A modifier: edit it in the element's Properties"
         style={{ paddingLeft: depth * INDENT + 4 + 18 }}
-        className="flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-[13px] text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
+        className="flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent"
       >
         <ClassIcon className={modifier} />
         {modifier}

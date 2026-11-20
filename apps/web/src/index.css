@@ -18,16 +18,30 @@
   --color-line: #2a2a2a; /* borders and dividers */
   --color-ink: #e4e4e4; /* main text */
   --color-muted: #9a9a9a; /* secondary text */
-  --color-faint: #636363; /* hints, disabled */
+  /* Too dim to read comfortably (about 3:1 against the panels), so only
+     for things you don't need to read: disabled or hidden items and
+     decoration. Hints and labels people read use muted (about 6:1). */
+  --color-faint: #636363;
   --color-accent: #e5a23c; /* the one accent: selection, primary actions */
   --color-accent-hover: #f0b458;
   --color-accent-ink: #1c1406; /* text on an accent background */
   --color-accent-soft: rgb(229 162 60 / 0.14); /* selected rows */
-  --color-warn: #e5a23c;
+  /* Yellow, not the accent's amber, so a warning never looks like a
+     selection. */
+  --color-warn: #e3c84a;
   --color-danger: #e5534b;
   --color-guide: #e0457b; /* alignment guides */
   --color-screen: #232323; /* the game screen's checkerboard... */
   --color-screen-alt: #1d1d1d; /* ...and its other square */
+
+  /* Text sizes on top of Tailwind's own (text-xs is 12px, text-sm 14px):
+     the editor's in-between sizes, named so they stay the same everywhere.
+     text-body for rows, menus and inputs; text-note for hints, shortcuts
+     and labels; text-badge for tiny counts; text-title for dialog titles. */
+  --text-title: 15px;
+  --text-body: 13px;
+  --text-note: 11px;
+  --text-badge: 10px;
 
   /* Values, sizes and code: the system's monospace font (no download). */
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

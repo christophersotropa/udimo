@@ -44,7 +44,7 @@ export function StatusBar() {
   )
 
   return (
-    <footer className="flex h-7 items-center justify-between gap-4 border-t border-line bg-panel px-3 font-mono text-[11px] text-muted">
+    <footer className="flex h-7 items-center justify-between gap-4 border-t border-line bg-panel px-3 font-mono text-note text-muted">
       <p className="flex min-w-0 items-center gap-3 truncate">
         {selected && 'many' in selected ? (
           <span>{selected.many} selected</span>

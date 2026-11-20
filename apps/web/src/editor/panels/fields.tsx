@@ -62,10 +62,10 @@ export function Section({
           type="button"
           aria-expanded={open}
           onClick={() => toggle(title)}
-          className="flex items-center gap-1 rounded text-[13px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent"
+          className="flex items-center gap-1 rounded text-body font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent"
         >
           <ChevronIcon
-            className={`text-faint transition-transform ${open ? 'rotate-90' : ''}`}
+            className={`text-muted transition-transform ${open ? 'rotate-90' : ''}`}
           />
           {title}
         </button>
@@ -151,7 +151,7 @@ export function Hint({
   warn?: boolean
 }) {
   return (
-    <p className={`py-0.5 text-[11px] ${warn ? 'text-warn' : 'text-faint'}`}>
+    <p className={`py-0.5 text-note ${warn ? 'text-warn' : 'text-muted'}`}>
       {children}
     </p>
   )
@@ -387,13 +387,13 @@ export function UDim2Row({
 
   const axis = (name: 'X' | 'Y', scale: 'xs' | 'ys', offset: 'xo' | 'yo') => (
     <Row label={name} indent>
-      <span className="text-[11px] text-faint">Scale</span>
+      <span className="text-note text-muted">Scale</span>
       <NumberField
         label={`${label} ${name} Scale`}
         value={value[scale]}
         onChange={(v) => onChange({ ...value, [scale]: v })}
       />
-      <span className="text-[11px] text-faint">Offset</span>
+      <span className="text-note text-muted">Offset</span>
       <NumberField
         label={`${label} ${name} Offset`}
         integer
@@ -414,7 +414,7 @@ export function UDim2Row({
           className="flex items-center gap-0.5 truncate text-left text-xs text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
         >
           <ChevronIcon
-            className={`-ml-0.5 shrink-0 text-faint transition-transform ${open ? 'rotate-90' : ''}`}
+            className={`-ml-0.5 shrink-0 text-muted transition-transform ${open ? 'rotate-90' : ''}`}
           />
           {label}
         </button>

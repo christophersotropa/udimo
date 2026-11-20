@@ -43,7 +43,7 @@ function Breadcrumb() {
     (state) => state.document.nodes[state.document.rootId].name,
   )
   return (
-    <p className="flex min-w-0 items-center gap-2 text-[13px]">
+    <p className="flex min-w-0 items-center gap-2 text-body">
       {/* flex, not inline: an inline SVG sits on the text baseline with
           room for letter tails below it, which pushes it off-center. */}
       <span className="ml-1.5 flex text-ink">
