@@ -5,6 +5,7 @@ import {
   FONT_STYLE,
   FONT_WEIGHT,
   HORIZONTAL_ALIGNMENT,
+  SCALE_TYPE,
   SORT_ORDER,
   TEXT_TRUNCATE,
   TEXT_X_ALIGNMENT,
@@ -109,6 +110,12 @@ const isUDim2 = (v: unknown) =>
   isNumber(v.ys) &&
   isNumber(v.yo)
 const isVector2 = (v: unknown) => isRecord(v) && isNumber(v.x) && isNumber(v.y)
+const isRect = (v: unknown) =>
+  isRecord(v) &&
+  isNumber(v.minX) &&
+  isNumber(v.minY) &&
+  isNumber(v.maxX) &&
+  isNumber(v.maxY)
 const isColor3 = (v: unknown) =>
   isRecord(v) && [v.r, v.g, v.b].every((c) => isNumber(c) && c >= 0 && c <= 1)
 const isBoolean = (v: unknown) => typeof v === 'boolean'
@@ -211,6 +218,12 @@ const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   PlaceholderColor3: isColor3,
   ClearTextOnFocus: isBoolean,
   Image: isString,
+  ImageColor3: isColor3,
+  ImageTransparency: isNumber,
+  ScaleType: isOneOf(SCALE_TYPE),
+  TileSize: isUDim2,
+  SliceCenter: isRect,
+  SliceScale: (v: unknown) => isNumber(v) && v >= 0,
   CanvasSize: isUDim2,
   ScrollBarThickness: isNumber,
 }

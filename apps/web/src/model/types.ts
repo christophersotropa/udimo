@@ -2,6 +2,7 @@ import type {
   ApplyStrokeMode,
   FillDirection,
   HorizontalAlignment,
+  ScaleType,
   SortOrder,
   TextTruncate,
   TextXAlignment,
@@ -30,6 +31,15 @@ export type UDim2 = {
 export type Vector2 = {
   x: number
   y: number
+}
+
+// A rectangle by its corners (Roblox's Rect): top-left (min) and
+// bottom-right (max), in pixels.
+export type Rect = {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
 }
 
 // Color3: red, green and blue, each from 0 to 1 (not 0 to 255),
@@ -115,6 +125,19 @@ export type Props = {
   ClearTextOnFocus?: boolean
   // Image classes (ImageLabel, ImageButton), e.g. "rbxassetid://123"
   Image?: string
+  // Multiplies the image's colours (white leaves it as it is)
+  ImageColor3?: Color3
+  // 0 = solid image, 1 = invisible
+  ImageTransparency?: number
+  // How the image fills the element (see SCALE_TYPE)
+  ScaleType?: ScaleType
+  // Tile: how big each copy of the image is
+  TileSize?: UDim2
+  // Slice: the stretchy middle of the image, in the image's own pixels;
+  // everything around it (corners and edges) keeps its size
+  SliceCenter?: Rect
+  // Slice: how big the corners and edges are drawn (2 = twice the size)
+  SliceScale?: number
   // ScrollingFrame: the size of the scrollable area its children sit on
   // (Scale is a fraction of the frame), and the scroll bar width in pixels
   CanvasSize?: UDim2

@@ -1,4 +1,4 @@
-import type { Color3, UDim, UDim2, Vector2 } from '../model/types.ts'
+import type { Color3, Rect, UDim, UDim2, Vector2 } from '../model/types.ts'
 import { parseHexColor } from './color.ts'
 import { formatNumber } from './numbers.ts'
 
@@ -48,6 +48,18 @@ export function parseVector2(text: string): Vector2 | null {
   const values = numbersIn(text)
   if (values.length !== 2) return null
   return { x: values[0], y: values[1] }
+}
+
+// A Rect as its four corner numbers, "minX, minY, maxX, maxY", like Studio.
+export function formatRect(r: Rect): string {
+  return `${n(r.minX)}, ${n(r.minY)}, ${n(r.maxX)}, ${n(r.maxY)}`
+}
+
+export function parseRect(text: string): Rect | null {
+  const values = numbersIn(text)
+  if (values.length !== 4) return null
+  const [minX, minY, maxX, maxY] = values
+  return { minX, minY, maxX, maxY }
 }
 
 const to255 = (channel: number) => Math.round(channel * 255)

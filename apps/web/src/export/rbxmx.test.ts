@@ -16,6 +16,8 @@ import layoutReference from '../../../../docs/reference/list-grid-layouts.rbxmx?
 import fontReference from '../../../../docs/reference/fonts.rbxmx?raw'
 // Seven TextLabels, each with one text option changed (build 49).
 import textOptionsReference from '../../../../docs/reference/text-options.rbxmx?raw'
+// Six ImageLabels, each with one image option changed (build 50).
+import imageOptionsReference from '../../../../docs/reference/image-options.rbxmx?raw'
 import type { Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
@@ -146,6 +148,26 @@ const TEXT_OPTION_LABELS: [string, Props][] = [
   ['TextWrapped', { TextWrapped: true }],
 ]
 
+// The ImageLabels in image-options.rbxmx, in file order.
+const IMAGE_OPTION_LABELS: [string, Props][] = [
+  ['ImageColor3 black', { ImageColor3: { r: 0, g: 0, b: 0 } }],
+  ['ImageTransparency 0.5', { ImageTransparency: 0.5 }],
+  ['ScaleType Fit', { ScaleType: 'Fit' }],
+  ['ScaleType Crop', { ScaleType: 'Crop' }],
+  [
+    'ScaleType Tile, TileSize {2, 0}, {1, 0}',
+    { ScaleType: 'Tile', TileSize: { xs: 2, xo: 0, ys: 1, yo: 0 } },
+  ],
+  [
+    'ScaleType Slice, SliceCenter 0, 0, 2, 0, SliceScale 2',
+    {
+      ScaleType: 'Slice',
+      SliceCenter: { minX: 0, minY: 0, maxX: 2, maxY: 0 },
+      SliceScale: 2,
+    },
+  ],
+]
+
 // The labels in fonts.rbxmx: name -> font.
 const FONT_LABELS = {
   BuilderSans: 'BuilderSans',
@@ -217,6 +239,31 @@ describe('documentToRbxmx', () => {
       expect(studio).toHaveLength(TEXT_OPTION_LABELS.length)
     })
     describe.each(TEXT_OPTION_LABELS.map(([name], i) => [name, i] as const))(
+      '%s',
+      (_name, i) => {
+        it.each([...ours[i]])('%s', (prop, value) => {
+          expect(studio[i].get(prop)).toBe(value)
+        })
+      },
+    )
+  })
+
+  describe('matches the Studio reference file for image options', () => {
+    const store = createDocumentStore()
+    const rootId = store.getState().document.rootId
+    for (const [, props] of IMAGE_OPTION_LABELS) {
+      store.getState().addNode(rootId, 'ImageLabel', props)
+    }
+    const ours = allPropertiesOf(
+      documentToRbxmx(store.getState().document),
+      'ImageLabel',
+    )
+    const studio = allPropertiesOf(imageOptionsReference, 'ImageLabel')
+
+    it('has the same six labels', () => {
+      expect(studio).toHaveLength(IMAGE_OPTION_LABELS.length)
+    })
+    describe.each(IMAGE_OPTION_LABELS.map(([name], i) => [name, i] as const))(
       '%s',
       (_name, i) => {
         it.each([...ours[i]])('%s', (prop, value) => {

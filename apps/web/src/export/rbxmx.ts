@@ -44,6 +44,14 @@ function propertyTag({ name, value }: Property): string {
     }
     case 'Vector2':
       return tag('Vector2', `<X>${value.value.x}</X><Y>${value.value.y}</Y>`)
+    case 'Rect': {
+      // Studio calls this type Rect2D, corners as <min> and <max>.
+      const r = value.value
+      return tag(
+        'Rect2D',
+        `<min><X>${r.minX}</X><Y>${r.minY}</Y></min><max><X>${r.maxX}</X><Y>${r.maxY}</Y></max>`,
+      )
+    }
     case 'Color3': {
       const c = value.value
       return tag('Color3', `<R>${c.r}</R><G>${c.g}</G><B>${c.b}</B>`)

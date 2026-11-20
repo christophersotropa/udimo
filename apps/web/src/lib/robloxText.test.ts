@@ -3,7 +3,9 @@ import {
   formatColor3,
   formatUDim,
   formatUDim2,
+  formatRect,
   formatVector2,
+  parseRect,
   parseColor3,
   parseUDim,
   parseUDim2,
@@ -50,6 +52,20 @@ describe('UDim and Vector2 as text', () => {
     expect(formatVector2({ x: 0.5, y: 1 })).toBe('0.5, 1')
     expect(parseVector2('0.5,1')).toEqual({ x: 0.5, y: 1 })
     expect(parseVector2('1')).toBeNull()
+  })
+})
+
+describe('Rect as text', () => {
+  it('writes and reads the four corner numbers', () => {
+    const rect = { minX: 10, minY: 12, maxX: 54.5, maxY: 52 }
+    expect(formatRect(rect)).toBe('10, 12, 54.5, 52')
+    expect(parseRect('10, 12, 54.5, 52')).toEqual(rect)
+    expect(parseRect('10 12 54.5 52')).toEqual(rect)
+  })
+
+  it('needs exactly four numbers', () => {
+    expect(parseRect('1, 2, 3')).toBeNull()
+    expect(parseRect('1, 2, 3, 4, 5')).toBeNull()
   })
 })
 

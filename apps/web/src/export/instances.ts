@@ -8,6 +8,7 @@ import {
   type FontStyle,
   type FontWeight,
   HORIZONTAL_ALIGNMENT,
+  SCALE_TYPE,
   SORT_ORDER,
   TEXT_TRUNCATE,
   TEXT_X_ALIGNMENT,
@@ -26,6 +27,7 @@ import type {
   NodeId,
   NumberKeypoint,
   Props,
+  Rect,
   UDim,
   UDim2,
   UiDocument,
@@ -55,6 +57,7 @@ export type Value =
   | { type: 'UDim'; value: UDim }
   | { type: 'UDim2'; value: UDim2 }
   | { type: 'Vector2'; value: Vector2 }
+  | { type: 'Rect'; value: Rect }
   | { type: 'Color3'; value: Color3 }
   | { type: 'Content'; value: string } // an image URI, '' for none
   | {
@@ -202,6 +205,12 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     properties.push(
       prop('ImageContent', { type: 'Content', value: uri }, 'rbxmx'),
       prop('Image', { type: 'string', value: uri }, 'luau'),
+      color3('ImageColor3', p.ImageColor3),
+      float('ImageTransparency', p.ImageTransparency),
+      enumProp('ScaleType', SCALE_TYPE, p.ScaleType),
+      prop('SliceCenter', { type: 'Rect', value: p.SliceCenter }),
+      float('SliceScale', p.SliceScale),
+      udim2('TileSize', p.TileSize),
     )
   }
 

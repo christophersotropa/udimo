@@ -40,6 +40,12 @@ const BASE_DEFAULTS: Required<Props> = {
   PlaceholderColor3: { r: 0.5, g: 0.5, b: 0.5 }, // mid grey
   ClearTextOnFocus: true,
   Image: PLACEHOLDER_IMAGE,
+  ImageColor3: { r: 1, g: 1, b: 1 }, // white: the image as it is
+  ImageTransparency: 0,
+  ScaleType: 'Stretch',
+  TileSize: { xs: 1, xo: 0, ys: 1, yo: 0 }, // one tile the element's size
+  SliceCenter: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+  SliceScale: 1,
   CanvasSize: { xs: 0, xo: 0, ys: 2, yo: 0 }, // twice the frame's height
   ScrollBarThickness: 12,
 }
