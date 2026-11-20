@@ -25,7 +25,7 @@
 
 ## Why
 
-Building UI in Roblox Studio means typing UDim2 values into a properties panel and pressing Play to see the result. Most web design tools that target Roblox only produce mockup images you then rebuild by hand. Udimo lets you design on a canvas that speaks Roblox (Scale and Offset, AnchorPoint, UICorner, UIListLayout) and exports the actual instances.  
+Building UI in Roblox Studio means typing UDim2 values into a properties panel and pressing Play to see the result. Most web design tools that target Roblox only produce mockup images you then rebuild by hand. Udimo lets you design on a canvas that speaks Roblox (Scale and Offset, AnchorPoint, UICorner, UIListLayout) and exports the actual instances.
 
 ## Features
 
@@ -57,15 +57,15 @@ The hard part of this project is producing files Studio reads exactly right: enu
 
 ## Tech stack
 
-| | |
-| --- | --- |
-| Language | TypeScript |
-| UI | React 19, Tailwind CSS |
-| State | Zustand + Immer (undo/redo via snapshots) |
-| Build | Vite, npm workspaces |
-| Testing | Vitest, about 900 tests |
-| Quality | Oxlint, Prettier, GitHub Actions CI on every push |
-| Hosting | Vercel |
+|          |                                                   |
+| -------- | ------------------------------------------------- |
+| Language | TypeScript                                        |
+| UI       | React 19, Tailwind CSS                            |
+| State    | Zustand + Immer (undo/redo via snapshots)         |
+| Build    | Vite, npm workspaces                              |
+| Testing  | Vitest, about 900 tests                           |
+| Quality  | Oxlint, Prettier, GitHub Actions CI on every push |
+| Hosting  | Vercel                                            |
 
 ## Run locally
 
