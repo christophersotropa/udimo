@@ -92,6 +92,56 @@ describe('exportWarnings', () => {
       ).toHaveLength(1)
     })
 
+    it('wraps TextWrapped text before measuring it', () => {
+      // "aaaa bbbb cccc": 140px on one line. Wrapped in 100px: two lines
+      // ("aaaa bbbb" is 90px), 2 × 14 = 28px tall, in a 30px box: fits.
+      const box = { Size: { xs: 0, xo: 100, ys: 0, yo: 30 } }
+      const wrapped = setup('TextLabel', {
+        ...box,
+        Text: 'aaaa bbbb cccc',
+        TextWrapped: true,
+      })
+      expect(
+        exportWarnings(wrapped.store.getState().document, tenPerChar),
+      ).toEqual([])
+      // Not wrapped, it runs past the side.
+      const unwrapped = setup('TextLabel', { ...box, Text: 'aaaa bbbb cccc' })
+      expect(
+        exportWarnings(unwrapped.store.getState().document, tenPerChar),
+      ).toHaveLength(1)
+    })
+
+    it('spaces lines by LineHeight', () => {
+      // One line of 20px at LineHeight 2 is 40px tall: more than 30.
+      const { store } = setup('TextLabel', {
+        Size: { xs: 0, xo: 400, ys: 0, yo: 30 },
+        TextSize: 20,
+        LineHeight: 2,
+      })
+      expect(
+        exportWarnings(store.getState().document, tenPerChar),
+      ).toHaveLength(1)
+    })
+
+    it('doesn’t count RichText tags', () => {
+      // "<b>hi</b>" shows "hi": 20px, in a 50px box.
+      const { store } = setup('TextLabel', {
+        Size: { xs: 0, xo: 50, ys: 0, yo: 30 },
+        Text: '<b>hi</b>',
+        RichText: true,
+      })
+      expect(exportWarnings(store.getState().document, tenPerChar)).toEqual([])
+    })
+
+    it('leaves TextTruncate text alone: it’s cut off on purpose', () => {
+      const { store } = setup('TextLabel', {
+        Size: { xs: 0, xo: 20, ys: 0, yo: 20 },
+        Text: 'far too long for this box',
+        TextTruncate: 'AtEnd',
+      })
+      expect(exportWarnings(store.getState().document, tenPerChar)).toEqual([])
+    })
+
     it('trusts TextScaled to fit', () => {
       const { store } = setup('TextLabel', {
         Size: { xs: 0, xo: 20, ys: 0, yo: 20 },

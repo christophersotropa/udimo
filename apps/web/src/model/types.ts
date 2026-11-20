@@ -3,6 +3,9 @@ import type {
   FillDirection,
   HorizontalAlignment,
   SortOrder,
+  TextTruncate,
+  TextXAlignment,
+  TextYAlignment,
   VerticalAlignment,
 } from './enums.ts'
 import type { FontFace } from './fonts.ts'
@@ -90,6 +93,19 @@ export type Props = {
   TextSize?: number
   // Text grows or shrinks to fill the box (TextSize is then ignored)
   TextScaled?: boolean
+  // Long lines wrap onto the next line instead of running past the box
+  TextWrapped?: boolean
+  // Where the text sits in its box
+  TextXAlignment?: TextXAlignment
+  TextYAlignment?: TextYAlignment
+  // 0 = solid text, 1 = invisible
+  TextTransparency?: number
+  // Tags in the text like <b>bold</b> style it (see lib/richText.ts)
+  RichText?: boolean
+  // Text that doesn't fit is cut off with "…"
+  TextTruncate?: TextTruncate
+  // Space between lines, as a multiple of the normal spacing (1 to 3)
+  LineHeight?: number
   // TextButton: darkens the button while hovered or pressed, in game
   AutoButtonColor?: boolean
   // TextBox: grey hint text shown while the box is empty, and whether

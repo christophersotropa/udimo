@@ -1,4 +1,6 @@
 import { toContentUri } from '../lib/assets.ts'
+import { richTextPlain } from '../lib/richText.ts'
+import { wrappedLineCount } from '../lib/text.ts'
 import { isImageClass, isTextClass } from './classes.ts'
 import { PLACEHOLDER_IMAGE, resolveProps } from './defaults.ts'
 import { absoluteBox, contentArea } from './layout.ts'
@@ -108,6 +110,8 @@ function imageWarnings(doc: UiDocument, id: NodeId): Warning[] {
 }
 
 // Text that doesn't fit inside its box (inside any padding) on a device.
+// RichText tags aren't counted; wrapped text is measured wrapped, spaced by
+// LineHeight. Text set to TextTruncate is cut off on purpose, so it's fine.
 function textWarnings(
   doc: UiDocument,
   id: NodeId,
@@ -117,19 +121,37 @@ function textWarnings(
   if (!isTextClass(node.className)) return []
   const p = resolveProps(node)
   if (p.TextScaled) return [] // it shrinks to fit by itself
-  const text =
-    node.className === 'TextBox' && p.Text === '' ? p.PlaceholderText : p.Text
+  if (p.TextTruncate !== 'None') return [] // cut off with "…" on purpose
+  const placeholder = node.className === 'TextBox' && p.Text === ''
+  const raw = placeholder ? p.PlaceholderText : p.Text
+  const text = p.RichText && !placeholder ? richTextPlain(raw) : raw
   if (text === '') return []
 
   const lines = text.split('\n')
-  const needWidth = Math.max(
-    ...lines.map((line) => measure(line, p.FontFace, p.TextSize)),
-  )
-  const needHeight = lines.length * p.TextSize
+  const width = (part: string) => measure(part, p.FontFace, p.TextSize)
+  const lineHeight = p.TextSize * p.LineHeight
+  // Wrapped: each typed line's words, and a space, for wrapping per device.
+  const words = lines.map((line) => line.split(' ').map(width))
+  const space = width(' ')
 
   const tooSmallOn = (Object.keys(DEVICES) as DeviceId[]).filter((device) => {
     const area = contentArea(node, absoluteBox(doc, id, DEVICES[device]))
-    return needWidth > area.width + 0.5 || needHeight > area.height + 0.5
+    if (p.TextWrapped) {
+      // Only a single word wider than the box sticks out sideways.
+      const lineCount = words.reduce(
+        (total, line) => total + wrappedLineCount(line, space, area.width),
+        0,
+      )
+      const widest = Math.max(...words.flat())
+      return (
+        widest > area.width + 0.5 || lineCount * lineHeight > area.height + 0.5
+      )
+    }
+    const needWidth = Math.max(...lines.map(width))
+    return (
+      needWidth > area.width + 0.5 ||
+      lines.length * lineHeight > area.height + 0.5
+    )
   })
   if (tooSmallOn.length === 0) return []
   return [

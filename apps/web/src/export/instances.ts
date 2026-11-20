@@ -9,6 +9,9 @@ import {
   type FontWeight,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
+  TEXT_TRUNCATE,
+  TEXT_X_ALIGNMENT,
+  TEXT_Y_ALIGNMENT,
   VERTICAL_ALIGNMENT,
   Z_INDEX_BEHAVIOR,
 } from '../model/enums.ts'
@@ -166,9 +169,16 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     properties.push(
       fontFace(p.FontFace),
       string('Text', p.Text),
+      float('LineHeight', p.LineHeight),
+      bool('RichText', p.RichText),
       color3('TextColor3', p.TextColor3),
       bool('TextScaled', p.TextScaled),
       float('TextSize', p.TextSize),
+      float('TextTransparency', p.TextTransparency),
+      enumProp('TextTruncate', TEXT_TRUNCATE, p.TextTruncate),
+      bool('TextWrapped', p.TextWrapped),
+      enumProp('TextXAlignment', TEXT_X_ALIGNMENT, p.TextXAlignment),
+      enumProp('TextYAlignment', TEXT_Y_ALIGNMENT, p.TextYAlignment),
     )
   }
 

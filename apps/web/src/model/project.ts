@@ -6,6 +6,9 @@ import {
   FONT_WEIGHT,
   HORIZONTAL_ALIGNMENT,
   SORT_ORDER,
+  TEXT_TRUNCATE,
+  TEXT_X_ALIGNMENT,
+  TEXT_Y_ALIGNMENT,
   VERTICAL_ALIGNMENT,
 } from './enums.ts'
 import { FONTS } from './fonts.ts'
@@ -195,6 +198,14 @@ const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   TextColor3: isColor3,
   TextSize: isNumber,
   TextScaled: isBoolean,
+  TextWrapped: isBoolean,
+  TextXAlignment: isOneOf(TEXT_X_ALIGNMENT),
+  TextYAlignment: isOneOf(TEXT_Y_ALIGNMENT),
+  TextTransparency: isNumber,
+  RichText: isBoolean,
+  TextTruncate: isOneOf(TEXT_TRUNCATE),
+  // Roblox keeps LineHeight between 1 and 3.
+  LineHeight: (v: unknown) => isNumber(v) && v >= 1 && v <= 3,
   AutoButtonColor: isBoolean,
   PlaceholderText: isString,
   PlaceholderColor3: isColor3,

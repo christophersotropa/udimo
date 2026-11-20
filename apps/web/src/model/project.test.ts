@@ -170,6 +170,20 @@ describe('parseProject rejects', () => {
     expectRejected(text, 'invalid FontFace')
   })
 
+  it('a LineHeight Roblox doesn’t allow (1 to 3)', () => {
+    const text = brokenFile((data, { label }) => {
+      data.document.nodes[label].props = { LineHeight: 5 }
+    })
+    expectRejected(text, 'invalid')
+  })
+
+  it('a text alignment Roblox does not have', () => {
+    const text = brokenFile((data, { label }) => {
+      data.document.nodes[label].props = { TextXAlignment: 'Middle' }
+    })
+    expectRejected(text, 'invalid')
+  })
+
   it('a font style Roblox does not have', () => {
     const text = brokenFile((data, { label }) => {
       data.document.nodes[label].props = {

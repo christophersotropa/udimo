@@ -1,10 +1,18 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { toContentUri } from '../../lib/assets.ts'
+import { richTextPlain } from '../../lib/richText.ts'
 import { color3ToCss } from '../../lib/color.ts'
 import {
   measureLineHeight,
   measureTextWidth,
   scaledTextSize,
+  scaledWrappedTextSize,
 } from '../../lib/text.ts'
 import { udimToCss } from '../../lib/udim2.ts'
 import { isImageClass, isTextClass } from '../../model/classes.ts'
@@ -24,6 +32,7 @@ import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { nodeStyle } from './nodeStyle.ts'
 import { ResizeHandles } from './ResizeHandles.tsx'
+import { RichTextView } from './RichTextView.tsx'
 
 // Draws one node, then draws each of its children inside it, and so on down
 // the tree. A component that renders itself like this is called recursive.
@@ -119,10 +128,22 @@ export function NodeView({ id }: { id: NodeId }) {
   )
 }
 
+// TextXAlignment and TextYAlignment as flexbox classes, for placing text
+// in its box.
+const JUSTIFY = {
+  Left: 'justify-start',
+  Center: 'justify-center',
+  Right: 'justify-end',
+} as const
+const ALIGN_ITEMS = {
+  Top: 'items-start',
+  Center: 'items-center',
+  Bottom: 'items-end',
+} as const
+
 // The box an element's text and children are laid out in: the whole
 // element, minus any UIPadding. It's positioned, so children's percentages
 // (Scale) are measured against it, like contentArea in model/layout.ts.
-// Text is centered in it both ways, like Roblox's default alignment.
 function ContentArea({
   node,
   children,
@@ -141,11 +162,14 @@ function ContentArea({
         bottom: udimToCss(padding.PaddingBottom.s, padding.PaddingBottom.o),
       }
     : { inset: 0 }
-  const centered = isTextClass(node.className)
-    ? 'flex items-center justify-center'
+  // Text sits where TextXAlignment and TextYAlignment say (Roblox's
+  // default: centered both ways).
+  const p = resolveProps(node)
+  const placed = isTextClass(node.className)
+    ? `flex ${JUSTIFY[p.TextXAlignment]} ${ALIGN_ITEMS[p.TextYAlignment]}`
     : ''
   return (
-    <div className={`absolute ${centered}`} style={inset}>
+    <div className={`absolute ${placed}`} style={inset}>
       {children}
     </div>
   )
@@ -158,12 +182,17 @@ function ContentArea({
 function NodeText({ id }: { id: NodeId }) {
   const screen = useViewStore(screenOf)
   const node = useDocumentStore((state) => state.document.nodes[id])
-  // With TextScaled, the size of the box the text must fit in (inside any
-  // padding), else null.
-  const scaledArea = useDocumentStore(
+  // The size of the box the text must fit in (inside any padding), when
+  // it's needed: for TextScaled, or to cut wrapped text off at the right
+  // line (TextTruncate). Else null.
+  const area = useDocumentStore(
     useShallow((state) => {
       const current = state.document.nodes[id]
-      if (!current || !resolveProps(current).TextScaled) return null
+      if (!current) return null
+      const q = resolveProps(current)
+      const needed =
+        q.TextScaled || (q.TextWrapped && q.TextTruncate !== 'None')
+      if (!needed) return null
       const box = absoluteBox(state.document, id, screen)
       const { width, height } = contentArea(current, box)
       return { width, height }
@@ -177,22 +206,50 @@ function NodeText({ id }: { id: NodeId }) {
   const placeholder = node.className === 'TextBox' && p.Text === ''
   const text = placeholder ? p.PlaceholderText : p.Text
 
-  // TextScaled: measure the widest line in this font, then pick the biggest
-  // size that fits (see lib/text.ts).
+  // RichText draws styled runs; its tags aren't measured.
+  const rich = p.RichText && !placeholder
+  const words = rich ? richTextPlain(text) : text
+
+  // TextScaled: measure the text in this font, then pick the biggest size
+  // that fits (see lib/text.ts). Wrapped text may use more lines instead
+  // of shrinking.
   let fontSize: number | undefined
-  if (scaledArea) {
+  if (area && p.TextScaled) {
     const cssFont = fontCss(p.FontFace, 100)
-    const lines = text.split('\n')
-    const widest = Math.max(
-      ...lines.map((line) => measureTextWidth(line, cssFont)),
-    )
-    fontSize = scaledTextSize(
-      widest / 100,
-      lines.length,
-      scaledArea,
-      measureLineHeight(cssFont),
-    )
+    const lineHeight = measureLineHeight(cssFont) * p.LineHeight
+    const lines = words.split('\n')
+    const perPixel = (part: string) => measureTextWidth(part, cssFont) / 100
+    fontSize = p.TextWrapped
+      ? scaledWrappedTextSize(
+          lines.map((line) => line.split(' ').map(perPixel)),
+          perPixel(' '),
+          area,
+          lineHeight,
+        )
+      : scaledTextSize(
+          Math.max(...lines.map(perPixel)),
+          lines.length,
+          area,
+          lineHeight,
+        )
   }
+
+  // TextTruncate: text that doesn't fit ends in "…". One line at a time
+  // when not wrapping; wrapped, after the last line that fits.
+  const truncate: CSSProperties =
+    p.TextTruncate === 'None' || p.TextScaled
+      ? {}
+      : p.TextWrapped && area
+        ? {
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: Math.max(
+              1,
+              Math.floor(area.height / (p.TextSize * p.LineHeight)),
+            ),
+            overflow: 'hidden',
+          }
+        : { overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }
 
   // Being edited (double-click or Enter): the text becomes a text box, in
   // the same place, font and size.
@@ -211,10 +268,15 @@ function NodeText({ id }: { id: NodeId }) {
     <span
       style={{
         fontSize,
-        color: placeholder ? color3ToCss(p.PlaceholderColor3) : undefined,
+        color: placeholder
+          ? color3ToCss(p.PlaceholderColor3, p.TextTransparency)
+          : undefined,
+        // Wrapped text wraps at the box's edges.
+        maxWidth: p.TextWrapped ? '100%' : undefined,
+        ...truncate,
       }}
     >
-      {text}
+      {rich ? <RichTextView text={text} /> : text}
     </span>
   )
 }
@@ -269,13 +331,15 @@ function CanvasTextEditor({
           event.currentTarget.blur()
         }
       }}
-      className="block w-full resize-none overflow-hidden bg-transparent p-0 text-center outline-none"
+      className="block w-full resize-none overflow-hidden bg-transparent p-0 outline-none"
       style={{
         font: 'inherit',
         fontSize,
         color: 'inherit',
-        lineHeight: 1,
-        whiteSpace: 'pre',
+        // Lined up, spaced and wrapped like the text itself (nodeStyle).
+        textAlign: 'inherit',
+        lineHeight: 'inherit',
+        whiteSpace: 'inherit',
         // A thin dashed line around the box, 1 screen pixel at any zoom.
         outline: 'calc(1px / var(--canvas-scale)) dashed var(--color-accent)',
       }}
