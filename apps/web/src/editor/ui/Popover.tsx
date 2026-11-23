@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { CheckIcon } from '../panels/icons.tsx'
 
 // Keep this far from the window's edges, in pixels.
 const EDGE = 8
@@ -146,13 +147,15 @@ export function MenuItem({
       role="menuitem"
       onClick={onClick}
       disabled={disabled}
-      className={`group flex w-full items-center gap-2 px-3 py-1 text-left text-body hover:bg-hover focus-visible:bg-hover focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
+      className={`group flex w-full items-center gap-2 px-3 py-1 text-left text-body hover:bg-hover focus-visible:bg-hover focus-visible:ring-1 focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-35 ${
         danger ? 'text-danger' : 'text-ink'
       }`}
     >
       {/* A fixed-width spot for the tick keeps labels lined up. */}
       {checked !== undefined && (
-        <span className="w-3 shrink-0 text-xs">{checked ? '✓' : ''}</span>
+        <span className="flex w-3 shrink-0 justify-center">
+          {checked && <CheckIcon size={12} />}
+        </span>
       )}
       <span className="min-w-0 flex-1">
         <span className="block">{children}</span>

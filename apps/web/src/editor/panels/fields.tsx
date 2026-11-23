@@ -1,3 +1,4 @@
+import { CheckBoxInput } from '../ui/Checkbox.tsx'
 import { type ReactNode, useContext, useState } from 'react'
 import { color3ToHex, hexToColor3 } from '../../lib/color.ts'
 import { clamp, formatNumber, parseNumberInput } from '../../lib/numbers.ts'
@@ -257,7 +258,7 @@ export function TextField({
   )
 }
 
-// An on/off property: a dark box with an accent tick (.check-box, index.css).
+// An on/off property: a dark box with an accent tick (CheckBoxInput).
 export function ToggleField({
   label,
   value,
@@ -268,12 +269,11 @@ export function ToggleField({
   onChange: (value: boolean) => void
 }) {
   return (
-    <input
-      type="checkbox"
-      aria-label={label}
+    <CheckBoxInput
+      label={label}
       checked={value}
-      onChange={(event) => onChange(event.target.checked)}
-      className="check-box size-3.5"
+      onChange={onChange}
+      size={14}
     />
   )
 }

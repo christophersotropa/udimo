@@ -1,0 +1,516 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-23T04:58:39+00:00",
+  "title": "Design System: Udimo",
+  "extensions": {
+    "colorMeta": {
+      "app": {
+        "role": "neutral",
+        "displayName": "Workbench Floor",
+        "canonical": "#121212",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel Grey",
+        "canonical": "#181818",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised Grey",
+        "canonical": "#202020",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover Grey",
+        "canonical": "#2a2a2a",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#2a2a2a",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#e4e4e4",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#9a9a9a",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "canonical": "#636363",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#121212",
+          "#181818",
+          "#202020",
+          "#2a2a2a",
+          "#636363",
+          "#9a9a9a",
+          "#e4e4e4"
+        ]
+      },
+      "accent-fill": {
+        "role": "primary",
+        "displayName": "Workbench Blue",
+        "canonical": "#3563e0",
+        "tonalRamp": [
+          "#0b1633",
+          "#1c3a8f",
+          "#294eb4",
+          "#3563e0",
+          "#5a82ea",
+          "#8cacf3",
+          "#b5caf9",
+          "#dde7fd"
+        ]
+      },
+      "accent-fill-hover": {
+        "role": "primary",
+        "displayName": "Pressed Blue",
+        "canonical": "color-mix(in oklab, var(--color-accent-fill), black 15%)",
+        "tonalRamp": [
+          "#0b1633",
+          "#1c3a8f",
+          "#294eb4",
+          "#3563e0",
+          "#5a82ea",
+          "#8cacf3",
+          "#b5caf9",
+          "#dde7fd"
+        ],
+        "resolved": "#294eb4"
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "color-mix(in oklab, var(--color-accent-fill), white 45%)",
+        "tonalRamp": [
+          "#0b1633",
+          "#1c3a8f",
+          "#294eb4",
+          "#3563e0",
+          "#5a82ea",
+          "#8cacf3",
+          "#b5caf9",
+          "#dde7fd"
+        ],
+        "resolved": "#8cacf3"
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Bright Signal Blue",
+        "canonical": "color-mix(in oklab, var(--color-accent-fill), white 65%)",
+        "tonalRamp": [
+          "#0b1633",
+          "#1c3a8f",
+          "#294eb4",
+          "#3563e0",
+          "#5a82ea",
+          "#8cacf3",
+          "#b5caf9",
+          "#dde7fd"
+        ],
+        "resolved": "#b5caf9"
+      },
+      "accent-ink": {
+        "role": "neutral",
+        "displayName": "Accent Ink",
+        "canonical": "#ffffff"
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Blue Wash",
+        "canonical": "color-mix(in srgb, var(--color-accent-fill) 20%, transparent)",
+        "resolved": "rgb(53 99 224 / 0.2)"
+      },
+      "select": {
+        "role": "primary",
+        "displayName": "Selection",
+        "canonical": "var(--color-accent)",
+        "tonalRamp": [
+          "#0b1633",
+          "#1c3a8f",
+          "#294eb4",
+          "#3563e0",
+          "#5a82ea",
+          "#8cacf3",
+          "#b5caf9",
+          "#dde7fd"
+        ],
+        "resolved": "#8cacf3"
+      },
+      "select-soft": {
+        "role": "primary",
+        "displayName": "Selection Wash",
+        "canonical": "var(--color-accent-soft)",
+        "resolved": "rgb(53 99 224 / 0.2)"
+      },
+      "select-ink": {
+        "role": "neutral",
+        "displayName": "Selection Ink",
+        "canonical": "#0b1633"
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Warning Yellow",
+        "canonical": "#e3c84a",
+        "tonalRamp": [
+          "#130a00",
+          "#332100",
+          "#563c00",
+          "#755b00",
+          "#997f00",
+          "#bea413",
+          "#e3c84a",
+          "#faefbf"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Delete Red",
+        "canonical": "#e5534b",
+        "tonalRamp": [
+          "#240000",
+          "#550000",
+          "#870000",
+          "#ad171b",
+          "#d84640",
+          "#e5534b",
+          "#ffa69a",
+          "#ffdbd2"
+        ]
+      },
+      "guide": {
+        "role": "tertiary",
+        "displayName": "Guide Pink",
+        "canonical": "#e0457b",
+        "tonalRamp": [
+          "#230008",
+          "#54001c",
+          "#860035",
+          "#ad0052",
+          "#d73c74",
+          "#e0457b",
+          "#ffa0c0",
+          "#ffd7e8"
+        ]
+      },
+      "screen": {
+        "role": "neutral",
+        "displayName": "Checkerboard",
+        "canonical": "#232323"
+      },
+      "screen-alt": {
+        "role": "neutral",
+        "displayName": "Checkerboard Alt",
+        "canonical": "#1d1d1d"
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog titles (Export). The largest text in the working editor."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explorer rows, menu items, buttons, the command field and its results."
+      },
+      "body-strong": {
+        "displayName": "Body Strong",
+        "purpose": "Panel titles, Properties section headers, the Udimo menu button, primary buttons."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Property names, menu hints, dialog explanations, panel footers."
+      },
+      "note": {
+        "displayName": "Note",
+        "purpose": "Menu and result group headings, field hints."
+      },
+      "value": {
+        "displayName": "Value",
+        "purpose": "Every editable value box in Properties; code-like text in Export."
+      },
+      "mono-note": {
+        "displayName": "Mono Note",
+        "purpose": "The status bar, keyboard shortcuts, the ⌘K hint, canvas size labels."
+      },
+      "badge": {
+        "displayName": "Badge",
+        "purpose": "Tiny counts in Explorer rows."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 25px 50px -12px rgb(0 0 0 / 0.5)",
+        "purpose": "Menus, the Udimo menu, the right-click menu and command results, always with a 1px Hairline ring."
+      },
+      {
+        "name": "modal",
+        "value": "0 25px 50px -12px rgb(0 0 0 / 0.6)",
+        "purpose": "Dialogs, over a rgb(0 0 0 / 0.6) backdrop."
+      },
+      {
+        "name": "hint",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4)",
+        "purpose": "The panel-dock preview label."
+      },
+      {
+        "name": "lifted-row",
+        "value": "0 0 0 1px color-mix(in srgb, var(--color-select) 45%, transparent), 0 8px 20px rgb(0 0 0 / 0.45)",
+        "purpose": "An Explorer row while it is dragged."
+      }
+    ],
+    "motion": [
+      {
+        "name": "row-colour",
+        "value": "background-color 100ms",
+        "purpose": "Explorer row colour changes."
+      },
+      {
+        "name": "state-default",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Tailwind default transition for the section chevron turning 90° and other small colour/opacity/transform changes. No entrance animations."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "editor-min",
+        "value": "800px × 480px",
+        "purpose": "Below this the editor is covered by the small-screen notice."
+      },
+      {
+        "name": "panel-width",
+        "value": "220px – 480px",
+        "purpose": "Resize range of a docked side."
+      }
+    ],
+    "focusRing": {
+      "value": "outline: 2px solid var(--color-accent); outline-offset: 2px",
+      "purpose": "Keyboard focus on buttons and checkboxes; fields and menu rows use a 1px Signal Blue ring instead."
+    },
+    "scope": "Editor chrome only. The canvas draws the user's Roblox UI exactly as Roblox does (apps/web/src/editor/canvas/NodeView.tsx, nodeStyle.ts, imageStyle.ts, RichTextView.tsx); this system never styles that drawing.",
+    "source": "apps/web/src/index.css (@theme)"
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action on screen: Export, Download, Copy.",
+      "html": "<button class=\"ds-btn-primary\">Export</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border: none; border-radius: 4px; background: var(--color-accent-fill, #3563e0); color: var(--color-accent-ink, #fff); font-size: 13px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; } .ds-btn-primary:hover { background: var(--color-accent-fill-hover, #294eb4); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ordinary actions, with a hairline ring.",
+      "html": "<button class=\"ds-btn-secondary\">Continue anyway</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border: none; border-radius: 4px; background: var(--color-raised, #202020); color: var(--color-ink, #e4e4e4); box-shadow: 0 0 0 1px var(--color-line, #2a2a2a); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; } .ds-btn-secondary:hover { background: var(--color-hover, #2a2a2a); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet actions in toolbars and menus.",
+      "html": "<button class=\"ds-btn-ghost\">Fit</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border: none; border-radius: 4px; background: transparent; color: var(--color-muted, #9a9a9a); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; } .ds-btn-ghost:hover { background: var(--color-hover, #2a2a2a); color: var(--color-ink, #e4e4e4); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tool Icon Button (active)",
+      "kind": "button",
+      "refersTo": "icon-button-active",
+      "description": "A square icon-only button; the current tool gets the Blue Wash and Signal Blue icon.",
+      "html": "<button class=\"ds-icon-btn ds-icon-btn--active\" aria-label=\"Select and move (V)\" aria-pressed=\"true\"><svg viewBox=\"0 0 16 16\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.5 2.5l9 4.5-4 1.2-1.6 4.3z\"/></svg></button>",
+      "css": ".ds-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: none; border-radius: 4px; background: transparent; color: var(--color-muted, #9a9a9a); cursor: pointer; } .ds-icon-btn:hover { background: var(--color-hover, #2a2a2a); color: var(--color-ink, #e4e4e4); } .ds-icon-btn--active, .ds-icon-btn--active:hover { background: var(--color-accent-soft, rgb(53 99 224 / 0.2)); color: var(--color-accent, #8cacf3); } .ds-icon-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Property Value Field",
+      "kind": "input",
+      "refersTo": "value-field",
+      "description": "A Properties value box: pressed into the panel, mono text, ring turns Signal Blue on focus.",
+      "html": "<label class=\"ds-prop-row\"><span class=\"ds-prop-label\">Size</span><input class=\"ds-value-field\" value=\"{0.4, 0}, {0.5, 0}\" aria-label=\"Size\"></label>",
+      "css": ".ds-prop-row { display: grid; grid-template-columns: 100px 180px; gap: 8px; align-items: center; } .ds-prop-label { font-size: 12px; color: var(--color-muted, #9a9a9a); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-value-field { height: 24px; padding: 0 6px; border: none; border-radius: 4px; background: var(--color-app, #121212); color: var(--color-ink, #e4e4e4); box-shadow: 0 0 0 1px var(--color-line, #2a2a2a); font-size: 12px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; outline: none; caret-color: var(--color-accent, #8cacf3); } .ds-value-field:hover { box-shadow: 0 0 0 1px var(--color-hover, #2a2a2a); } .ds-value-field:focus { box-shadow: 0 0 0 1px var(--color-accent, #8cacf3); }"
+    },
+    {
+      "name": "Command Field",
+      "kind": "input",
+      "refersTo": "command-field",
+      "description": "The centred top-bar field (⌘K) that inserts objects and runs any action.",
+      "html": "<label class=\"ds-command\"><svg viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"4.5\"/><path d=\"M10.5 10.5l3 3\"/></svg><input placeholder=\"Insert an object or search actions…\" aria-label=\"Insert an object or search actions\"><kbd>⌘K</kbd></label>",
+      "css": ".ds-command { display: flex; align-items: center; gap: 8px; width: 440px; height: 28px; padding: 0 8px; border-radius: 4px; background: var(--color-raised, #202020); box-shadow: 0 0 0 1px var(--color-line, #2a2a2a); color: var(--color-muted, #9a9a9a); } .ds-command:focus-within { box-shadow: 0 0 0 1px var(--color-accent, #8cacf3); } .ds-command input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--color-ink, #e4e4e4); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; outline: none; } .ds-command input::placeholder { color: var(--color-muted, #9a9a9a); } .ds-command kbd { padding: 0 4px; border-radius: 4px; box-shadow: 0 0 0 1px var(--color-line, #2a2a2a); font-size: 11px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }"
+    },
+    {
+      "name": "Menu",
+      "kind": "custom",
+      "refersTo": "menu",
+      "description": "Floating menu: Raised Grey, hairline ring, Float shadow; neutral hover, never accent.",
+      "html": "<div class=\"ds-menu\" role=\"menu\"><button class=\"ds-menu-item\" role=\"menuitem\"><span>Undo</span><span class=\"ds-menu-key\">⌘Z</span></button><button class=\"ds-menu-item\" role=\"menuitem\"><span>Duplicate</span><span class=\"ds-menu-key\">⌘D</span></button><hr class=\"ds-menu-sep\"><button class=\"ds-menu-item ds-menu-item--danger\" role=\"menuitem\"><span>Delete</span><span class=\"ds-menu-key\">⌫</span></button></div>",
+      "css": ".ds-menu { width: 256px; padding: 4px 0; border-radius: 4px; background: var(--color-raised, #202020); box-shadow: 0 0 0 1px var(--color-line, #2a2a2a), 0 25px 50px -12px rgb(0 0 0 / 0.5); } .ds-menu-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 12px; border: none; background: transparent; color: var(--color-ink, #e4e4e4); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left; cursor: default; } .ds-menu-item:hover { background: var(--color-hover, #2a2a2a); } .ds-menu-item:focus-visible { background: var(--color-hover, #2a2a2a); outline: none; box-shadow: inset 0 0 0 1px var(--color-accent, #8cacf3); } .ds-menu-item--danger { color: var(--color-danger, #e5534b); } .ds-menu-key { font-size: 11px; color: var(--color-muted, #9a9a9a); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; } .ds-menu-sep { margin: 4px 0; border: none; border-top: 1px solid var(--color-line, #2a2a2a); }"
+    },
+    {
+      "name": "Device Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-control",
+      "description": "Desktop / Tablet / Phone: the chosen option is neutral grey, not blue.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"Device\"><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"true\">Desktop</button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">Tablet</button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">Phone</button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 2px; border-radius: 4px; background: var(--color-app, #121212); box-shadow: 0 0 0 1px var(--color-line, #2a2a2a); } .ds-seg-opt { height: 24px; padding: 0 12px; border: none; border-radius: 4px; background: transparent; color: var(--color-muted, #9a9a9a); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; } .ds-seg-opt:hover { color: var(--color-ink, #e4e4e4); } .ds-seg-opt[aria-checked='true'] { background: var(--color-hover, #2a2a2a); color: var(--color-ink, #e4e4e4); } .ds-seg-opt:focus-visible { outline: 2px solid var(--color-accent, #8cacf3); }"
+    },
+    {
+      "name": "Explorer Row",
+      "kind": "nav",
+      "refersTo": "tree-row-selected",
+      "description": "Studio-style tree rows; the selected row takes the selection tint.",
+      "html": "<div class=\"ds-tree\" role=\"tree\"><div class=\"ds-tree-row\" role=\"treeitem\"><svg class=\"ds-ico-frame\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"10\" height=\"10\" rx=\"1\"/></svg><span>Window</span></div><div class=\"ds-tree-row ds-tree-row--selected\" role=\"treeitem\" aria-selected=\"true\" style=\"padding-left:24px\"><svg class=\"ds-ico-frame\" viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"10\" height=\"10\" rx=\"1\"/></svg><span>Header</span></div><div class=\"ds-tree-row ds-tree-row--mod\" role=\"treeitem\" style=\"padding-left:24px\"><svg viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" aria-hidden=\"true\"><path d=\"M8 3l5 5-5 5-5-5z\"/></svg><span>UICorner</span></div></div>",
+      "css": ".ds-tree { width: 220px; padding: 4px; background: var(--color-panel, #181818); } .ds-tree-row { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 4px 0 8px; border-radius: 4px; color: var(--color-ink, #e4e4e4); font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: background-color 100ms; } .ds-tree-row:hover { background: var(--color-hover, #2a2a2a); } .ds-tree-row--selected, .ds-tree-row--selected:hover { background: var(--color-select-soft, rgb(53 99 224 / 0.2)); color: var(--color-select, #8cacf3); } .ds-tree-row--mod { color: var(--color-muted, #9a9a9a); } .ds-tree-row--mod svg { color: var(--color-faint, #636363); } .ds-ico-frame { color: #38bdf8; }"
+    },
+    {
+      "name": "Status Bar",
+      "kind": "custom",
+      "refersTo": "status-bar",
+      "description": "Bottom strip: all mono 11px Muted, selected name in Ink, hairline dividers.",
+      "html": "<footer class=\"ds-status\"><span><b>Window · Frame</b><i></i>768 × 540 px<i></i>x 576 y 270</span><span>Snap on<i></i>45%<i></i>Saved locally</span></footer>",
+      "css": ".ds-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 640px; height: 28px; padding: 0 12px; background: var(--color-panel, #181818); border-top: 1px solid var(--color-line, #2a2a2a); color: var(--color-muted, #9a9a9a); font-size: 11px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; } .ds-status span { display: flex; align-items: center; gap: 12px; } .ds-status b { font-weight: 400; color: var(--color-ink, #e4e4e4); } .ds-status i { display: inline-block; width: 1px; height: 12px; background: var(--color-line, #2a2a2a); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Workbench",
+    "overview": "Udimo is a tool people use for an hour at a time, next to Roblox Studio, while they build a shop menu or a HUD. The editor's own look stays out of the way so the user's game UI is the brightest, most colourful thing on screen. The chrome is near-black and flat, split into areas by one-pixel lines. Rows are compact, the type is small and plain, and any number you can edit is set in monospace. One dark blue accent marks the few things that matter right now: the main action (Export), the current tool, what is selected, and where keyboard focus is.\n\nThe layout follows Studio on purpose: an Explorer tree, a canvas, and a Properties panel, with Studio's own names for classes and properties. The top bar puts commands first. On the left is a single **Udimo** menu that holds File, Edit, View, Insert and Arrange. In the middle is a command field (⌘K) that inserts any object or runs any action. On the right are the tools, the device preview switch, and Export. There is no row of five menus across the top.\n\nThis system covers the **editor chrome only**. The canvas draws the user's Roblox UI exactly as Roblox would draw it, using the user's own colours, fonts, corners and strokes (`apps/web/src/editor/canvas/NodeView.tsx`, `nodeStyle.ts`, `imageStyle.ts`, `RichTextView.tsx`). Nothing in this file applies to that drawing. The only parts of the canvas this system styles are the editor's own overlays: selection outlines and handles, alignment guides, the size label, the checkerboard behind the game screen, and the zoom bar.",
+    "keyCharacteristics": [
+      "Dark, flat, neutral grey surfaces in four steps, with no colour tint.",
+      "One accent token, picked by hand, with every other blue worked out from it in CSS.",
+      "Hairline borders and rings instead of shadows. Shadows appear only on things that float above the page.",
+      "Small type (13 px rows, 11–12 px notes) in the system UI font, with monospace for values.",
+      "Studio's structure and names, plus a command-first top bar.",
+      "The canvas shows Roblox's rendering, never a prettier version of it."
+    ],
+    "rules": [
+      {
+        "name": "The One Hand-Picked Blue Rule",
+        "body": "`accent-fill` is the only accent value anyone picks. Every other accent shade is a `color-mix()` of it, and no component writes a blue hex of its own. A planned setting will let users choose their accent, and it has to work by changing one token.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rare Accent Rule",
+        "body": "The accent marks the main action, the current tool, selection, focus, and a handful of text actions. Menu rows, section headers and ordinary buttons use a neutral grey highlight on hover, never blue. If a screen has more than one filled blue button, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Amber Rule",
+        "body": "Amber is retired from the editor chrome (Avenlo uses it), and the accent is never set to an amber or orange. Warning Yellow is a status colour, not the accent, and it stays on warnings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Means Value Rule",
+        "body": "If a string is a value Roblox would accept (a UDim2, a Color3, a pixel size, a position, a shortcut), set it in the mono font. Names, labels and sentences stay in the sans. A property name is sans; its value is mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Small Steps Rule",
+        "body": "Text sizes in the chrome are 15, 13, 12, 11 and 10 px, and nothing else. A new screen reuses these steps. Hierarchy comes from weight (600 against 400) and colour (Ink against Muted), not from bigger sizes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Until Floating Rule",
+        "body": "Anything docked into the layout is flat and outlined. A shadow means \"this is above the page and will go away\". Never use a shadow to make a panel or a button look important.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the theme tokens (`bg-panel`, `text-muted`, `ring-line`, `bg-accent-fill`, and so on) for every colour in the chrome. To change the look, edit `apps/web/src/index.css`, not the components.",
+      "Do derive any new accent shade from `--color-accent-fill` with `color-mix()`, so a user-chosen accent re-colours it.",
+      "Do use the `select` tokens for anything that means \"this is selected\", and the `accent` tokens for action and focus, even while they share a value.",
+      "Do build new controls from `Button`, `IconButton`, `Popover`/`MenuItem`, `Dialog`, `SegmentedControl` and `CheckBoxInput` (`apps/web/src/editor/ui/`), so every button and menu looks and behaves the same.",
+      "Do keep text people read at Muted (#9A9A9A) or brighter. Faint is only for disabled, hidden or decorative things.",
+      "Do give every control a visible keyboard focus: a 2 px Signal Blue outline, or a Signal Blue ring on fields and menu rows.",
+      "Do use Studio's spelling for classes and properties (BackgroundColor3, UDim2, ScreenGui) in every label."
+    ],
+    "donts": [
+      "Don't style the user's Roblox UI on the canvas. It is drawn exactly as Roblox draws it, with the user's colours and fonts, and must never look better than Studio would show it.",
+      "Don't write a blue hex (or any accent colour) directly into a component, an SVG or a style. The one exception is the static `public/logo.svg` favicon, which can't read CSS variables.",
+      "Don't use amber or orange as the accent.",
+      "Don't colour hover states, menu rows or ordinary buttons with the accent. Hover is Hover Grey.",
+      "Don't use Warning Yellow or Delete Red for anything other than warnings and destructive actions. Don't use the accent for a warning.",
+      "Don't add shadows to panels, bars or buttons. Shadows are only for menus, dialogs and dragged items.",
+      "Don't add text sizes outside 15 / 13 / 12 / 11 / 10 px, or download fonts for the chrome.",
+      "Don't let the page scroll. Only panels and lists scroll inside the fixed-height app."
+    ]
+  }
+}

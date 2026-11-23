@@ -102,7 +102,9 @@ function MenuColumns({ close }: { close: () => void }) {
             autoFocus={i === 0}
             onPointerEnter={() => setTitle(m.title)}
             onFocus={() => setTitle(m.title)}
-            className={`flex h-7 w-full items-center px-3 text-left text-body focus-visible:outline-none ${
+            // Keyboard focus gets an accent ring, so it's distinct from the
+            // open menu's grey and from pointer hover.
+            className={`flex h-7 w-full items-center px-3 text-left text-body focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset ${
               m.title === title ? 'bg-hover text-ink' : 'text-muted'
             }`}
           >
