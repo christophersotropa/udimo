@@ -65,7 +65,7 @@ export function StatusBar() {
         ) : null}
       </p>
       <div className="flex min-w-0 items-center gap-3">
-        {/* A passing message (useViewStore's showNotice), in amber. */}
+        {/* A passing message (useViewStore's showNotice), in the warning yellow. */}
         {notice && (
           <>
             <span role="status" className="truncate text-warn">

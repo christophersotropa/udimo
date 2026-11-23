@@ -211,7 +211,7 @@ function MainItems({
         }}
         className={`flex h-6 w-full items-center px-3 text-body focus-visible:outline-none ${
           insertOpen
-            ? 'bg-accent text-accent-ink'
+            ? 'bg-hover text-ink'
             : 'text-ink hover:bg-hover focus:bg-hover'
         }`}
       >
@@ -361,15 +361,13 @@ function Item({
       onClick={onClick}
       onPointerEnter={onHover}
       onFocus={onHover}
-      className={`group flex h-6 w-full items-center px-3 text-body hover:bg-accent hover:text-accent-ink focus:bg-accent focus:text-accent-ink focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
+      className={`group flex h-6 w-full items-center px-3 text-body hover:bg-hover focus:bg-hover focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
         danger ? 'text-danger' : 'text-ink'
       }`}
     >
       <span className="flex-1 text-left">{children}</span>
       {shortcut && (
-        <span className="font-mono text-note text-muted group-hover:text-accent-ink/70 group-focus:text-accent-ink/70">
-          {shortcut}
-        </span>
+        <span className="font-mono text-note text-muted ">{shortcut}</span>
       )}
     </button>
   )

@@ -53,7 +53,7 @@ export function ScreenLabel({
           className={`block rounded-sm px-1 py-px font-mono text-note whitespace-nowrap ${
             tone === 'guide'
               ? 'bg-guide text-white'
-              : 'bg-accent text-accent-ink'
+              : 'bg-select text-select-ink'
           }`}
         >
           {children}

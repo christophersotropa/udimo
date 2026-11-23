@@ -118,7 +118,8 @@ export function Popover({
 
 // One row of a menu: a label, an optional hint underneath, a shortcut on
 // the right, and a tick when `checked` (for on/off items like Snapping).
-// The hovered row turns amber, like the rest of the accent.
+// The hovered row gets a neutral highlight: the accent is kept for the
+// few things that need it (Export, selection), not every menu row.
 export function MenuItem({
   onClick,
   children,
@@ -142,7 +143,7 @@ export function MenuItem({
       role="menuitem"
       onClick={onClick}
       disabled={disabled}
-      className={`group flex w-full items-center gap-2 px-3 py-1 text-left text-body hover:bg-accent hover:text-accent-ink focus-visible:bg-accent focus-visible:text-accent-ink focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
+      className={`group flex w-full items-center gap-2 px-3 py-1 text-left text-body hover:bg-hover focus-visible:bg-hover focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35 ${
         danger ? 'text-danger' : 'text-ink'
       }`}
     >
@@ -152,16 +153,10 @@ export function MenuItem({
       )}
       <span className="min-w-0 flex-1">
         <span className="block">{children}</span>
-        {hint && (
-          <span className="block text-xs text-muted group-hover:text-accent-ink/70 group-focus-visible:text-accent-ink/70">
-            {hint}
-          </span>
-        )}
+        {hint && <span className="block text-xs text-muted ">{hint}</span>}
       </span>
       {shortcut && (
-        <span className="font-mono text-note text-muted group-hover:text-accent-ink/70 group-focus-visible:text-accent-ink/70">
-          {shortcut}
-        </span>
+        <span className="font-mono text-note text-muted ">{shortcut}</span>
       )}
     </button>
   )

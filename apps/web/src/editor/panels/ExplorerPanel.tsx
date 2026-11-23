@@ -425,7 +425,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
           dropPlace === 'inside'
             ? 'bg-accent-soft ring-1 ring-accent'
             : isSelected
-              ? 'bg-accent-soft text-accent'
+              ? 'bg-select-soft text-select'
               : 'text-muted hover:bg-hover'
         }`}
       >
@@ -439,13 +439,6 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             style={{ left: level * INDENT + 10 }}
           />
         ))}
-        {/* An amber bar on the selected row's edge. */}
-        {isSelected && (
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0.5 left-0 w-0.5 rounded-full bg-accent"
-          />
-        )}
 
         {hasChildren ? (
           <button
@@ -478,7 +471,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
             onDoubleClick={() => setRenamingId(id)}
             title={`${node.className} · double-click to rename, drag to move, right-click for more`}
             className={`min-w-0 flex-1 truncate text-left text-body focus-visible:outline-2 focus-visible:outline-accent ${
-              hidden ? 'text-faint' : isSelected ? 'text-accent' : 'text-ink'
+              hidden ? 'text-faint' : isSelected ? 'text-select' : 'text-ink'
             }`}
           >
             {node.name}
@@ -486,7 +479,7 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
         )}
         {/* Dragging several rows: the grabbed one says how many more. */}
         {tree.lifted?.id === id && tree.lifted.count > 1 && (
-          <span className="shrink-0 rounded-sm bg-accent px-1 font-mono text-badge font-semibold text-accent-ink">
+          <span className="shrink-0 rounded-sm bg-accent-fill px-1 font-mono text-badge font-semibold text-accent-ink">
             +{tree.lifted.count - 1}
           </span>
         )}

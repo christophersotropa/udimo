@@ -20,7 +20,7 @@ function cursorFor({ x, y }: Handle): string {
   return x === y ? 'nwse-resize' : 'nesw-resize' // corners: diagonal
 }
 
-// Small amber squares drawn inside the selected element, centered on its
+// Small selection-coloured squares drawn inside the selected element, centered on its
 // edges. Each handle is 13 screen pixels (easy to grab) but transparent,
 // with only a 7-pixel square painted in its middle. Sizes are divided by
 // --canvas-scale, so they stay the same on screen at any zoom.
@@ -38,7 +38,7 @@ export function ResizeHandles() {
       // A one-colour "gradient" is the simplest way to paint a smaller
       // square in the middle of a box.
       background:
-        'linear-gradient(var(--color-accent), var(--color-accent)) center / calc(7px / var(--canvas-scale)) calc(7px / var(--canvas-scale)) no-repeat',
+        'linear-gradient(var(--color-select), var(--color-select)) center / calc(7px / var(--canvas-scale)) calc(7px / var(--canvas-scale)) no-repeat',
       cursor: cursorFor(handle),
       zIndex: 10_000, // above the element's own children
     }
