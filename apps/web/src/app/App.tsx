@@ -6,7 +6,16 @@ import { StatusBar } from '../editor/StatusBar.tsx'
 import { TopBar } from '../editor/topbar/TopBar.tsx'
 import { PanelDropPreview } from '../editor/panels/PanelDropPreview.tsx'
 import { PanelResizer } from '../editor/panels/PanelResizer.tsx'
-import { canvasColumn, gridColumns, gridRows } from '../store/panelLayout.ts'
+import { useState } from 'react'
+import { SmallScreenNotice } from '../editor/SmallScreenNotice.tsx'
+import { useWindowSize } from '../editor/useWindowSize.ts'
+import { tooSmallForEditor } from '../editor/smallScreen.ts'
+import {
+  canvasColumn,
+  gridColumns,
+  gridRows,
+  type PanelLayout,
+} from '../store/panelLayout.ts'
 import { useViewStore } from '../store/viewStore.ts'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts.ts'
 
@@ -18,11 +27,42 @@ import { useKeyboardShortcuts } from './useKeyboardShortcuts.ts'
 // stacked (store/panelLayout.ts). Explorer starts left, Properties right.
 // Objects are inserted by right-clicking (or the Explorer's + buttons).
 function App() {
-  useKeyboardShortcuts()
   const panels = useViewStore((state) => state.panels)
+  // Too small a window (a phone, say) gets a notice instead of a broken
+  // layout, unless you chose "Continue anyway" (until the next reload).
+  const windowSize = useWindowSize()
+  const [continued, setContinued] = useState(false)
+  const covered = tooSmallForEditor(windowSize) && !continued
+  useKeyboardShortcuts(!covered)
 
   return (
-    <div className="grid h-svh grid-rows-[auto_1fr_auto] overflow-clip bg-app text-ink">
+    <>
+      {covered && (
+        <SmallScreenNotice
+          size={windowSize}
+          onContinue={() => setContinued(true)}
+        />
+      )}
+      <Editor panels={panels} covered={covered} />
+    </>
+  )
+}
+
+// The editor itself. While the small-screen notice covers it, it's inert:
+// it can't be clicked, focused with Tab, or read by a screen reader, so
+// nothing reaches it through the notice (but it stays loaded, as it was).
+function Editor({
+  panels,
+  covered,
+}: {
+  panels: PanelLayout
+  covered: boolean
+}) {
+  return (
+    <div
+      inert={covered}
+      className="grid h-svh grid-rows-[auto_1fr_auto] overflow-clip bg-app text-ink"
+    >
       <TopBar />
       {/* The workspace: a grid of [left side] canvas [right side], with two
           rows so panels docked on one side can stack (panelLayout.ts).

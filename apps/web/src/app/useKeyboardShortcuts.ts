@@ -49,8 +49,11 @@ const NUDGE_BIG = 10
 //   Tools          V select, H hand (pan)
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
-export function useKeyboardShortcuts() {
+// `enabled` false turns them all off (while the small-screen notice covers
+// the editor, so Backspace there can't delete something behind it).
+export function useKeyboardShortcuts(enabled = true) {
   useEffect(() => {
+    if (!enabled) return
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement
       if (target.closest('input, textarea, [contenteditable="true"]')) return
@@ -179,5 +182,5 @@ export function useKeyboardShortcuts() {
     // when the component goes away, so the listener never piles up.
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [enabled])
 }
