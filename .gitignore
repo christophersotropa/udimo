@@ -164,5 +164,8 @@ vite.config.ts.timestamp-*
 .env.*
 !.env.example
 
-# Impeccable (design tool) reports: personal notes, not part of the project
-.impeccable/
+# Impeccable (design tool). Its shared settings (.impeccable/config.json)
+# are committed; reports and per-machine files are not.
+**/.impeccable/audit/
+.impeccable/config.local.json
+.impeccable/hook.cache.json
