@@ -13,7 +13,7 @@ import {
 } from '../../model/warnings.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
-import { CloseIcon } from '../panels/icons.tsx'
+import { CheckIcon, CloseIcon } from '../panels/icons.tsx'
 import { fileBaseName } from '../topbar/projectFiles.ts'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { Checkbox } from '../ui/Checkbox.tsx'
@@ -406,8 +406,9 @@ function Checks({
         </span>
       </div>
       {warnings.length === 0 ? (
-        <p className="border-t border-line pt-2 text-body text-muted">
-          ✓ Nothing to fix. Ready for Studio.
+        <p className="flex items-center gap-1.5 border-t border-line pt-2 text-body text-muted">
+          <CheckIcon className="text-accent" />
+          Nothing to fix. Ready for Studio.
         </p>
       ) : (
         <ul className="max-h-60 overflow-y-auto">

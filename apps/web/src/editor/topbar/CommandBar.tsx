@@ -5,7 +5,7 @@ import type { ClassName, ModifierClass } from '../../model/types.ts'
 import { insertObject } from '../../store/commands.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { ClassIcon } from '../panels/ClassIcon.tsx'
-import { SearchIcon } from '../panels/icons.tsx'
+import { CheckIcon, SearchIcon } from '../panels/icons.tsx'
 import { type Command, searchCommands } from './commandSearch.ts'
 import { labelOf, MENUS } from './menus.ts'
 
@@ -162,12 +162,19 @@ export function CommandBar() {
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
+          // Also on click: a click can arrive without moving focus (from
+          // a script, or some assistive tools), and should still open it.
+          onClick={() => setOpen(true)}
           onBlur={close}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-muted"
+          // text-ellipsis: a narrow window ends the placeholder with "…"
+          // instead of cutting a word in half.
+          className="min-w-0 flex-1 bg-transparent text-body text-ellipsis text-ink outline-none placeholder:text-muted"
         />
         {!open && (
-          <kbd className="shrink-0 font-mono text-note text-muted">⌘K</kbd>
+          <kbd className="shrink-0 rounded-sm px-1 font-mono text-note text-muted ring-1 ring-line">
+            ⌘K
+          </kbd>
         )}
       </div>
 
@@ -246,15 +253,17 @@ function CommandRow({
         onMouseDown={(event) => event.preventDefault()}
         onClick={onRun}
         className={`flex h-7 cursor-default items-center gap-2 px-3 text-body ${
-          active ? 'bg-hover' : ''
-        } ${row.enabled ? 'text-ink' : 'text-faint'}`}
+          // The row Enter would run: the selection tint, like a selected
+          // Explorer row, so it's plain which one it is.
+          active ? 'bg-select-soft' : ''
+        } ${!row.enabled ? 'text-faint' : active ? 'text-select' : 'text-ink'}`}
       >
         {row.icon ? (
           <ClassIcon className={row.icon} />
         ) : (
           // Lines up action names with class names.
-          <span className="w-3.5 shrink-0 text-center text-xs text-muted">
-            {row.checked ? '✓' : ''}
+          <span className="flex w-3.5 shrink-0 justify-center text-muted">
+            {row.checked && <CheckIcon size={12} />}
           </span>
         )}
         <span className="min-w-0 flex-1 truncate">{row.label}</span>
@@ -267,6 +276,10 @@ function CommandRow({
           <span className="shrink-0 font-mono text-note text-muted">
             {row.shortcut}
           </span>
+        )}
+        {/* What Enter does, on the row it would run. */}
+        {active && (
+          <kbd className="shrink-0 font-mono text-note text-muted">↵</kbd>
         )}
       </li>
     </>

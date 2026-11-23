@@ -172,3 +172,12 @@ export function SearchIcon(props: IconProps) {
     </Icon>
   )
 }
+
+// A tick: ticked menu items, ticked checkboxes.
+export function CheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 8.5l3 3L12.5 5" />
+    </Icon>
+  )
+}
