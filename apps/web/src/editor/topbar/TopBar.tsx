@@ -5,27 +5,29 @@ import { ExportDialog } from '../export/ExportDialog.tsx'
 import { CursorIcon, HandIcon } from '../panels/icons.tsx'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { SegmentedControl } from '../ui/SegmentedControl.tsx'
-import { MenuBar } from './MenuBar.tsx'
-import { Logo } from './Logo.tsx'
+import { AppMenu } from './AppMenu.tsx'
+import { CommandBar } from './CommandBar.tsx'
 
-// The bar across the top, in three parts: logo, design name and menus on
-// the left; the tools in the middle; the device and Export on the right.
+// The bar across the top, in three parts: the Udimo menu (File, Edit,
+// View, Insert, Arrange) and the design's name on the left; the command
+// field in the middle; the tools, device and Export on the right.
 // The middle column is "auto" between two equal "1fr" columns, which keeps
-// the tools centered whatever the sides hold.
+// the command field centered whatever the sides hold.
 export function TopBar() {
   const exportOpen = useViewStore((state) => state.exportOpen)
   const setExportOpen = useViewStore((state) => state.setExportOpen)
 
   return (
     <header className="grid h-11 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line bg-panel px-2.5">
-      <div className="flex min-w-0 items-center gap-3">
-        <Breadcrumb />
-        <MenuBar />
+      <div className="flex min-w-0 items-center gap-1">
+        <AppMenu />
+        <DesignName />
       </div>
 
-      <Tools />
+      <CommandBar />
 
       <div className="flex items-center justify-end gap-2">
+        <Tools />
         <DeviceTabs />
         <Button variant="primary" onClick={() => setExportOpen(true)}>
           Export
@@ -37,27 +39,21 @@ export function TopBar() {
   )
 }
 
-// The logo (Logo.tsx), then "Udimo / <ScreenGui name>".
-function Breadcrumb() {
+// "/ <ScreenGui name>", after the Udimo menu.
+function DesignName() {
   const name = useDocumentStore(
     (state) => state.document.nodes[state.document.rootId].name,
   )
   return (
     <p className="flex min-w-0 items-center gap-2 text-body">
-      {/* flex, not inline: an inline SVG sits on the text baseline with
-          room for letter tails below it, which pushes it off-center. */}
-      <span className="ml-1.5 flex text-ink">
-        <Logo size={20} />
-      </span>
-      <span className="font-semibold text-ink">Udimo</span>
       <span className="text-faint">/</span>
       <span className="truncate text-muted">{name}</span>
     </p>
   )
 }
 
-// Select and Hand. (The draw tools are in the Insert menu, and on F, T, B
-// and I.)
+// Select and Hand. (Objects are added from the Insert menu, the command
+// field or a right-click.)
 function Tools() {
   const tool = useViewStore((state) => state.tool)
   const setTool = useViewStore((state) => state.setTool)

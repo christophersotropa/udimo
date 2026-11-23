@@ -35,7 +35,10 @@ export function Popover({
 }) {
   const [open, setOpen] = useState(false)
   // Where the box goes, worked out once it's drawn and can be measured.
-  // Until then it's drawn invisibly.
+  // Until then it's drawn see-through (opacity 0). Not visibility: hidden,
+  // which would also stop anything inside from taking keyboard focus (a
+  // menu's first item focusing itself as it opens). Either way it's placed
+  // before the browser paints, so it's never seen in the wrong spot.
   const [place, setPlace] = useState<CSSProperties | null>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -105,7 +108,7 @@ export function Popover({
           <div
             ref={boxRef}
             role="menu"
-            style={place ?? { left: 0, top: 0, visibility: 'hidden' }}
+            style={place ?? { left: 0, top: 0, opacity: 0 }}
             className={`fixed z-50 ${width} max-h-[calc(100vh-16px)] overflow-y-auto rounded bg-raised py-1 shadow-2xl shadow-black/50 ring-1 ring-line`}
           >
             {children(close)}

@@ -35,6 +35,7 @@ const NUDGE_BIG = 10
 //   Paste Into     Cmd+Shift+V: inside the one selected element
 //   Rename         F2
 //   Edit text      Enter (or double-click it on the canvas)
+//   Commands       Cmd+K: the command field (insert or run anything)
 //   Filter         Cmd+Shift+X: the Explorer's filter box
 //   Files          Cmd+S save, Cmd+O open, Cmd+E export
 //   Select all     Cmd+A
@@ -56,6 +57,13 @@ export function useKeyboardShortcuts(enabled = true) {
     if (!enabled) return
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement
+      // ⌘K: the command field (CommandBar.tsx), from anywhere, even from
+      // inside another text box.
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        document.getElementById('command-bar')?.focus()
+        return
+      }
       if (target.closest('input, textarea, [contenteditable="true"]')) return
       // Menus and dialogs handle their own keys (arrows move through a
       // menu there, not your selection on the canvas).

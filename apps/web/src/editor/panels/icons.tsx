@@ -162,3 +162,13 @@ export function CollapseIcon(props: IconProps) {
     </Icon>
   )
 }
+
+// A magnifying glass, for search boxes (the command field).
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="M10.5 10.5L14 14" />
+    </Icon>
+  )
+}
