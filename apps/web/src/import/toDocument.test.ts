@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 // Real files saved from Roblox Studio (see export/rbxmx.test.ts for what
 // each holds). "?raw" makes Vite load them as text.
+import canvasGroup from '../../../../docs/reference/canvas-group.rbxmx?raw'
 import cornerStroke from '../../../../docs/reference/corner-stroke.rbxmx?raw'
 import defaults from '../../../../docs/reference/defaults.rbxmx?raw'
 import fonts from '../../../../docs/reference/fonts.rbxmx?raw'
@@ -22,6 +23,7 @@ import type { NodeId, UiDocument } from '../model/types.ts'
 import { importRbxmx, RbxmxError } from './toDocument.ts'
 
 const STUDIO_FILES = {
+  'canvas-group': canvasGroup,
   'corner-stroke': cornerStroke,
   defaults,
   fonts,

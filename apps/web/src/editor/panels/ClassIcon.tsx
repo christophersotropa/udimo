@@ -22,6 +22,13 @@ const SHAPES: Record<ClassName | 'Modifier', ReactNode> = {
       <path d="M10.5 5.5v3" />
     </>
   ),
+  // Two overlapping squares: a group, drawn as one.
+  CanvasGroup: (
+    <>
+      <rect x="2.5" y="2.5" width="8" height="8" rx="1" />
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1" />
+    </>
+  ),
   TextLabel: <path d="M4 4h8M8 4v9" />,
   // A box with a text cursor in it.
   TextBox: (
@@ -52,6 +59,7 @@ const COLORS: Record<ClassName | 'Modifier', string> = {
   ScreenGui: 'text-ink',
   Frame: 'text-sky-400',
   ScrollingFrame: 'text-sky-400',
+  CanvasGroup: 'text-sky-400',
   TextLabel: 'text-emerald-400',
   TextBox: 'text-emerald-400',
   TextButton: 'text-rose-300',

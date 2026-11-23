@@ -217,6 +217,13 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     )
   }
 
+  if (node.className === 'CanvasGroup') {
+    properties.push(
+      color3('GroupColor3', p.GroupColor3),
+      float('GroupTransparency', p.GroupTransparency),
+    )
+  }
+
   if (node.className === 'ScrollingFrame') {
     properties.push(
       udim2('CanvasSize', p.CanvasSize),

@@ -37,6 +37,12 @@ export const CATALOG: CatalogEntry[] = [
     hint: 'Scrolling container',
   },
   {
+    kind: 'element',
+    className: 'CanvasGroup',
+    group: 'Common',
+    hint: 'Container that fades as one',
+  },
+  {
     kind: 'modifier',
     className: 'UIListLayout',
     group: 'Layout',

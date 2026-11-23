@@ -8,7 +8,18 @@ const names = (entries: { className: string }[]) =>
 describe('the insert catalog', () => {
   it('offers every element class and every modifier', () => {
     const elements = CATALOG.filter((e) => e.kind === 'element')
-    expect(elements).toHaveLength(7)
+    expect(names(elements).sort()).toEqual(
+      [
+        'CanvasGroup',
+        'Frame',
+        'ImageButton',
+        'ImageLabel',
+        'ScrollingFrame',
+        'TextBox',
+        'TextButton',
+        'TextLabel',
+      ].sort(),
+    )
     expect(names(CATALOG.filter((e) => e.kind === 'modifier')).sort()).toEqual(
       [...MODIFIER_CLASSES].sort(),
     )

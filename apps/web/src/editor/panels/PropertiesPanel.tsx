@@ -655,6 +655,28 @@ function NodeProperties({
         </Section>
       )}
 
+      {node.className === 'CanvasGroup' && (
+        <Section title="Group">
+          <Row label="GroupTransparency">
+            <NumberField
+              label="GroupTransparency"
+              min={0}
+              max={1}
+              value={p.GroupTransparency}
+              onChange={(GroupTransparency) => set({ GroupTransparency })}
+            />
+          </Row>
+          <Row label="GroupColor3">
+            <ColorField
+              label="GroupColor3"
+              value={p.GroupColor3}
+              onChange={(GroupColor3) => set({ GroupColor3 })}
+            />
+          </Row>
+          <Hint>Fades and tints everything in the group as one picture.</Hint>
+        </Section>
+      )}
+
       {node.className === 'ScrollingFrame' && (
         <Section title="Scrolling">
           <UDim2Row

@@ -2,6 +2,7 @@ import {
   type CSSProperties,
   type ReactNode,
   useEffect,
+  useId,
   useRef,
   useState,
 } from 'react'
@@ -113,6 +114,34 @@ export function NodeView({ id }: { id: NodeId }) {
     </ContentArea>
   )
 
+  // A CanvasGroup draws its background, border and contents as one
+  // picture, faded and tinted together, on a layer of its own; the outer
+  // box keeps the selection outline and resize handles, so they stay
+  // clear however faded or tinted the group is.
+  if (node.className === 'CanvasGroup') {
+    const { backgroundColor, backgroundImage, boxShadow, ...outer } = style
+    return (
+      <div style={outer} data-node-id={node.id} title={node.name}>
+        <GroupLayer
+          node={node}
+          paint={{ backgroundColor, backgroundImage, boxShadow }}
+        >
+          {resolveProps(node).ClipsDescendants ? (
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ borderRadius: 'inherit' }}
+            >
+              {content}
+            </div>
+          ) : (
+            content
+          )}
+        </GroupLayer>
+        {showHandles && <ResizeHandles />}
+      </div>
+    )
+  }
+
   return (
     <div style={style} data-node-id={node.id} title={node.name}>
       {isImageClass(node.className) && <ImageContent node={node} />}
@@ -132,6 +161,53 @@ export function NodeView({ id }: { id: NodeId }) {
         content
       )}
       {showHandles && <ResizeHandles />}
+    </div>
+  )
+}
+
+// A CanvasGroup's picture: its background and border (`paint`) and its
+// contents, faded by GroupTransparency and tinted by GroupColor3 as one.
+// CSS opacity already works that way: it draws everything inside first,
+// then fades the result, so overlapping children don't show through each
+// other. The tint multiplies each colour channel by GroupColor3's, which
+// CSS has no word for; an SVG filter does it (feColorMatrix scales red,
+// green and blue by r, g and b), in sRGB, the colours Roblox multiplies in.
+function GroupLayer({
+  node,
+  paint,
+  children,
+}: {
+  node: UiNode
+  paint: CSSProperties
+  children: ReactNode
+}) {
+  const { GroupTransparency, GroupColor3 } = resolveProps(node)
+  // An id for the filter, unique on the page (React's useId), with only
+  // letters and digits so it's safe inside url(#...).
+  const filterId = `group-tint-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  const tinted = !isWhite(GroupColor3)
+  const { r, g, b } = GroupColor3
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        ...paint,
+        borderRadius: 'inherit',
+        opacity: 1 - GroupTransparency,
+        filter: tinted ? `url(#${filterId})` : undefined,
+      }}
+    >
+      {tinted && (
+        <svg width="0" height="0" className="absolute" aria-hidden="true">
+          <filter id={filterId} colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values={`${r} 0 0 0 0  0 ${g} 0 0 0  0 0 ${b} 0 0  0 0 0 1 0`}
+            />
+          </filter>
+        </svg>
+      )}
+      {children}
     </div>
   )
 }

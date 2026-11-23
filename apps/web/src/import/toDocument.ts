@@ -84,6 +84,7 @@ const ELEMENT_CLASSES: readonly ClassName[] = [
   'ImageLabel',
   'ImageButton',
   'ScrollingFrame',
+  'CanvasGroup',
 ]
 const isElement = (className: string): className is ClassName =>
   (ELEMENT_CLASSES as readonly string[]).includes(className)
@@ -181,6 +182,8 @@ const PROP_SOURCES: Record<
   ScrollingDirection: [['ScrollingDirection'], asEnum(SCROLLING_DIRECTION)],
   ScrollBarImageColor3: [['ScrollBarImageColor3'], asColor3],
   ScrollBarImageTransparency: [['ScrollBarImageTransparency'], asNumber],
+  GroupTransparency: [['GroupTransparency'], asNumber],
+  GroupColor3: [['GroupColor3'], asColor3],
   AutomaticSize: [['AutomaticSize'], asEnum(AUTOMATIC_SIZE)],
 }
 

@@ -53,20 +53,23 @@ const BASE_DEFAULTS: Required<Props> = {
   ScrollingDirection: 'XY',
   ScrollBarImageColor3: { r: 0, g: 0, b: 0 }, // black, Studio's default
   ScrollBarImageTransparency: 0,
+  GroupTransparency: 0,
+  GroupColor3: { r: 1, g: 1, b: 1 }, // white: no tint
 }
 
 // Where a class differs from the base. Every class is checked against a
 // Studio reference file in docs/reference/: defaults.rbxmx (Frame,
 // TextLabel), text-classes.rbxmx (TextButton, TextBox) and
 // image-classes.rbxmx (ImageLabel, ImageButton, ScrollingFrame, which all
-// match the base).
+// match the base) and canvas-group.rbxmx (CanvasGroup).
 const TEXT_SIZE = { xs: 0, xo: 200, ys: 0, yo: 50 }
 const CLASS_DEFAULTS: Partial<Record<ClassName, Props>> = {
   TextLabel: { Size: TEXT_SIZE },
   TextButton: { Size: TEXT_SIZE, Text: 'Button' },
   TextBox: { Size: TEXT_SIZE, Text: 'TextBox' },
-  // A ScrollingFrame clips its contents by default.
+  // A ScrollingFrame and a CanvasGroup clip their contents by default.
   ScrollingFrame: { ClipsDescendants: true },
+  CanvasGroup: { ClipsDescendants: true },
 }
 
 // Every supported property's default for one class.
