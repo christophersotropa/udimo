@@ -345,3 +345,13 @@ export function exportTree(
   }
   return root
 }
+
+// How many instances a tree holds, counting itself: what Studio's Explorer
+// will show once the file is inserted (the ScreenGui, every element, every
+// modifier, and the LocalScript if there is one).
+export function countInstances(instance: ExportInstance): number {
+  return instance.children.reduce(
+    (total, child) => total + countInstances(child),
+    1,
+  )
+}

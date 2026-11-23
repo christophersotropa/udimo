@@ -98,4 +98,21 @@ describe('view store', () => {
     state().resetPanels()
     expect(state().panels).toEqual(DEFAULT_PANEL_LAYOUT)
   })
+
+  it('asks Properties to show a modifier, unfolding its section', () => {
+    const { store } = setup()
+    const state = () => store.getState()
+    state().toggleSection('Modifiers') // folded shut
+    state().toggleSection('Text')
+    state().revealModifier('frame', 'UICorner')
+    expect(state().modifierReveal).toEqual({
+      id: 'frame',
+      modifier: 'UICorner',
+    })
+    expect(state().closedSections).toEqual(['Text'])
+    // Asking again for the same one is still a new request.
+    const first = state().modifierReveal
+    state().revealModifier('frame', 'UICorner')
+    expect(state().modifierReveal).not.toBe(first)
+  })
 })

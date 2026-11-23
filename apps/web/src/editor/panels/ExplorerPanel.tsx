@@ -19,7 +19,7 @@ import {
 } from '../../store/commands.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { useViewStore } from '../../store/viewStore.ts'
-import { openMenuFor } from '../menus/openMenu.ts'
+import { openMenuFor, openModifierMenu } from '../menus/openMenu.ts'
 import { IconButton } from '../ui/Button.tsx'
 import { ClassIcon } from './ClassIcon.tsx'
 import {
@@ -154,12 +154,30 @@ export function ExplorerPanel() {
     } else if (!store.selection.includes(id)) {
       store.select(id, true)
     }
+    // A modifier line shows that modifier's fields in Properties, as a
+    // click on it does.
+    if (modifier && !extend) {
+      useViewStore.getState().revealModifier(id, modifier)
+    }
     line.scrollIntoView({ block: 'nearest' })
   }
 
   function onTreeKeyDown(event: ReactKeyboardEvent<HTMLUListElement>) {
     // The rename box handles its own keys.
     if ((event.target as Element).closest('input')) return
+    // Delete on a modifier line removes that modifier, not the element it's
+    // on (which is what the editor's own Delete shortcut would remove: the
+    // element is what's selected).
+    if (
+      (event.key === 'Delete' || event.key === 'Backspace') &&
+      active.modifier
+    ) {
+      event.preventDefault()
+      event.stopPropagation()
+      useDocumentStore.getState().removeModifier(active.id, active.modifier)
+      setLastActive({ id: active.id }) // carry on from the element's line
+      return
+    }
     const elements = [
       ...(listRef.current?.querySelectorAll<HTMLElement>('[role="treeitem"]') ??
         []),
@@ -190,7 +208,9 @@ export function ExplorerPanel() {
       toggleOpen(id)
     } else {
       const box = line.getBoundingClientRect()
-      openMenuFor(id, box.left + 24, box.bottom)
+      const modifier = line.dataset.modifier as ModifierClass | undefined
+      if (modifier) openModifierMenu(id, modifier, box.left + 24, box.bottom)
+      else openMenuFor(id, box.left + 24, box.bottom)
     }
   }
 
@@ -524,10 +544,11 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
               }
               onSelect={() => {
                 useDocumentStore.getState().select(id)
+                useViewStore.getState().revealModifier(id, modifier)
                 tree.activate({ id, modifier })
                 tree.focusTree()
               }}
-              onMenu={(x, y) => openMenuFor(id, x, y)}
+              onMenu={(x, y) => openModifierMenu(id, modifier, x, y)}
             />
           ))}
           {node.children.map((childId) => (
@@ -547,7 +568,8 @@ function TreeRow({ id, depth, parentHidden, tree }: TreeRowProps) {
 
 // A modifier listed under its element. Modifiers live on the element in
 // Udimo (and become real children in the export), so clicking one selects
-// the element, where the Properties panel shows the modifier's fields.
+// the element and opens that modifier's fields in Properties. Right-click
+// (and Delete) act on the modifier alone, never on the element.
 function ModifierRow({
   ownerId,
   modifier,
@@ -561,7 +583,7 @@ function ModifierRow({
   depth: number
   outlined: boolean // the keyboard's current line, while you use it
   onSelect: () => void
-  onMenu: (x: number, y: number) => void // right-click: the element's menu
+  onMenu: (x: number, y: number) => void // right-click: the modifier's own menu
 }) {
   return (
     <li role="none">
@@ -584,7 +606,7 @@ function ModifierRow({
           event.preventDefault()
           onMenu(event.clientX, event.clientY)
         }}
-        title="A modifier: edit it in the element's Properties"
+        title="Click to edit in Properties · right-click for more"
         style={{ paddingLeft: depth * INDENT + 4 + 18 }}
         className={`flex h-6 w-full items-center gap-1.5 rounded-sm pr-1 text-left text-body text-muted hover:bg-hover ${
           outlined ? 'outline-1 -outline-offset-1 outline-accent' : ''

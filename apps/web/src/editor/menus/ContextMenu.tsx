@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import type { ModifierClass, NodeId } from '../../model/types.ts'
 import { planWrap } from '../../model/wrap.ts'
 import {
   copyToClipboard,
@@ -33,7 +34,12 @@ export function ContextMenu() {
   const menu = useViewStore((state) => state.contextMenu)
   if (!menu) return null
   // A new key for each opening, so the menu starts fresh every time.
-  return <MenuBox key={`${menu.x}:${menu.y}:${menu.targetId}`} menu={menu} />
+  return (
+    <MenuBox
+      key={`${menu.x}:${menu.y}:${menu.targetId}:${menu.modifier ?? ''}`}
+      menu={menu}
+    />
+  )
 }
 
 const SHORTCUT_KEYS = {
@@ -127,6 +133,12 @@ function MenuBox({ menu }: { menu: ContextMenuState }) {
     >
       {menu.insertOnly ? (
         <InsertObjectMenu targetId={menu.targetId} onDone={close} />
+      ) : menu.modifier ? (
+        <ModifierItems
+          ownerId={menu.targetId}
+          modifier={menu.modifier}
+          close={close}
+        />
       ) : (
         <MainItems
           targetId={menu.targetId}
@@ -138,6 +150,21 @@ function MenuBox({ menu }: { menu: ContextMenuState }) {
       )}
     </div>
   )
+}
+
+// Up/Down move between a menu's items (Right opens Insert Object, on that
+// item itself). Shared by the main menu and the modifier menu.
+function moveBetweenItems(event: KeyboardEvent) {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+  event.preventDefault()
+  const items = [
+    ...(event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>(
+      ':scope > button:enabled',
+    ),
+  ]
+  const at = items.indexOf(document.activeElement as HTMLButtonElement)
+  const step = event.key === 'ArrowDown' ? 1 : -1
+  items[(at + step + items.length) % items.length]?.focus()
 }
 
 function MainItems({
@@ -167,22 +194,8 @@ function MainItems({
     close()
   }
 
-  // Up/Down move between items, Right opens Insert Object.
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
-    event.preventDefault()
-    const items = [
-      ...(
-        event.currentTarget as HTMLElement
-      ).querySelectorAll<HTMLButtonElement>(':scope > button:enabled'),
-    ]
-    const at = items.indexOf(document.activeElement as HTMLButtonElement)
-    const step = event.key === 'ArrowDown' ? 1 : -1
-    items[(at + step + items.length) % items.length]?.focus()
-  }
-
   return (
-    <div className="relative w-52" onKeyDown={onKeyDown}>
+    <div className="relative w-52" onKeyDown={moveBetweenItems}>
       <button
         type="button"
         role="menuitem"
@@ -279,6 +292,47 @@ function MainItems({
         onClick={run(() => deleteSelection(store))}
       >
         Delete
+      </Item>
+    </div>
+  )
+}
+
+// The menu for one modifier (right-click on its line in the Explorer). Its
+// actions are the modifier's own, named after it, so "Delete UICorner"
+// can't be mistaken for deleting the element.
+function ModifierItems({
+  ownerId,
+  modifier,
+  close,
+}: {
+  ownerId: NodeId
+  modifier: ModifierClass
+  close: () => void
+}) {
+  const run = (action: () => void) => () => {
+    action()
+    close()
+  }
+
+  return (
+    <div className="w-52" onKeyDown={moveBetweenItems}>
+      <Item
+        onHover={() => {}}
+        onClick={run(() =>
+          useViewStore.getState().revealModifier(ownerId, modifier),
+        )}
+      >
+        Edit {modifier}
+      </Item>
+      <hr className="my-1 border-line" />
+      <Item
+        onHover={() => {}}
+        danger
+        onClick={run(() =>
+          useDocumentStore.getState().removeModifier(ownerId, modifier),
+        )}
+      >
+        Delete {modifier}
       </Item>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { withEnd } from '../../lib/sequence.ts'
 import { formatUDim } from '../../lib/robloxText.ts'
 import { isTextClass } from '../../model/classes.ts'
@@ -19,6 +19,7 @@ import {
 } from '../../model/modifiers.ts'
 import type { ModifierClass, NodeId, UiNode } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
+import { useViewStore } from '../../store/viewStore.ts'
 import { MenuItem, Popover } from '../ui/Popover.tsx'
 import {
   ColorField,
@@ -60,8 +61,33 @@ function shortValue(node: UiNode, modifier: ModifierClass): string {
 export function ModifiersSection({ id }: { id: NodeId }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const { addModifier, removeModifier } = useDocumentStore.getState()
-  // Which rows are open. Only this panel cares, so it's React state.
-  const [open, setOpen] = useState<ReadonlySet<ModifierClass>>(new Set())
+  // A request to show one modifier's fields (a click on its line in the
+  // Explorer, or "Edit UICorner" in its menu).
+  const reveal = useViewStore((state) => state.modifierReveal)
+  // Which rows are open. Only this panel cares, so it's React state. It
+  // starts with the requested one open: Properties is rebuilt for each new
+  // selection, and the click that selected this element may have asked.
+  const [open, setOpen] = useState<ReadonlySet<ModifierClass>>(() =>
+    reveal?.id === id ? new Set([reveal.modifier]) : new Set(),
+  )
+  // A later request while this element stays selected: open that row too.
+  // (Adjusting state during render when an input changes, as the Explorer
+  // does for the selection; see "You Might Not Need an Effect".)
+  const [seenReveal, setSeenReveal] = useState(reveal)
+  if (reveal !== seenReveal) {
+    setSeenReveal(reveal)
+    if (reveal?.id === id && !open.has(reveal.modifier)) {
+      setOpen(new Set([...open, reveal.modifier]))
+    }
+  }
+  // Then bring the requested row into view. An effect, because it needs
+  // the row on the page first.
+  useEffect(() => {
+    if (reveal?.id !== id) return
+    document
+      .getElementById(`modifier-${reveal.modifier}`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [reveal, id])
   if (!node) return null
 
   const on = MODIFIER_CLASSES.filter((m) => node.modifiers?.[m])
@@ -119,7 +145,8 @@ export function ModifiersSection({ id }: { id: NodeId }) {
       {on.map((m) => {
         const isOpen = open.has(m)
         return (
-          <div key={m}>
+          // The id lets a reveal request scroll to it.
+          <div key={m} id={`modifier-${m}`}>
             <div className="group grid min-h-6 grid-cols-[minmax(100px,calc(40cqw_-_var(--indent,0px)))_minmax(0,1fr)_auto] items-center gap-2">
               <button
                 type="button"
