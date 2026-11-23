@@ -12,7 +12,7 @@ import {
 } from '../../lib/resize.ts'
 import { addOffset } from '../../lib/udim2.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import { isLaidOut } from '../../model/layout.ts'
+import { drawnScale, isLaidOut } from '../../model/layout.ts'
 import { topLevelNodes } from '../../model/tree.ts'
 import type { NodeId, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -55,7 +55,12 @@ type DragAction =
       kind: 'move'
       // Where each dragged element was when the drag began.
       startPositions: Map<NodeId, UDim2>
-      // What to snap to (null if the elements have different parents).
+      // For each, how many times bigger its parent's space is drawn (the
+      // parents' UIScale): a pointer move is divided by it, so the element
+      // follows the pointer exactly.
+      units: Map<NodeId, number>
+      // What to snap to (null if the elements have different parents, or
+      // they're inside a scaled element; see onPointerMove).
       snap: SnapContext | null
     }
   | {
@@ -63,6 +68,9 @@ type DragAction =
       id: NodeId
       handle: Handle
       start: ResizeStart
+      // How many times bigger the element is drawn (its own UIScale and its
+      // parents'): a pointer move is divided by it.
+      unit: number
       snap: SnapContext | null
     }
   | {
@@ -182,10 +190,16 @@ export function useCanvasPointer(scale: number) {
       const id = handleOwner.dataset.nodeId
       const doc = useDocumentStore.getState().document
       const p = resolveProps(doc.nodes[id])
+      const screen = screenOf(useViewStore.getState())
+      const unit = drawnScale(doc, id, screen)
       beginDrag(event, {
         kind: 'resize',
         id,
-        snap: snapContext(doc, [id], screenOf(useViewStore.getState())),
+        unit,
+        // Snapping works in the parent's own pixels, but its guide lines
+        // would be drawn unscaled, in the wrong place: off inside a
+        // scaled element.
+        snap: unit === 1 ? snapContext(doc, [id], screen) : null,
         handle: {
           x: Number(handleEl.dataset.handleX) as HandleSide,
           y: Number(handleEl.dataset.handleY) as HandleSide,
@@ -224,6 +238,8 @@ export function useCanvasPointer(scale: number) {
     if (!selection.includes(id)) return // Shift-click just unselected it
 
     const startPositions = new Map<NodeId, UDim2>()
+    const units = new Map<NodeId, number>()
+    const screen = screenOf(useViewStore.getState())
     for (const nodeId of topLevelNodes(doc, selection)) {
       // A locked element picked in the Explorer stays put when you drag others.
       if (doc.nodes[nodeId].locked) continue
@@ -231,15 +247,18 @@ export function useCanvasPointer(scale: number) {
       // confusing edits. Reorder laid-out children in the Explorer instead.
       if (isLaidOut(doc, nodeId)) continue
       startPositions.set(nodeId, resolveProps(doc.nodes[nodeId]).Position)
+      const parentId = doc.nodes[nodeId].parentId!
+      units.set(nodeId, drawnScale(doc, parentId, screen))
     }
+    const scaled = [...units.values()].some((unit) => unit !== 1)
     beginDrag(event, {
       kind: 'move',
       startPositions,
-      snap: snapContext(
-        doc,
-        [...startPositions.keys()],
-        screenOf(useViewStore.getState()),
-      ),
+      units,
+      // Off inside a scaled element (see resize above).
+      snap: scaled
+        ? null
+        : snapContext(doc, [...startPositions.keys()], screen),
     })
   }
 
@@ -291,7 +310,8 @@ export function useCanvasPointer(scale: number) {
         setGuides([])
       }
       for (const [id, start] of current.startPositions) {
-        updateProps(id, { Position: addOffset(start, dx, dy) })
+        const unit = current.units.get(id) ?? 1
+        updateProps(id, { Position: addOffset(start, dx / unit, dy / unit) })
       }
     } else {
       if (snap) {
@@ -319,8 +339,8 @@ export function useCanvasPointer(scale: number) {
       const { size, position } = resizeBox(
         current.start,
         current.handle,
-        dx,
-        dy,
+        dx / current.unit,
+        dy / current.unit,
       )
       updateProps(current.id, { Size: size, Position: position })
     }

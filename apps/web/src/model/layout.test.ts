@@ -301,3 +301,120 @@ describe('visualBox (UIScale)', () => {
     expect(visualBox(doc, id, SCREEN)).toEqual(absoluteBox(doc, id, SCREEN))
   })
 })
+
+// AutomaticSize, measured with the estimate in textMetrics.ts: each
+// character half the text size wide, each line 1.25 × the text size tall.
+describe('AutomaticSize', () => {
+  const W = { xs: 0, xo: 0, ys: 0, yo: 0 }
+  function setup() {
+    const store = createDocumentStore()
+    const root = store.getState().document.rootId
+    return { store, root, s: store.getState() }
+  }
+  const boxOf = (store: ReturnType<typeof createDocumentStore>, id: string) =>
+    absoluteBox(store.getState().document, id, SCREEN)
+
+  it('grows a label across to fit its text', () => {
+    const { store, root, s } = setup()
+    // "Hello" at 20px: 5 × 10 = 50 wide.
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 10, yo: 50 },
+      Text: 'Hello',
+      TextSize: 20,
+      AutomaticSize: 'X',
+    })
+    expect(boxOf(store, id)).toMatchObject({ width: 50, height: 50 })
+  })
+
+  it('never shrinks below Size', () => {
+    const { store, root, s } = setup()
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 200, yo: 50 },
+      Text: 'Hi',
+      AutomaticSize: 'XY',
+    })
+    expect(boxOf(store, id)).toMatchObject({ width: 200, height: 50 })
+  })
+
+  it('wraps text at the width and grows down when only Y grows', () => {
+    const { store, root, s } = setup()
+    // Words 40px wide, spaces 10: "aaaa bbbb" (90) fits in 100, "cccc"
+    // wraps: 2 lines × 25 = 50 tall.
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 100, yo: 10 },
+      Text: 'aaaa bbbb cccc',
+      TextSize: 20,
+      TextWrapped: true,
+      AutomaticSize: 'Y',
+    })
+    expect(boxOf(store, id)).toMatchObject({ width: 100, height: 50 })
+  })
+
+  it('leaves TextScaled text to fit the box instead', () => {
+    const { store, root, s } = setup()
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 10, yo: 10 },
+      Text: 'A long line of text',
+      TextScaled: true,
+      AutomaticSize: 'XY',
+    })
+    expect(boxOf(store, id)).toMatchObject({ width: 10, height: 10 })
+  })
+
+  it('grows a container to fit its children', () => {
+    const { store, root, s } = setup()
+    const frame = s.addNode(root, 'Frame', { Size: W, AutomaticSize: 'XY' })
+    s.addNode(frame, 'Frame', {
+      Position: { ...W, xo: 100, yo: 50 },
+      Size: { ...W, xo: 80, yo: 40 },
+    })
+    expect(boxOf(store, frame)).toMatchObject({ width: 180, height: 90 })
+  })
+
+  it('grows to fit what its UIListLayout places, plus UIPadding', () => {
+    const { store, root, s } = setup()
+    const list = s.addNode(root, 'Frame', {
+      Size: { ...W, xo: 200 },
+      AutomaticSize: 'Y',
+    })
+    s.addModifier(list, 'UIListLayout')
+    s.updateModifier(list, 'UIListLayout', { Padding: { s: 0, o: 5 } })
+    s.addModifier(list, 'UIPadding')
+    s.updateModifier(list, 'UIPadding', {
+      PaddingTop: { s: 0, o: 10 },
+      PaddingBottom: { s: 0, o: 10 },
+    })
+    for (let i = 0; i < 3; i++) {
+      s.addNode(list, 'Frame', { Size: { ...W, xo: 50, yo: 30 } })
+    }
+    // 10 + 30 + 5 + 30 + 5 + 30 + 10 = 120.
+    expect(boxOf(store, list)).toMatchObject({ width: 200, height: 120 })
+  })
+
+  it('grows away from its AnchorPoint', () => {
+    const { store, root, s } = setup()
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 10, yo: 50 },
+      Position: { ...W, xo: 100, yo: 100 },
+      AnchorPoint: { x: 0.5, y: 0 },
+      Text: 'Hello',
+      TextSize: 20,
+      AutomaticSize: 'X',
+    })
+    // 50 wide, centred on x = 100.
+    expect(boxOf(store, id)).toMatchObject({ x: 75, width: 50 })
+  })
+
+  it('stays within a UISizeConstraint', () => {
+    const { store, root, s } = setup()
+    const id = s.addNode(root, 'TextLabel', {
+      Size: { ...W, xo: 10, yo: 50 },
+      Text: 'A rather long label',
+      TextSize: 20,
+      AutomaticSize: 'X',
+    })
+    s.addModifier(id, 'UISizeConstraint')
+    s.updateModifier(id, 'UISizeConstraint', { MaxSize: { x: 60, y: null } })
+    expect(boxOf(store, id).width).toBe(60)
+  })
+})

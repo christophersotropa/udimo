@@ -60,14 +60,19 @@ export function NodeView({ id }: { id: NodeId }) {
       ? cornerRadiusPixels(state.document, id, screen)
       : 0,
   )
-  // The size a UIAspectRatioConstraint forces, and the box a parent's
-  // layout gives this element (each null if there's none). useShallow lets
-  // a selector return a small object: the component only re-renders when
-  // one of its values changes, not every time a new, identical object is
-  // made.
-  const aspectSize = useDocumentStore(
+  // The size a UIAspectRatioConstraint forces or AutomaticSize grows to,
+  // and the box a parent's layout gives this element (each null if there's
+  // none). useShallow lets a selector return a small object: the component
+  // only re-renders when one of its values changes, not every time a new,
+  // identical object is made.
+  const fixedSize = useDocumentStore(
     useShallow((state) => {
-      if (!state.document.nodes[id]?.modifiers?.UIAspectRatioConstraint) {
+      const n = state.document.nodes[id]
+      const automatic = n?.props.AutomaticSize
+      if (
+        !n?.modifiers?.UIAspectRatioConstraint &&
+        (!automatic || automatic === 'None')
+      ) {
         return null
       }
       const { width, height } = absoluteBox(state.document, id, screen)
@@ -88,7 +93,7 @@ export function NodeView({ id }: { id: NodeId }) {
     return <div className="absolute inset-0">{children}</div>
   }
 
-  const pixels = { cornerRadius, aspectSize, slot }
+  const pixels = { cornerRadius, fixedSize, slot }
   // An outline is drawn outside the element without changing its size,
   // so selecting never shifts the layout.
   const style = isSelected

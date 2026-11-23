@@ -274,9 +274,7 @@ function NodeProperties({
           />
         </Row>
         {p.AutomaticSize !== 'None' && (
-          <Hint>
-            In game it grows to fit its contents; the canvas shows Size for now.
-          </Hint>
+          <Hint>Grows to fit its contents; Size is the smallest it gets.</Hint>
         )}
         <Row label="AnchorPoint">
           <TextValueField
