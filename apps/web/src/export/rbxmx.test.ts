@@ -18,6 +18,9 @@ import fontReference from '../../../../docs/reference/fonts.rbxmx?raw'
 import textOptionsReference from '../../../../docs/reference/text-options.rbxmx?raw'
 // Six ImageLabels, each with one image option changed (build 50).
 import imageOptionsReference from '../../../../docs/reference/image-options.rbxmx?raw'
+// A TextLabel with UIScale, UISizeConstraint and UITextSizeConstraint at
+// their defaults, then one of each changed (build 51).
+import sizingReference from '../../../../docs/reference/sizing.rbxmx?raw'
 import type { Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
@@ -467,5 +470,50 @@ describe('documentToRbxmx', () => {
 describe('escapeXml', () => {
   it('leaves normal text alone', () => {
     expect(escapeXml('Shop')).toBe('Shop')
+  })
+
+  describe('matches the Studio reference file for sizing (build 51)', () => {
+    // The file's first of each class is the "Defaults" label's.
+    const store = createDocumentStore()
+    const root = store.getState().document.rootId
+    const label = store.getState().addNode(root, 'TextLabel')
+    for (const modifier of [
+      'UIScale',
+      'UISizeConstraint',
+      'UITextSizeConstraint',
+    ] as const) {
+      store.getState().addModifier(label, modifier)
+    }
+    const ours = documentToRbxmx(store.getState().document)
+
+    describe.each(['UIScale', 'UISizeConstraint', 'UITextSizeConstraint'])(
+      'a default %s',
+      (className) => {
+        const mine = propertiesOf(ours, className)
+        const studio = propertiesOf(sizingReference, className)
+        it.each([...mine])('%s', (name, value) => {
+          expect(studio.get(name)).toBe(value)
+        })
+      },
+    )
+
+    it('writes no limit as INF, like Studio', () => {
+      expect(propertiesOf(ours, 'UISizeConstraint').get('MaxSize')).toBe(
+        'Vector2:<X>INF</X><Y>INF</Y>',
+      )
+    })
+
+    it('writes AutomaticSize as Studio numbers it', () => {
+      const s2 = createDocumentStore()
+      s2.getState().addNode(s2.getState().document.rootId, 'TextLabel', {
+        AutomaticSize: 'XY',
+      })
+      const xml = documentToRbxmx(s2.getState().document)
+      expect(propertiesOf(xml, 'TextLabel').get('AutomaticSize')).toBe(
+        propertiesOfNamed(sizingReference, 'AutomaticSizeXY').get(
+          'AutomaticSize',
+        ),
+      )
+    })
   })
 })

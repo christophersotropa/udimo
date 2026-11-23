@@ -1,5 +1,6 @@
 import type {
   ApplyStrokeMode,
+  AutomaticSize,
   FillDirection,
   HorizontalAlignment,
   ScaleType,
@@ -48,6 +49,15 @@ export type Color3 = {
   r: number
   g: number
   b: number
+}
+
+// A largest size in pixels, per axis, where null means no limit. Roblox
+// writes "no limit" as infinity (INF), but a project file is JSON, which
+// has no way to write infinity, so Udimo keeps null and the exporters turn
+// it into INF / math.huge. (UISizeConstraint's MaxSize.)
+export type SizeLimit = {
+  x: number | null
+  y: number | null
 }
 
 // UDim: one axis of a UDim2, Scale + Offset. Used for UICorner's radius.
@@ -138,6 +148,10 @@ export type Props = {
   SliceCenter?: Rect
   // Slice: how big the corners and edges are drawn (2 = twice the size)
   SliceScale?: number
+  // Grows the element to fit its contents across (X), down (Y) or both;
+  // Size is then the smallest it gets. Exported as set; the canvas still
+  // shows Size (drawing the growth is a later build).
+  AutomaticSize?: AutomaticSize
   // ScrollingFrame: the size of the scrollable area its children sit on
   // (Scale is a fraction of the frame), and the scroll bar width in pixels
   CanvasSize?: UDim2
@@ -180,6 +194,22 @@ export type ModifierProps = {
     // Width divided by height. The element becomes the biggest box with this
     // shape that fits inside its Size.
     AspectRatio?: number
+  }
+  UIScale: {
+    // Draws the element and everything inside it this many times bigger
+    // (1.5 = half as big again), around its AnchorPoint.
+    Scale?: number
+  }
+  UISizeConstraint: {
+    // The element's smallest and largest size in pixels, whatever its Size
+    // says (null in MaxSize: no limit that way).
+    MinSize?: Vector2
+    MaxSize?: SizeLimit
+  }
+  UITextSizeConstraint: {
+    // With TextScaled: the smallest and largest text size it may pick.
+    MinTextSize?: number
+    MaxTextSize?: number
   }
   // Layouts place the element's children for you, ignoring their Position.
   // An element has at most one layout.

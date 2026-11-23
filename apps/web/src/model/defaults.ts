@@ -46,6 +46,7 @@ const BASE_DEFAULTS: Required<Props> = {
   TileSize: { xs: 1, xo: 0, ys: 1, yo: 0 }, // one tile the element's size
   SliceCenter: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
   SliceScale: 1,
+  AutomaticSize: 'None',
   CanvasSize: { xs: 0, xo: 0, ys: 2, yo: 0 }, // twice the frame's height
   ScrollBarThickness: 12,
 }

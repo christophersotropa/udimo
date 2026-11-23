@@ -60,6 +60,20 @@ export const CATALOG: CatalogEntry[] = [
     group: 'Layout',
     hint: 'Modifier',
   },
+  // Size: scaling and limits on an element's (or its text's) size.
+  { kind: 'modifier', className: 'UIScale', group: 'Size', hint: 'Modifier' },
+  {
+    kind: 'modifier',
+    className: 'UISizeConstraint',
+    group: 'Size',
+    hint: 'Modifier',
+  },
+  {
+    kind: 'modifier',
+    className: 'UITextSizeConstraint',
+    group: 'Size',
+    hint: 'Modifier',
+  },
   { kind: 'modifier', className: 'UICorner', group: 'Style', hint: 'Modifier' },
   { kind: 'modifier', className: 'UIStroke', group: 'Style', hint: 'Modifier' },
   {

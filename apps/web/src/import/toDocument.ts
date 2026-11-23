@@ -2,6 +2,7 @@ import { createId } from '../lib/ids.ts'
 import { defaultProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
+  AUTOMATIC_SIZE,
   FILL_DIRECTION,
   FONT_STYLE,
   FONT_WEIGHT,
@@ -106,6 +107,14 @@ const asRect: Read = (v) =>
   v.type === 'Rect'
     ? { minX: v.minX, minY: v.minY, maxX: v.maxX, maxY: v.maxY }
     : undefined
+// A size limit: infinity (Studio's INF) is "no limit", null in Udimo.
+const asSizeLimit: Read = (v) =>
+  v.type === 'Vector2'
+    ? {
+        x: v.x === Infinity ? null : v.x,
+        y: v.y === Infinity ? null : v.y,
+      }
+    : undefined
 const asColor3: Read = (v) =>
   v.type === 'Color3' ? { r: v.r, g: v.g, b: v.b } : undefined
 const asColorSequence: Read = (v) =>
@@ -167,6 +176,7 @@ const PROP_SOURCES: Record<
   SliceScale: [['SliceScale'], asNumber],
   CanvasSize: [['CanvasSize'], asUDim2],
   ScrollBarThickness: [['ScrollBarThickness'], asNumber],
+  AutomaticSize: [['AutomaticSize'], asEnum(AUTOMATIC_SIZE)],
 }
 
 // The same for each modifier's properties. UICorner: Studio files store a
@@ -197,6 +207,15 @@ const MODIFIER_SOURCES: {
     PaddingRight: [['PaddingRight'], asUDim],
   },
   UIAspectRatioConstraint: { AspectRatio: [['AspectRatio'], asNumber] },
+  UIScale: { Scale: [['Scale'], asNumber] },
+  UISizeConstraint: {
+    MinSize: [['MinSize'], asVector2],
+    MaxSize: [['MaxSize'], asSizeLimit],
+  },
+  UITextSizeConstraint: {
+    MinTextSize: [['MinTextSize'], asNumber],
+    MaxTextSize: [['MaxTextSize'], asNumber],
+  },
   UIListLayout: {
     FillDirection: [['FillDirection'], asEnum(FILL_DIRECTION)],
     HorizontalAlignment: [

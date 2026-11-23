@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
 import {
+  clampSize,
+  visualBox,
   absoluteBox,
   boxInParent,
   fitAspect,
@@ -207,5 +209,95 @@ describe('children placed by a layout', () => {
     const doc = store.getState().document
     expect(isLaidOut(doc, a)).toBe(true)
     expect(isLaidOut(doc, b)).toBe(false)
+  })
+})
+
+describe('UISizeConstraint', () => {
+  function constrained(size: {
+    xs: number
+    xo: number
+    ys: number
+    yo: number
+  }) {
+    const store = createDocumentStore()
+    const id = store
+      .getState()
+      .addNode(store.getState().document.rootId, 'Frame', { Size: size })
+    store.getState().addModifier(id, 'UISizeConstraint')
+    store.getState().updateModifier(id, 'UISizeConstraint', {
+      MinSize: { x: 50, y: 50 },
+      MaxSize: { x: 400, y: null },
+    })
+    return boxInParent(store.getState().document.nodes[id], SCREEN)
+  }
+
+  it('keeps the box between MinSize and MaxSize', () => {
+    // 80% of 1000 = 800 wide, capped at 400; 10px tall, raised to 50.
+    const box = constrained({ xs: 0.8, xo: 0, ys: 0, yo: 10 })
+    expect(box.width).toBe(400)
+    expect(box.height).toBe(50)
+  })
+
+  it('has no maximum where MaxSize is null', () => {
+    expect(constrained({ xs: 0, xo: 100, ys: 0, yo: 2000 }).height).toBe(2000)
+  })
+
+  it('lets the minimum win when the limits cross, like CSS', () => {
+    expect(clampSize(10, 50, 30)).toBe(50)
+    expect(clampSize(10, 0, null)).toBe(10)
+  })
+})
+
+describe('visualBox (UIScale)', () => {
+  // A 200×100 Frame centred at (500, 250), scaled ×2, with a child
+  // 50×50 at its top-left corner.
+  function scaled() {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const root = store.getState().document.rootId
+    const frame = addNode(root, 'Frame', {
+      Size: { xs: 0, xo: 200, ys: 0, yo: 100 },
+      Position: { xs: 0.5, xo: 0, ys: 0.5, yo: 0 },
+      AnchorPoint: { x: 0.5, y: 0.5 },
+    })
+    addModifier(frame, 'UIScale')
+    updateModifier(frame, 'UIScale', { Scale: 2 })
+    const child = addNode(frame, 'Frame', {
+      Size: { xs: 0, xo: 50, ys: 0, yo: 50 },
+    })
+    return { doc: store.getState().document, frame, child }
+  }
+
+  it('scales an element around its AnchorPoint', () => {
+    const { doc, frame } = scaled()
+    // 400×200, still centred at (500, 250).
+    expect(visualBox(doc, frame, SCREEN)).toEqual({
+      x: 300,
+      y: 150,
+      width: 400,
+      height: 200,
+    })
+  })
+
+  it('scales what’s inside with it, offsets included', () => {
+    const { doc, child } = scaled()
+    // 50×50 becomes 100×100, at the scaled frame's corner.
+    expect(visualBox(doc, child, SCREEN)).toEqual({
+      x: 300,
+      y: 150,
+      width: 100,
+      height: 100,
+    })
+  })
+
+  it('matches absoluteBox when nothing is scaled', () => {
+    const store = createDocumentStore()
+    const id = store
+      .getState()
+      .addNode(store.getState().document.rootId, 'Frame', {
+        Position: { xs: 0.1, xo: 5, ys: 0, yo: 20 },
+      })
+    const doc = store.getState().document
+    expect(visualBox(doc, id, SCREEN)).toEqual(absoluteBox(doc, id, SCREEN))
   })
 })

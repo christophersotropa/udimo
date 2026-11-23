@@ -15,7 +15,10 @@ import {
 
 // Numbers as Luau understands them. JavaScript's own formatting (like 0.5,
 // -24, 1e-7) is valid Luau too.
-const num = (n: number) => String(n)
+// A number in Luau. Infinity (UISizeConstraint's MaxSize with no limit) is
+// math.huge, Luau's name for it.
+const num = (n: number) =>
+  n === Infinity ? 'math.huge' : n === -Infinity ? '-math.huge' : String(n)
 
 // A color. Colors picked in Udimo are whole steps of 1/255, so they're
 // written the way Roblox developers usually write them, Color3.fromRGB(20,

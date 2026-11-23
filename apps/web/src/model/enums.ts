@@ -49,6 +49,9 @@ export const SCALE_TYPE = {
 export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
 export const APPLY_STROKE_MODE = { Contextual: 0, Border: 1 } as const
+// AutomaticSize: which way an element grows to fit its contents, if any
+// (numbered as Studio saves them: docs/reference/sizing.rbxmx).
+export const AUTOMATIC_SIZE = { None: 0, X: 1, Y: 2, XY: 3 } as const
 
 export type FillDirection = keyof typeof FILL_DIRECTION
 export type HorizontalAlignment = keyof typeof HORIZONTAL_ALIGNMENT
@@ -61,6 +64,7 @@ export type TextXAlignment = keyof typeof TEXT_X_ALIGNMENT
 export type TextYAlignment = keyof typeof TEXT_Y_ALIGNMENT
 export type TextTruncate = keyof typeof TEXT_TRUNCATE
 export type ScaleType = keyof typeof SCALE_TYPE
+export type AutomaticSize = keyof typeof AUTOMATIC_SIZE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

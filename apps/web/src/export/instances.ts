@@ -3,6 +3,7 @@ import { isImageClass, isTextClass } from '../model/classes.ts'
 import { resolveProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
+  AUTOMATIC_SIZE,
   BORDER_MODE,
   FILL_DIRECTION,
   type FontStyle,
@@ -166,6 +167,7 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     udim2('Size', p.Size),
     bool('Visible', p.Visible),
     int('ZIndex', p.ZIndex),
+    enumProp('AutomaticSize', AUTOMATIC_SIZE, p.AutomaticSize),
   )
 
   if (isTextClass(node.className)) {
@@ -259,6 +261,20 @@ const MODIFIER_PROPERTIES: {
   ],
   UIAspectRatioConstraint: ({ AspectRatio }) => [
     float('AspectRatio', AspectRatio),
+  ],
+  UIScale: ({ Scale }) => [float('Scale', Scale)],
+  // "No limit" (null) is infinity in Roblox; each exporter writes it its
+  // own way (INF in a file, math.huge in a script).
+  UISizeConstraint: ({ MinSize, MaxSize }) => [
+    vector2('MaxSize', {
+      x: MaxSize.x ?? Infinity,
+      y: MaxSize.y ?? Infinity,
+    }),
+    vector2('MinSize', MinSize),
+  ],
+  UITextSizeConstraint: ({ MinTextSize, MaxTextSize }) => [
+    int('MaxTextSize', MaxTextSize),
+    int('MinTextSize', MinTextSize),
   ],
   UIListLayout: (list) => [
     enumProp('FillDirection', FILL_DIRECTION, list.FillDirection),

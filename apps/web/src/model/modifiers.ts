@@ -7,8 +7,8 @@ const WHITE = { r: 1, g: 1, b: 1 }
 const NO_SPACE = { s: 0, o: 0 }
 
 // What a modifier starts with when you insert it in Studio, checked against
-// the files in docs/reference/ (corner-stroke, gradient-padding-aspect and
-// list-grid-layouts).
+// the files in docs/reference/ (corner-stroke, gradient-padding-aspect,
+// list-grid-layouts and sizing).
 export const MODIFIER_DEFAULTS: {
   [K in ModifierClass]: Required<ModifierProps[K]>
 } = {
@@ -37,6 +37,12 @@ export const MODIFIER_DEFAULTS: {
     PaddingRight: NO_SPACE,
   },
   UIAspectRatioConstraint: { AspectRatio: 1 },
+  UIScale: { Scale: 1 },
+  UISizeConstraint: {
+    MinSize: { x: 0, y: 0 },
+    MaxSize: { x: null, y: null }, // no limit (INF in Studio's file)
+  },
+  UITextSizeConstraint: { MinTextSize: 1, MaxTextSize: 100 },
   UIListLayout: {
     FillDirection: 'Vertical',
     HorizontalAlignment: 'Left',
@@ -107,6 +113,13 @@ const SUMMARIES: {
       : sides.join(' / ')
   },
   UIAspectRatioConstraint: ({ AspectRatio }) => `ratio ${AspectRatio}`,
+  UIScale: ({ Scale }) => `× ${Scale}`,
+  UISizeConstraint: ({ MinSize, MaxSize }) => {
+    const most = (n: number | null) => (n === null ? '∞' : `${n}`)
+    return `${MinSize.x}×${MinSize.y} to ${most(MaxSize.x)}×${most(MaxSize.y)} px`
+  },
+  UITextSizeConstraint: ({ MinTextSize, MaxTextSize }) =>
+    `text ${MinTextSize}–${MaxTextSize}`,
   UIListLayout: ({ FillDirection, Padding }) =>
     `${FillDirection}, ${udimText(Padding)} gap`,
   UIGridLayout: ({ CellSize }) => {

@@ -1,5 +1,6 @@
 import { resolveProps } from '../model/defaults.ts'
-import { CATALOG } from '../model/catalog.ts'
+import { CATALOG, type CatalogEntry } from '../model/catalog.ts'
+import type { NodeId } from '../model/types.ts'
 import { planWrap } from '../model/wrap.ts'
 import {
   copyToClipboard,
@@ -35,6 +36,21 @@ const single = () => (selection().length === 1 ? selection()[0] : null)
 
 // True when everything selected is hidden / locked: then Hide and Lock
 // become Show and Unlock.
+// Inserts an entry from the Insert Object catalogue into `targetId` (an
+// element goes inside or beside it, a modifier onto it). A new modifier
+// also opens its fields in Properties, since setting them is what comes
+// next. Used by the right-click Insert Object list and the command field.
+export function insertFromCatalog(
+  targetId: NodeId,
+  entry: CatalogEntry,
+): boolean {
+  const added = insertObject(docs, targetId, entry)
+  if (added && entry.kind === 'modifier') {
+    view().revealModifier(targetId, entry.className)
+  }
+  return added
+}
+
 export function selectionHidden(): boolean {
   const { document } = docs.getState()
   return (

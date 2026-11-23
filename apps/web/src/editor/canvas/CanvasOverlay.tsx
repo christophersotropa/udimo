@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow'
 import { resolveProps } from '../../model/defaults.ts'
-import { absoluteBox } from '../../model/layout.ts'
+import { visualBox } from '../../model/layout.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { screenOf, useViewStore } from '../../store/viewStore.ts'
 import { ScreenLabel } from './ScreenLabel.tsx'
@@ -66,7 +66,8 @@ function SizeBadge() {
       const id = state.selection[0]
       const node = state.document.nodes[id]
       if (!node || !resolveProps(node).Visible) return null
-      const box = absoluteBox(state.document, id, screen)
+      // As it appears, UIScale included (Roblox's AbsoluteSize).
+      const box = visualBox(state.document, id, screen)
       return {
         x: box.x + box.width / 2,
         y: box.y + box.height,

@@ -18,6 +18,14 @@ export function escapeXml(text: string): string {
     .replaceAll("'", '&apos;')
 }
 
+// A number as Studio writes it: infinity is INF (UISizeConstraint's
+// MaxSize with no limit), everything else as JavaScript prints it.
+function num(n: number): string {
+  if (n === Infinity) return 'INF'
+  if (n === -Infinity) return '-INF'
+  return String(n)
+}
+
 // One property as an XML tag, the way Studio writes it.
 function propertyTag({ name, value }: Property): string {
   const tag = (type: string, inner: string) =>
@@ -43,7 +51,10 @@ function propertyTag({ name, value }: Property): string {
       )
     }
     case 'Vector2':
-      return tag('Vector2', `<X>${value.value.x}</X><Y>${value.value.y}</Y>`)
+      return tag(
+        'Vector2',
+        `<X>${num(value.value.x)}</X><Y>${num(value.value.y)}</Y>`,
+      )
     case 'Rect': {
       // Studio calls this type Rect2D, corners as <min> and <max>.
       const r = value.value

@@ -62,3 +62,56 @@ describe('nodeStyle with the newer properties', () => {
     )
   })
 })
+
+describe('sizing modifiers', () => {
+  function withModifier(
+    modifier: 'UIScale' | 'UISizeConstraint',
+    props: Record<string, unknown>,
+    nodeProps: Props = {},
+  ) {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const id = addNode(store.getState().document.rootId, 'Frame', nodeProps)
+    addModifier(id, modifier)
+    updateModifier(id, modifier, props as never)
+    return store.getState().document.nodes[id]
+  }
+
+  it('limits the size with CSS min and max sizes', () => {
+    const style = nodeStyle(
+      withModifier('UISizeConstraint', {
+        MinSize: { x: 50, y: 60 },
+        MaxSize: { x: 400, y: null },
+      }),
+      NO_PIXELS,
+    )
+    expect(style).toMatchObject({ minWidth: 50, minHeight: 60, maxWidth: 400 })
+    expect(style.maxHeight).toBeUndefined()
+  })
+
+  it('scales around the AnchorPoint', () => {
+    // Anchor at the center: no shift needed, just the scale.
+    const centered = nodeStyle(
+      withModifier(
+        'UIScale',
+        { Scale: 2 },
+        { AnchorPoint: { x: 0.5, y: 0.5 } },
+      ),
+      NO_PIXELS,
+    )
+    expect(centered.transform).toBe(
+      'translate(-50%, -50%) translate(0%, 0%) scale(2)',
+    )
+    // Anchor at the top-left: shift so that corner stays put.
+    // (0 − ½) × (1 − 2) = +½ of the element's size.
+    const corner = nodeStyle(withModifier('UIScale', { Scale: 2 }), NO_PIXELS)
+    expect(corner.transform).toBe(
+      'translate(0%, 0%) translate(50%, 50%) scale(2)',
+    )
+  })
+
+  it('leaves the transform alone at Scale 1', () => {
+    const style = nodeStyle(withModifier('UIScale', { Scale: 1 }), NO_PIXELS)
+    expect(style.transform).toBe('translate(0%, 0%)')
+  })
+})
