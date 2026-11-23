@@ -50,6 +50,8 @@ Udimo is used alongside Roblox Studio on a desktop or laptop. The editor needs a
 - The name **Udimo** is fixed.
 - The logo (amber stacked squares, `apps/web/public/logo.svg`) may be redrawn.
 - The owner considers the current editor too similar to Avenlo; the editor must not resemble it.
+- The editor keeps its current dark look: in the November 2026 redesign round the owner preferred it over every new visual direction. Changes refine it rather than replace it.
+- No amber accent (Avenlo uses amber). The accent is dark blue for now, and users will be able to choose their own accent in a future setting, so it must stay a single token.
 - Public repository: no secrets in code, and no other games' art or screenshots.
 
 ## Evidence on Hand
