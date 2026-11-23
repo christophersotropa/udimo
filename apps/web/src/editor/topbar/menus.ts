@@ -4,7 +4,12 @@ import { createEmptyDocument } from '../../model/document.ts'
 import { DEVICES, type DeviceId } from '../../model/screen.ts'
 import { useViewStore } from '../../store/viewStore.ts'
 import { actions, can, selectionHidden, selectionLocked } from '../actions.ts'
-import { pickProjectFile, saveProject, startFrom } from './projectFiles.ts'
+import {
+  pickProjectFile,
+  pickRbxmxFile,
+  saveProject,
+  startFrom,
+} from './projectFiles.ts'
 
 // Every action the top bar offers, as plain data: the Udimo menu
 // (AppMenu.tsx) shows them as menus, and the command field
@@ -50,6 +55,8 @@ export const MENUS: Menu[] = [
       { label: 'Open project…', shortcut: '⌘O', run: pickProjectFile },
       { label: 'Save project', shortcut: '⌘S', run: saveProject },
       'separator',
+      // From Roblox Studio: right-click a ScreenGui, Save to File… (.rbxmx).
+      { label: 'Import .rbxmx from Studio…', run: pickRbxmxFile },
       { label: 'Export…', shortcut: '⌘E', run: actions.openExport },
     ],
   },

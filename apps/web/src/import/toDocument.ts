@@ -324,7 +324,7 @@ export function importRbxmx(text: string): ImportResult {
   ): NodeId {
     const id = createId()
     const name = nameOf(instance)
-    const here = `${path}.${name}`
+    const here = path ? `${path}.${name}` : name
     const label = `${instance.className} ${name}`
     const props = readProperties(
       instance,
@@ -410,6 +410,10 @@ export function importRbxmx(text: string): ImportResult {
   const screenGui = top.find((item) => item.className === 'ScreenGui')
   const rootId = createId()
   const rootName = screenGui ? nameOf(screenGui) : 'ScreenGui'
+  // Where things are, for the report, starts at the file's ScreenGui; in a
+  // file without one, at its own top elements (the ScreenGui made to hold
+  // them isn't in the file, so naming it would only confuse).
+  const rootPath = screenGui ? rootName : ''
   nodes[rootId] = {
     id: rootId,
     className: 'ScreenGui',
@@ -427,12 +431,12 @@ export function importRbxmx(text: string): ImportResult {
         addElement(
           item as RawInstance & { className: ClassName },
           rootId,
-          rootName,
+          rootPath,
         ),
       )
     } else {
       // Includes modifiers straight on the ScreenGui, which Roblox ignores.
-      skip(item, rootName)
+      skip(item, rootPath)
     }
   }
   // Anything else at the top of a file with a ScreenGui (a second
