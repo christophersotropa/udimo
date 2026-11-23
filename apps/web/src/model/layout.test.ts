@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDocumentStore } from '../store/documentStore.ts'
 import {
+  canvasSize,
   clampSize,
   visualBox,
   absoluteBox,
@@ -416,5 +417,44 @@ describe('AutomaticSize', () => {
     s.addModifier(id, 'UISizeConstraint')
     s.updateModifier(id, 'UISizeConstraint', { MaxSize: { x: 60, y: null } })
     expect(boxOf(store, id).width).toBe(60)
+  })
+})
+
+describe('AutomaticCanvasSize', () => {
+  // A 200 × 100 ScrollingFrame whose canvas starts no bigger than itself,
+  // with a UIListLayout of three 100px-tall items: 300px of content.
+  function scroller(automatic: 'None' | 'Y') {
+    const store = createDocumentStore()
+    const s = store.getState()
+    const id = s.addNode(s.document.rootId, 'ScrollingFrame', {
+      Size: { xs: 0, xo: 200, ys: 0, yo: 100 },
+      CanvasSize: { xs: 0, xo: 0, ys: 0, yo: 0 },
+      AutomaticCanvasSize: automatic,
+    })
+    s.addModifier(id, 'UIListLayout')
+    for (let i = 0; i < 3; i++) {
+      s.addNode(id, 'Frame', { Size: { xs: 1, xo: 0, ys: 0, yo: 100 } })
+    }
+    const doc = store.getState().document
+    return { doc, id, box: absoluteBox(doc, id, SCREEN) }
+  }
+
+  it('grows the canvas to fit the children', () => {
+    const { doc, id, box } = scroller('Y')
+    expect(canvasSize(doc.nodes[id], box, doc)).toEqual({
+      width: 200,
+      height: 300,
+    })
+    // A third of it shows, so the scroll bar is a third as long.
+    expect(visibleFraction(doc, id, SCREEN, 'y')).toBeCloseTo(1 / 3)
+  })
+
+  it('leaves the canvas alone without it', () => {
+    const { doc, id, box } = scroller('None')
+    expect(canvasSize(doc.nodes[id], box, doc)).toEqual({
+      width: 200,
+      height: 100,
+    })
+    expect(visibleFraction(doc, id, SCREEN, 'y')).toBe(1)
   })
 })

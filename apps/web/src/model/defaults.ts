@@ -49,6 +49,10 @@ const BASE_DEFAULTS: Required<Props> = {
   AutomaticSize: 'None',
   CanvasSize: { xs: 0, xo: 0, ys: 2, yo: 0 }, // twice the frame's height
   ScrollBarThickness: 12,
+  AutomaticCanvasSize: 'None',
+  ScrollingDirection: 'XY',
+  ScrollBarImageColor3: { r: 0, g: 0, b: 0 }, // black, Studio's default
+  ScrollBarImageTransparency: 0,
 }
 
 // Where a class differs from the base. Every class is checked against a

@@ -4,6 +4,7 @@ import { arrangeGrid, arrangeList, type LayoutItem } from './arrange.ts'
 import { isTextClass } from './classes.ts'
 import { resolveProps } from './defaults.ts'
 import { resolveModifier } from './modifiers.ts'
+import type { AutomaticSize } from './enums.ts'
 import type { ScreenSize } from './screen.ts'
 import { textMetrics } from './textMetrics.ts'
 import type { NodeId, UDim, UiDocument, UiNode } from './types.ts'
@@ -106,29 +107,30 @@ export function textBounds(node: UiNode, wrapAt: number | null): ScreenSize {
   return { width: widest, height: count * lineHeight }
 }
 
-// AutomaticSize: an element of size `base` grown to fit what's in it,
-// along X, Y or both, never shrunk. What's in it: its text (unless
-// TextScaled, which fits the text to the box instead), and its visible
-// children where they sit (or where its layout puts them), plus its
-// UIPadding. Children sized by Scale are measured against `base`: they'd
-// otherwise grow with the element that grows to fit them, forever.
-// With only Y growing, TextWrapped text wraps at the element's width.
-function grownSize(
+// How much room an element's contents need, measured from the corner of
+// `surface` (the element itself, or a ScrollingFrame's canvas): its visible
+// children where they sit (or where its layout puts them), with `withText`
+// its text too (unless TextScaled, which fits the text to the box
+// instead), plus its UIPadding. Children sized by Scale are measured
+// against `surface`: measured against the grown size, they'd grow with
+// whatever grows to fit them, forever. With only Y growing, TextWrapped
+// text wraps at the width.
+function contentNeeds(
   doc: UiDocument,
   node: UiNode,
-  base: ScreenSize,
+  surface: ScreenSize,
+  withText: boolean,
 ): ScreenSize {
   const p = resolveProps(node)
-  const area = contentArea(node, base)
+  const area = paddedArea(node, surface)
   // UIPadding on the right and bottom, which the contents also need. Read
   // from the UIPadding itself, not from what's left of the area: an
   // element starting at 0 tall (a list that grows) has no room for its
   // padding yet.
-  const canvas = canvasSize(node, base)
   const padding = resolveModifier(node, 'UIPadding')
-  const padRight = padding ? udimPixels(padding.PaddingRight, canvas.width) : 0
+  const padRight = padding ? udimPixels(padding.PaddingRight, surface.width) : 0
   const padBottom = padding
-    ? udimPixels(padding.PaddingBottom, canvas.height)
+    ? udimPixels(padding.PaddingBottom, surface.height)
     : 0
   let needWidth = 0
   let needHeight = 0
@@ -137,7 +139,7 @@ function grownSize(
     needHeight = Math.max(needHeight, bottom + padBottom)
   }
 
-  if (isTextClass(node.className) && !p.TextScaled) {
+  if (withText && isTextClass(node.className) && !p.TextScaled) {
     const wrapAt = p.TextWrapped && p.AutomaticSize === 'Y' ? area.width : null
     const text = textBounds(node, wrapAt)
     reach(area.x + text.width, area.y + text.height)
@@ -150,33 +152,62 @@ function grownSize(
     const box = slots ? slots.get(childId) : boxInParent(child, area, doc)
     if (box) reach(area.x + box.x + box.width, area.y + box.y + box.height)
   }
+  return { width: needWidth, height: needHeight }
+}
 
-  const growsX = p.AutomaticSize === 'X' || p.AutomaticSize === 'XY'
-  const growsY = p.AutomaticSize === 'Y' || p.AutomaticSize === 'XY'
+// `size` grown to `needs` along the axes an AutomaticSize value names,
+// never shrunk.
+function growAlong(
+  axes: AutomaticSize,
+  size: ScreenSize,
+  needs: ScreenSize,
+): ScreenSize {
+  const x = axes === 'X' || axes === 'XY'
+  const y = axes === 'Y' || axes === 'XY'
   return {
-    width: growsX ? Math.max(base.width, needWidth) : base.width,
-    height: growsY ? Math.max(base.height, needHeight) : base.height,
+    width: x ? Math.max(size.width, needs.width) : size.width,
+    height: y ? Math.max(size.height, needs.height) : size.height,
   }
+}
+
+// AutomaticSize: an element of size `base` grown to fit its text and
+// children (contentNeeds). A ScrollingFrame's children sit on its canvas,
+// so that's what they're measured on.
+function grownSize(
+  doc: UiDocument,
+  node: UiNode,
+  base: ScreenSize,
+): ScreenSize {
+  const needs = contentNeeds(doc, node, canvasSize(node, base), true)
+  return growAlong(resolveProps(node).AutomaticSize, base, needs)
 }
 
 // A ScrollingFrame's scrollable canvas: CanvasSize big (Scale meaning a
-// fraction of the frame), but never smaller than the frame. Any other
-// element just has its own size.
-export function canvasSize(node: UiNode, size: ScreenSize): ScreenSize {
+// fraction of the frame), but never smaller than the frame; with
+// AutomaticCanvasSize (given the document, which holds its children) grown
+// to fit its children too. Any other element just has its own size.
+export function canvasSize(
+  node: UiNode,
+  size: ScreenSize,
+  doc?: UiDocument,
+): ScreenSize {
   if (node.className !== 'ScrollingFrame') return size
-  const { CanvasSize } = resolveProps(node)
-  return {
+  const { CanvasSize, AutomaticCanvasSize } = resolveProps(node)
+  const canvas = {
     width: Math.max(size.width, CanvasSize.xs * size.width + CanvasSize.xo),
     height: Math.max(size.height, CanvasSize.ys * size.height + CanvasSize.yo),
   }
+  if (!doc || AutomaticCanvasSize === 'None') return canvas
+  return growAlong(
+    AutomaticCanvasSize,
+    canvas,
+    contentNeeds(doc, node, canvas, false),
+  )
 }
 
-// The area an element's children are laid out in, measured from the
-// element's top-left corner: its canvas (see canvasSize), minus any
-// UIPadding. Children's Scale is a fraction of this area, and their
-// Position starts at its corner.
-export function contentArea(node: UiNode, size: ScreenSize): Box {
-  const { width, height } = canvasSize(node, size)
+// `surface` less any UIPadding: where children go, from its corner.
+function paddedArea(node: UiNode, surface: ScreenSize): Box {
+  const { width, height } = surface
   const padding = resolveModifier(node, 'UIPadding')
   if (!padding) return { x: 0, y: 0, width, height }
 
@@ -190,6 +221,18 @@ export function contentArea(node: UiNode, size: ScreenSize): Box {
     width: Math.max(0, width - left - right),
     height: Math.max(0, height - top - bottom),
   }
+}
+
+// The area an element's children are laid out in, measured from the
+// element's top-left corner: its canvas (see canvasSize; give the document
+// so AutomaticCanvasSize counts), minus any UIPadding. Children's Scale is
+// a fraction of this area, and their Position starts at its corner.
+export function contentArea(
+  node: UiNode,
+  size: ScreenSize,
+  doc?: UiDocument,
+): Box {
+  return paddedArea(node, canvasSize(node, size, doc))
 }
 
 // True if `id`'s parent has a layout that places it: the parent has a
@@ -257,7 +300,7 @@ export function layoutSlot(
   if (!isLaidOut(doc, id)) return null
   const parentId = doc.nodes[id].parentId!
   const parentBox = absoluteBox(doc, parentId, screen)
-  const area = contentArea(doc.nodes[parentId], parentBox)
+  const area = contentArea(doc.nodes[parentId], parentBox, doc)
   return layoutBoxes(doc, parentId, area)?.get(id) ?? null
 }
 
@@ -272,7 +315,7 @@ export function absoluteBox(
   const node = doc.nodes[id]
   if (node.parentId === null) return { x: 0, y: 0, ...screen }
   const parent = absoluteBox(doc, node.parentId, screen)
-  const area = contentArea(doc.nodes[node.parentId], parent)
+  const area = contentArea(doc.nodes[node.parentId], parent, doc)
   const box = boxInContentArea(doc, node, area)
   return {
     ...box,
@@ -301,7 +344,7 @@ function placedOnScreen(
   const k = parent.scale
   // The parent's size before scaling, where its children are laid out.
   const local = { width: parent.box.width / k, height: parent.box.height / k }
-  const area = contentArea(doc.nodes[node.parentId], local)
+  const area = contentArea(doc.nodes[node.parentId], local, doc)
   const b = boxInContentArea(doc, node, area)
   let box = {
     x: parent.box.x + (area.x + b.x) * k,
@@ -352,7 +395,7 @@ export function visibleFraction(
   axis: 'x' | 'y',
 ): number {
   const box = absoluteBox(doc, id, screen)
-  const canvas = canvasSize(doc.nodes[id], box)
+  const canvas = canvasSize(doc.nodes[id], box, doc)
   const [visible, total] =
     axis === 'x' ? [box.width, canvas.width] : [box.height, canvas.height]
   return total > 0 ? visible / total : 1

@@ -1,6 +1,7 @@
 import type {
   ApplyStrokeMode,
   AutomaticSize,
+  ScrollingDirection,
   FillDirection,
   HorizontalAlignment,
   ScaleType,
@@ -155,6 +156,13 @@ export type Props = {
   // (Scale is a fraction of the frame), and the scroll bar width in pixels
   CanvasSize?: UDim2
   ScrollBarThickness?: number
+  // ScrollingFrame: the canvas grows to fit the children across (X), down
+  // (Y) or both, with CanvasSize as its smallest; which way it scrolls; and
+  // the scroll bar's colour and see-through-ness.
+  AutomaticCanvasSize?: AutomaticSize
+  ScrollingDirection?: ScrollingDirection
+  ScrollBarImageColor3?: Color3
+  ScrollBarImageTransparency?: number
 }
 
 // Modifiers: objects that sit inside an element in Roblox and change how it
