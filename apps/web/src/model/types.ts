@@ -85,6 +85,9 @@ export type ClassName =
   | 'ImageLabel'
   | 'ImageButton'
   | 'ScrollingFrame'
+  // A Frame whose contents are drawn as one picture, then faded and
+  // tinted together (GroupTransparency, GroupColor3).
+  | 'CanvasGroup'
 
 // Property names are spelled exactly like Roblox's, so the exporter can
 // write them straight through. All optional: a missing property means
@@ -163,6 +166,11 @@ export type Props = {
   ScrollingDirection?: ScrollingDirection
   ScrollBarImageColor3?: Color3
   ScrollBarImageTransparency?: number
+  // CanvasGroup: fades (0 = solid, 1 = invisible) and tints (multiplies by
+  // this colour; white leaves it as it is) the whole group as one picture,
+  // so overlapping children don't show through each other.
+  GroupTransparency?: number
+  GroupColor3?: Color3
 }
 
 // Modifiers: objects that sit inside an element in Roblox and change how it

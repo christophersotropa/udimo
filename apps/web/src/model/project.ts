@@ -103,6 +103,7 @@ const KNOWN_CLASSES: Record<ClassName, true> = {
   ImageLabel: true,
   ImageButton: true,
   ScrollingFrame: true,
+  CanvasGroup: true,
 }
 
 const isUDim2 = (v: unknown) =>
@@ -246,6 +247,8 @@ export const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   ScrollingDirection: isOneOf(SCROLLING_DIRECTION),
   ScrollBarImageColor3: isColor3,
   ScrollBarImageTransparency: isNumber,
+  GroupTransparency: isNumber,
+  GroupColor3: isColor3,
   AutomaticSize: isOneOf(AUTOMATIC_SIZE),
 }
 
