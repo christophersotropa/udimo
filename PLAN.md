@@ -287,9 +287,11 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 52  | ScrollingFrame options: AutomaticCanvasSize, ScrollingDirection, ScrollBarImageColor3                                    | `feat(model): scrolling frame options`                     |
 | 53  | CanvasGroup (GroupTransparency, GroupColor3)                                                                             | `feat(model): add CanvasGroup`                             |
 | 54  | More of Roblox's built-in fonts                                                                                          | `feat(model): more fonts`                                  |
+| 55  | `.rbxmx` importer: read a Studio file into a document, with a report of what was left out (no UI yet)                    | `feat(import): read .rbxmx files into a document`          |
+| 56  | Import in the editor: File menu, command field and dropping a file on the canvas                                         | `feat(editor): import .rbxmx files`                        |
 
 Showing images by Roblox asset ID is on hold: it needs Roblox's legacy thumbnail API through a server function, and Roblox's Terms of Use need checking first (build 46 research).
 
-Each of 49–54 starts with a reference `.rbxmx` saved from Studio (see above). After these: UIPageLayout and UIFlexItem, importing `.rbxmx` (Phase 2), the node graph (Phase 4), then AI (Phase 3).
+Each of 49–54 starts with a reference `.rbxmx` saved from Studio (see above). Importing `.rbxmx` (55–56, Phase 2) was moved ahead of 51–54 in November 2026. After these: UIPageLayout and UIFlexItem, the node graph (Phase 4), then AI (Phase 3).
 
 Tag `v0.1.0` (the end of Phase 1) when the project owner says so. It's a separate step, not part of a build.

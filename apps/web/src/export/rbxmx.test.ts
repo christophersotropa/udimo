@@ -21,25 +21,11 @@ import imageOptionsReference from '../../../../docs/reference/image-options.rbxm
 import type { Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
-
-// The properties of the first <Item> of `className` in an .rbxmx file, as
-// name -> "Type:value" with whitespace removed, so formatting doesn't matter.
-function propertiesOf(xml: string, className: string): Map<string, string> {
-  const block = xml.match(
-    new RegExp(
-      `<Item class="${className}"[^>]*>\\s*<Properties>([\\s\\S]*?)</Properties>`,
-    ),
-  )
-  if (!block) throw new Error(`No ${className} in file`)
-
-  const props = new Map<string, string>()
-  for (const [, type, name, value] of block[1].matchAll(
-    /<(\w+) name="(\w+)">([\s\S]*?)<\/\1>/g,
-  )) {
-    props.set(name, `${type}:${value.replace(/\s+/g, '')}`)
-  }
-  return props
-}
+import {
+  allPropertiesOf,
+  propertiesOf,
+  propertiesOfNamed,
+} from './testRbxmx.ts'
 
 // ScreenGui > Frame > TextLabel, with no properties set (all defaults).
 function defaultDocument() {
@@ -104,38 +90,6 @@ function layoutDocument() {
 }
 
 // Like propertiesOf, but for the <Item> whose Name is `name`.
-function propertiesOfNamed(xml: string, name: string): Map<string, string> {
-  for (const [, body] of xml.matchAll(
-    /<Item class="\w+"[^>]*>\s*<Properties>([\s\S]*?)<\/Properties>/g,
-  )) {
-    if (body.includes(`<string name="Name">${name}</string>`)) {
-      return propertiesOf(
-        `<Item class="X"><Properties>${body}</Properties>`,
-        'X',
-      )
-    }
-  }
-  throw new Error(`No item named ${name} in file`)
-}
-
-// Every <Item> of `className` in an .rbxmx file, in file order, each as
-// propertiesOf gives it.
-function allPropertiesOf(
-  xml: string,
-  className: string,
-): Map<string, string>[] {
-  return [
-    ...xml.matchAll(
-      new RegExp(
-        `<Item class="${className}"[^>]*>\\s*<Properties>([\\s\\S]*?)</Properties>`,
-        'g',
-      ),
-    ),
-  ].map(([, body]) =>
-    propertiesOf(`<Item class="X"><Properties>${body}</Properties>`, 'X'),
-  )
-}
-
 // The TextLabels in text-options.rbxmx, in file order: what each one has
 // changed from the defaults.
 const TEXT_OPTION_LABELS: [string, Props][] = [

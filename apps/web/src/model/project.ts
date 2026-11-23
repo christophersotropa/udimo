@@ -145,7 +145,9 @@ const isFontFace = (v: unknown) =>
 type Check = (value: unknown) => boolean
 
 // One check per modifier property; TypeScript insists on every one.
-const MODIFIER_CHECKS: {
+// Exported for the .rbxmx importer (import/toDocument.ts), which holds
+// imported values to the same rules as project files.
+export const MODIFIER_CHECKS: {
   [K in ModifierClass]: Record<keyof ModifierProps[K], Check>
 } = {
   UICorner: { CornerRadius: isUDim },
@@ -187,7 +189,8 @@ const MODIFIER_CHECKS: {
 
 // One check per property. The type makes TypeScript insist on a check for
 // every property in Props, so a new property can't be forgotten here.
-const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
+// Exported for the .rbxmx importer, like MODIFIER_CHECKS.
+export const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   Size: isUDim2,
   Position: isUDim2,
   AnchorPoint: isVector2,
