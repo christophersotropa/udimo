@@ -284,6 +284,7 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 49  | Text options: TextWrapped, TextXAlignment and TextYAlignment, TextTransparency, RichText, TextTruncate, LineHeight       | `feat(model): more text options`                           |
 | 50  | Image options: ImageColor3, ImageTransparency, ScaleType (Stretch, Fit, Crop, Tile, Slice) with SliceCenter and TileSize | `feat(model): image options and 9-slice`                   |
 | 51  | Sizing helpers: AutomaticSize, UIScale, UISizeConstraint, UITextSizeConstraint                                           | `feat(model): automatic size, scale and size constraints`  |
+| 51b | Draw AutomaticSize on the canvas (elements grow to fit their text and children); dragging inside a UIScale'd element     | `feat(canvas): draw AutomaticSize`                         |
 | 52  | ScrollingFrame options: AutomaticCanvasSize, ScrollingDirection, ScrollBarImageColor3                                    | `feat(model): scrolling frame options`                     |
 | 53  | CanvasGroup (GroupTransparency, GroupColor3)                                                                             | `feat(model): add CanvasGroup`                             |
 | 54  | More of Roblox's built-in fonts                                                                                          | `feat(model): more fonts`                                  |

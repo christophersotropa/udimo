@@ -29,9 +29,16 @@ export function fitAspect(
     : { width, height: width / ratio }
 }
 
+// Keeps a length between a smallest and (unless null: no limit) a largest
+// size, the smallest winning if they cross, like CSS min/max sizes.
+export function clampSize(length: number, min: number, max: number | null) {
+  return Math.max(min, max === null ? length : Math.min(length, max))
+}
+
 // Where an element sits inside a parent area of the given pixel size,
 // measured from the area's top-left corner. Each axis is Scale × parent +
-// Offset; a UIAspectRatioConstraint then shrinks the box to its shape; then
+// Offset; a UIAspectRatioConstraint then shrinks the box to its shape, and
+// a UISizeConstraint keeps it between its MinSize and MaxSize; then
 // AnchorPoint shifts the box so that point lands on Position.
 export function boxInParent(node: UiNode, parent: ScreenSize): Box {
   const { Size, Position, AnchorPoint } = resolveProps(node)
@@ -40,6 +47,12 @@ export function boxInParent(node: UiNode, parent: ScreenSize): Box {
 
   const aspect = resolveModifier(node, 'UIAspectRatioConstraint')
   if (aspect) ({ width, height } = fitAspect(width, height, aspect.AspectRatio))
+
+  const limits = resolveModifier(node, 'UISizeConstraint')
+  if (limits) {
+    width = clampSize(width, limits.MinSize.x, limits.MaxSize.x)
+    height = clampSize(height, limits.MinSize.y, limits.MaxSize.y)
+  }
 
   return {
     x: Position.xs * parent.width + Position.xo - AnchorPoint.x * width,
@@ -169,6 +182,57 @@ export function absoluteBox(
     x: parent.x + area.x + box.x,
     y: parent.y + area.y + box.y,
   }
+}
+
+// Where an element appears on screen once UIScale is applied, with the
+// total scale it's drawn at (its own UIScale times its parents'). Roblox
+// places an element in its parent's unscaled space, then scales it with
+// the parent; its own UIScale then scales it around its AnchorPoint (its
+// top-left corner when a layout places it). absoluteBox ignores UIScale,
+// because the canvas builds its CSS from it and CSS does the scaling; this
+// is for drawing on top of the canvas (like the size label) and matches
+// Roblox's AbsoluteSize and AbsolutePosition.
+function placedOnScreen(
+  doc: UiDocument,
+  id: NodeId,
+  screen: ScreenSize,
+): { box: Box; scale: number } {
+  const node = doc.nodes[id]
+  if (node.parentId === null)
+    return { box: { x: 0, y: 0, ...screen }, scale: 1 }
+  const parent = placedOnScreen(doc, node.parentId, screen)
+  const k = parent.scale
+  // The parent's size before scaling, where its children are laid out.
+  const local = { width: parent.box.width / k, height: parent.box.height / k }
+  const area = contentArea(doc.nodes[node.parentId], local)
+  const b = boxInContentArea(doc, node, area)
+  let box = {
+    x: parent.box.x + (area.x + b.x) * k,
+    y: parent.box.y + (area.y + b.y) * k,
+    width: b.width * k,
+    height: b.height * k,
+  }
+  const s = resolveModifier(node, 'UIScale')?.Scale ?? 1
+  if (s !== 1) {
+    const anchor = isLaidOut(doc, id)
+      ? { x: 0, y: 0 }
+      : resolveProps(node).AnchorPoint
+    box = {
+      x: box.x + anchor.x * box.width * (1 - s),
+      y: box.y + anchor.y * box.height * (1 - s),
+      width: box.width * s,
+      height: box.height * s,
+    }
+  }
+  return { box, scale: k * s }
+}
+
+export function visualBox(
+  doc: UiDocument,
+  id: NodeId,
+  screen: ScreenSize,
+): Box {
+  return placedOnScreen(doc, id, screen).box
 }
 
 // How much of a ScrollingFrame's canvas fits in view along one axis, from 0

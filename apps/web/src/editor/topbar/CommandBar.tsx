@@ -2,7 +2,7 @@ import { type KeyboardEvent, useRef, useState } from 'react'
 import { CATALOG } from '../../model/catalog.ts'
 import { insertParent } from '../../model/insert.ts'
 import type { ClassName, ModifierClass } from '../../model/types.ts'
-import { insertObject } from '../../store/commands.ts'
+import { insertFromCatalog } from '../actions.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { ClassIcon } from '../panels/ClassIcon.tsx'
 import { CheckIcon, SearchIcon } from '../panels/icons.tsx'
@@ -47,7 +47,7 @@ function currentRows(): Row[] {
         !isModifier ||
         (target !== doc.rootId &&
           !targetNode.modifiers?.[entry.className as ModifierClass]),
-      run: () => insertObject(store, target, entry),
+      run: () => insertFromCatalog(target, entry),
     }
   })
 

@@ -16,6 +16,7 @@ import {
 } from '../../model/fonts.ts'
 import { isLaidOut } from '../../model/layout.ts'
 import {
+  AUTOMATIC_SIZE,
   enumNames,
   type FontWeight,
   SCALE_TYPE,
@@ -264,6 +265,19 @@ function NodeProperties({
           value={p.Size}
           onChange={(Size) => set({ Size })}
         />
+        <Row label="AutomaticSize">
+          <SelectField
+            label="AutomaticSize"
+            value={p.AutomaticSize}
+            options={enumNames(AUTOMATIC_SIZE)}
+            onChange={(AutomaticSize) => set({ AutomaticSize })}
+          />
+        </Row>
+        {p.AutomaticSize !== 'None' && (
+          <Hint>
+            In game it grows to fit its contents; the canvas shows Size for now.
+          </Hint>
+        )}
         <Row label="AnchorPoint">
           <TextValueField
             label="AnchorPoint"

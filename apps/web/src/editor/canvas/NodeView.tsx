@@ -234,6 +234,15 @@ function NodeText({ id }: { id: NodeId }) {
           area,
           lineHeight,
         )
+    // UITextSizeConstraint: the size TextScaled picks stays within its
+    // MinTextSize and MaxTextSize.
+    const limits = resolveModifier(node, 'UITextSizeConstraint')
+    if (limits) {
+      fontSize = Math.min(
+        Math.max(fontSize, limits.MinTextSize),
+        limits.MaxTextSize,
+      )
+    }
   }
 
   // TextTruncate: text that doesn't fit ends in "…". One line at a time

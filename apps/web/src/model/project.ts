@@ -1,6 +1,7 @@
 import { isValidTimeline } from '../lib/sequence.ts'
 import {
   APPLY_STROKE_MODE,
+  AUTOMATIC_SIZE,
   FILL_DIRECTION,
   FONT_STYLE,
   FONT_WEIGHT,
@@ -110,6 +111,11 @@ const isUDim2 = (v: unknown) =>
   isNumber(v.ys) &&
   isNumber(v.yo)
 const isVector2 = (v: unknown) => isRecord(v) && isNumber(v.x) && isNumber(v.y)
+// A size limit per axis: a number of pixels, or null for no limit.
+const isLimit = (v: unknown) => v === null || (isNumber(v) && v >= 0)
+const isSizeLimit = (v: unknown) => isRecord(v) && isLimit(v.x) && isLimit(v.y)
+const isNonNegativeVector2 = (v: unknown) =>
+  isVector2(v) && (v as { x: number }).x >= 0 && (v as { y: number }).y >= 0
 const isRect = (v: unknown) =>
   isRecord(v) &&
   isNumber(v.minX) &&
@@ -130,6 +136,9 @@ const isColorSequence = isSequence((k) => isColor3(k.color))
 const isNumberSequence = isSequence((k) => isNumber(k.value))
 const isPositive = (v: unknown) => isNumber(v) && v > 0
 const isWholeNumber = (v: unknown) => isNumber(v) && Number.isInteger(v)
+// A whole text size, which Roblox keeps between 1 and 100.
+const isTextSize = (v: unknown) =>
+  isNumber(v) && Number.isInteger(v) && v >= 1 && v <= 100
 // One of an enum's names, like "Vertical".
 const isOneOf = (table: Record<string, number>) => (v: unknown) =>
   typeof v === 'string' && Object.hasOwn(table, v)
@@ -169,6 +178,9 @@ export const MODIFIER_CHECKS: {
     PaddingRight: isUDim,
   },
   UIAspectRatioConstraint: { AspectRatio: isPositive },
+  UIScale: { Scale: isPositive },
+  UISizeConstraint: { MinSize: isNonNegativeVector2, MaxSize: isSizeLimit },
+  UITextSizeConstraint: { MinTextSize: isTextSize, MaxTextSize: isTextSize },
   UIListLayout: {
     FillDirection: isOneOf(FILL_DIRECTION),
     HorizontalAlignment: isOneOf(HORIZONTAL_ALIGNMENT),
@@ -229,6 +241,7 @@ export const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   SliceScale: (v: unknown) => isNumber(v) && v >= 0,
   CanvasSize: isUDim2,
   ScrollBarThickness: isNumber,
+  AutomaticSize: isOneOf(AUTOMATIC_SIZE),
 }
 
 // Ids become keys of the `nodes` object. A key like "__proto__" would change

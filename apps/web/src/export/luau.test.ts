@@ -152,4 +152,18 @@ describe('documentToLuau', () => {
       'Name = "My \\"Gui\\"",',
     )
   })
+
+  it('writes a size limit with no limit as math.huge', () => {
+    const store = createDocumentStore()
+    const frame = store
+      .getState()
+      .addNode(store.getState().document.rootId, 'Frame')
+    store.getState().addModifier(frame, 'UISizeConstraint')
+    store.getState().updateModifier(frame, 'UISizeConstraint', {
+      MaxSize: { x: 400, y: null },
+    })
+    expect(documentToLuau(store.getState().document)).toContain(
+      'MaxSize = Vector2.new(400, math.huge),',
+    )
+  })
 })

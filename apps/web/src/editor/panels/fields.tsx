@@ -235,6 +235,38 @@ export function NumberField({
   )
 }
 
+// A size limit in whole pixels where "no limit" is allowed (UISizeConstraint's
+// MaxSize): shown as ∞, and typing ∞, "inf" or nothing at all means no
+// limit. The value is wrapped in an object because the box treats null as
+// "couldn't read that".
+export function LimitField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number | null
+  onChange: (value: number | null) => void
+}) {
+  return (
+    <TextValueField<{ limit: number | null }>
+      label={label}
+      value={{ limit: value }}
+      format={({ limit }) => (limit === null ? '∞' : formatNumber(limit))}
+      parse={(text) => {
+        const word = text.trim().toLowerCase()
+        if (word === '' || word === '∞' || word === 'inf')
+          return { limit: null }
+        const parsed = parseNumberInput(text)
+        return parsed === null
+          ? null
+          : { limit: Math.max(0, Math.round(parsed)) }
+      }}
+      onChange={({ limit }) => onChange(limit)}
+    />
+  )
+}
+
 // A text box that saves on every keystroke, so the canvas updates as you
 // type (Text, PlaceholderText...).
 export function TextField({

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { withEnd } from '../../lib/sequence.ts'
 import { formatUDim } from '../../lib/robloxText.ts'
 import { isTextClass } from '../../model/classes.ts'
+import { resolveProps } from '../../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
   enumNames,
@@ -23,6 +24,8 @@ import { useViewStore } from '../../store/viewStore.ts'
 import { MenuItem, Popover } from '../ui/Popover.tsx'
 import {
   ColorField,
+  Hint,
+  LimitField,
   NumberField,
   Row,
   Section,
@@ -346,6 +349,93 @@ function ModifierFields({
               }
             />
           </Row>
+        </>
+      )
+    }
+    case 'UIScale': {
+      const scale = resolveModifier(node, 'UIScale')!
+      return (
+        <Row label="Scale">
+          {/* 1.5 draws it half as big again, children and all. */}
+          <NumberField
+            label="UIScale Scale"
+            min={0.01}
+            value={scale.Scale}
+            onChange={(Scale) => update(id, 'UIScale', { Scale })}
+          />
+        </Row>
+      )
+    }
+    case 'UISizeConstraint': {
+      const limits = resolveModifier(node, 'UISizeConstraint')!
+      const axes = ['x', 'y'] as const
+      return (
+        <>
+          <Row label="MinSize">
+            {axes.map((axis) => (
+              <NumberField
+                key={axis}
+                label={`UISizeConstraint MinSize ${axis.toUpperCase()}`}
+                integer
+                min={0}
+                value={limits.MinSize[axis]}
+                onChange={(n) =>
+                  update(id, 'UISizeConstraint', {
+                    MinSize: { ...limits.MinSize, [axis]: n },
+                  })
+                }
+              />
+            ))}
+          </Row>
+          <Row label="MaxSize">
+            {axes.map((axis) => (
+              <LimitField
+                key={axis}
+                label={`UISizeConstraint MaxSize ${axis.toUpperCase()} (∞ for no limit)`}
+                value={limits.MaxSize[axis]}
+                onChange={(n) =>
+                  update(id, 'UISizeConstraint', {
+                    MaxSize: { ...limits.MaxSize, [axis]: n },
+                  })
+                }
+              />
+            ))}
+          </Row>
+        </>
+      )
+    }
+    case 'UITextSizeConstraint': {
+      const limits = resolveModifier(node, 'UITextSizeConstraint')!
+      return (
+        <>
+          <Row label="MinTextSize">
+            <NumberField
+              label="UITextSizeConstraint MinTextSize"
+              integer
+              min={1}
+              max={100}
+              value={limits.MinTextSize}
+              onChange={(MinTextSize) =>
+                update(id, 'UITextSizeConstraint', { MinTextSize })
+              }
+            />
+          </Row>
+          <Row label="MaxTextSize">
+            <NumberField
+              label="UITextSizeConstraint MaxTextSize"
+              integer
+              min={1}
+              max={100}
+              value={limits.MaxTextSize}
+              onChange={(MaxTextSize) =>
+                update(id, 'UITextSizeConstraint', { MaxTextSize })
+              }
+            />
+          </Row>
+          {/* It only changes text that TextScaled sizes. */}
+          {!(isTextClass(node.className) && resolveProps(node).TextScaled) && (
+            <Hint>Only takes effect on text with TextScaled on.</Hint>
+          )}
         </>
       )
     }

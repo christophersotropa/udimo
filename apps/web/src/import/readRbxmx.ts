@@ -41,9 +41,18 @@ export type RawInstance = {
 
 export class RbxmxError extends Error {}
 
+// A number written by Studio: digits, or INF / -INF for infinity (a
+// UISizeConstraint's MaxSize with no limit). NaN when it isn't a number.
+function parseNumber(text: string): number {
+  const word = text.trim()
+  if (/^\+?inf(inity)?$/i.test(word)) return Infinity
+  if (/^-inf(inity)?$/i.test(word)) return -Infinity
+  return word === '' ? NaN : Number(word)
+}
+
 // A number from an element's text; NaN when it isn't one.
 const numberIn = (element: XmlElement | undefined): number =>
-  element ? Number(textOf(element).trim()) : NaN
+  element ? parseNumber(textOf(element)) : NaN
 
 // Several numbered parts at once (<XS>, <XO>...), or null if any is
 // missing or isn't a number.
@@ -54,7 +63,7 @@ function numbers<K extends string>(
   const out = {} as Record<K, number>
   for (const name of names) {
     const n = numberIn(childNamed(element, name))
-    if (!Number.isFinite(n)) return null
+    if (Number.isNaN(n)) return null // (infinity is allowed)
     out[name] = n
   }
   return out
@@ -100,10 +109,8 @@ function readValue(tag: XmlElement): RawValue | null | undefined {
     case 'int':
     case 'float':
     case 'double': {
-      const n = Number(text.trim())
-      return text.trim() !== '' && Number.isFinite(n)
-        ? { type: 'number', value: n }
-        : null
+      const n = parseNumber(text)
+      return Number.isNaN(n) ? null : { type: 'number', value: n }
     }
     case 'token': {
       const n = Number(text.trim())

@@ -2,7 +2,7 @@ import { type KeyboardEvent, useMemo, useState } from 'react'
 import { type CatalogEntry, searchCatalog } from '../../model/catalog.ts'
 import { insertParent } from '../../model/insert.ts'
 import type { NodeId } from '../../model/types.ts'
-import { insertObject } from '../../store/commands.ts'
+import { insertFromCatalog } from '../actions.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { ClassIcon } from '../panels/ClassIcon.tsx'
 
@@ -31,7 +31,7 @@ export function InsertObjectMenu({
 
   function add(entry: CatalogEntry | undefined) {
     if (!entry || has(entry)) return
-    insertObject(useDocumentStore, targetId, entry)
+    insertFromCatalog(targetId, entry)
     onDone()
   }
 

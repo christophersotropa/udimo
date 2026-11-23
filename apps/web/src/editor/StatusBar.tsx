@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import { absoluteBox } from '../model/layout.ts'
+import { visualBox } from '../model/layout.ts'
 import { useDocumentStore } from '../store/documentStore.ts'
 import { currentView, screenOf, useViewStore } from '../store/viewStore.ts'
 
@@ -31,7 +31,7 @@ export function StatusBar() {
       const id = selection[0] ?? document.rootId
       const node = document.nodes[id]
       if (!node) return null
-      const box = absoluteBox(document, id, screen)
+      const box = visualBox(document, id, screen) // UIScale included
       return {
         name: node.name,
         className: node.className,

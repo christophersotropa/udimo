@@ -63,6 +63,35 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
     } satisfies CSSProperties)
   }
 
+  // UISizeConstraint: never smaller than MinSize or bigger than MaxSize,
+  // whatever Size (or a layout) says. CSS's own min/max sizes do exactly
+  // that. (No limit, null, sets no maximum.)
+  const limits = resolveModifier(node, 'UISizeConstraint')
+  if (limits) {
+    Object.assign(style, {
+      minWidth: limits.MinSize.x,
+      minHeight: limits.MinSize.y,
+      maxWidth: limits.MaxSize.x ?? undefined,
+      maxHeight: limits.MaxSize.y ?? undefined,
+    } satisfies CSSProperties)
+  }
+
+  // UIScale: the element and everything inside it drawn Scale times as
+  // big, around its AnchorPoint (top-left when a layout places it), so
+  // that point stays where Position puts it. CSS scales around the
+  // element's center, so a translate first moves that point back:
+  // (anchor − ½) × (1 − Scale) of the element's size, as percentages.
+  // Children are drawn inside the element, so they scale with it.
+  const uiScale = resolveModifier(node, 'UIScale')
+  if (uiScale && uiScale.Scale !== 1) {
+    const s = uiScale.Scale
+    const anchor = pixels.slot ? { x: 0, y: 0 } : p.AnchorPoint
+    const shift = (a: number) => `${(a - 0.5) * (1 - s) * 100}%`
+    const before =
+      style.transform && style.transform !== 'none' ? `${style.transform} ` : ''
+    style.transform = `${before}translate(${shift(anchor.x)}, ${shift(anchor.y)}) scale(${s})`
+  }
+
   const gradient = resolveModifier(node, 'UIGradient')
   if (gradient) {
     style.backgroundColor = undefined
