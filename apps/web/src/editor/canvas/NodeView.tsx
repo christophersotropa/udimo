@@ -94,7 +94,7 @@ export function NodeView({ id }: { id: NodeId }) {
   const style = isSelected
     ? {
         ...nodeStyle(node, pixels),
-        outline: 'calc(1.5px / var(--canvas-scale)) solid var(--color-accent)',
+        outline: 'calc(1.5px / var(--canvas-scale)) solid var(--color-select)',
       }
     : nodeStyle(node, pixels)
 
@@ -343,7 +343,7 @@ function CanvasTextEditor({
         lineHeight: 'inherit',
         whiteSpace: 'inherit',
         // A thin dashed line around the box, 1 screen pixel at any zoom.
-        outline: 'calc(1px / var(--canvas-scale)) dashed var(--color-accent)',
+        outline: 'calc(1px / var(--canvas-scale)) dashed var(--color-select)',
       }}
     />
   )

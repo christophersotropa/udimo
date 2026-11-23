@@ -6,7 +6,7 @@ const TITLES: Record<PanelId, string> = {
   properties: 'Properties',
 }
 
-// While a panel is dragged by its title bar: an amber box where it will
+// While a panel is dragged by its title bar: an accent-coloured box where it will
 // dock if let go. Drawn over the workspace (App places it there).
 export function PanelDropPreview() {
   const drag = useViewStore((state) => state.panelDrag)

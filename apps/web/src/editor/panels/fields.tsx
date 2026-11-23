@@ -76,7 +76,7 @@ export function Section({
   )
 }
 
-// A small amber text button on the right of a section title.
+// A small accent-coloured text button on the right of a section title.
 export function SectionAction({
   onClick,
   title,
@@ -257,7 +257,7 @@ export function TextField({
   )
 }
 
-// An on/off property: a dark box with an amber tick (.check-box, index.css).
+// An on/off property: a dark box with an accent tick (.check-box, index.css).
 export function ToggleField({
   label,
   value,

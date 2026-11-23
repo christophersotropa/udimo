@@ -1,7 +1,8 @@
-// Udimo's logo: an outlined square with a filled amber square overlapping
+// Udimo's logo: an outlined square with a filled accent square overlapping
 // its corner, like a UI element dropped onto a screen. Drawn on a 32 × 32
 // grid. The outline takes the text color around it (currentColor), so it
-// stays visible on any background; the filled square is the logo amber.
+// stays visible on any background; the filled square is the accent fill
+// (so it follows the accent colour).
 // public/logo.svg is the same drawing, for the browser tab.
 export function Logo({ size = 22 }: { size?: number }) {
   return (
@@ -21,7 +22,13 @@ export function Logo({ size = 22 }: { size?: number }) {
         stroke="currentColor"
         strokeWidth="3"
       />
-      <rect x="11" y="11" width="20" height="20" fill="#f0a93b" />
+      <rect
+        x="11"
+        y="11"
+        width="20"
+        height="20"
+        style={{ fill: 'var(--color-accent-fill)' }}
+      />
     </svg>
   )
 }

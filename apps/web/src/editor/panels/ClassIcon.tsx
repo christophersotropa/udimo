@@ -3,8 +3,9 @@ import type { ClassName, ModifierClass } from '../../model/types.ts'
 
 // A small outline icon for each kind of object, in the Explorer and the
 // Insert list, coloured by family so you can tell kinds apart at a glance:
-// containers blue, text green, buttons amber (they're what players press),
-// images violet, modifiers grey, and the screen itself in the accent.
+// containers blue, text green, buttons rose (they're what players press),
+// images violet, modifiers grey, and the screen itself in plain ink. None
+// of them is the accent, so a class colour never looks like selection.
 const SHAPES: Record<ClassName | 'Modifier', ReactNode> = {
   // A monitor: the whole screen.
   ScreenGui: (
@@ -48,13 +49,13 @@ const SHAPES: Record<ClassName | 'Modifier', ReactNode> = {
 }
 
 const COLORS: Record<ClassName | 'Modifier', string> = {
-  ScreenGui: 'text-accent',
+  ScreenGui: 'text-ink',
   Frame: 'text-sky-400',
   ScrollingFrame: 'text-sky-400',
   TextLabel: 'text-emerald-400',
   TextBox: 'text-emerald-400',
-  TextButton: 'text-accent',
-  ImageButton: 'text-accent',
+  TextButton: 'text-rose-300',
+  ImageButton: 'text-rose-300',
   ImageLabel: 'text-violet-400',
   Modifier: 'text-faint',
 }

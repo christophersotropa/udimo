@@ -8,7 +8,8 @@ const FOCUS =
 
 const VARIANTS = {
   // The main action on screen (Export, Download).
-  primary: 'bg-accent font-semibold text-accent-ink hover:bg-accent-hover',
+  primary:
+    'bg-accent-fill font-semibold text-accent-ink hover:bg-accent-fill-hover',
   // Ordinary actions, with a border.
   secondary: 'bg-raised text-ink ring-1 ring-line hover:bg-hover',
   // Quiet actions in toolbars and menus.

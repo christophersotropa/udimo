@@ -8,7 +8,7 @@
   changes here, in one place.
 
   The style: a working tool, not a showcase. Near-black flat surfaces, thin
-  lines, compact rows, one accent color (amber), and monospace for values.
+  lines, compact rows, one accent colour (dark blue), and monospace for values.
 */
 @theme {
   --color-app: #121212; /* behind everything: the canvas area */
@@ -22,12 +22,40 @@
      for things you don't need to read: disabled or hidden items and
      decoration. Hints and labels people read use muted (about 6:1). */
   --color-faint: #636363;
-  --color-accent: #e5a23c; /* the one accent: selection, primary actions */
-  --color-accent-hover: #f0b458;
-  --color-accent-ink: #1c1406; /* text on an accent background */
-  --color-accent-soft: rgb(229 162 60 / 0.14); /* selected rows */
-  /* Yellow, not the accent's amber, so a warning never looks like a
-     selection. */
+  /* The accent. Only accent-fill is picked by hand; every other accent
+     shade is worked out from it with color-mix() (a CSS function that
+     blends two colours), so changing this one value re-colours the whole
+     editor. A future "accent colour" setting only has to set it.
+     accent-fill: solid backgrounds with white text on them (Export, the
+       active tool, the logo). Dark blue: white text on it is 5.2:1.
+     accent: the same blue lightened for text, outlines and focus rings on
+       the dark panels, where the dark blue itself would be too dim. */
+  --color-accent-fill: #3563e0;
+  /* Hover darkens: a lighter blue would drop white text under 4.5:1. */
+  --color-accent-fill-hover: color-mix(
+    in oklab,
+    var(--color-accent-fill),
+    black 15%
+  );
+  --color-accent: color-mix(in oklab, var(--color-accent-fill), white 45%);
+  --color-accent-hover: color-mix(
+    in oklab,
+    var(--color-accent-fill),
+    white 65%
+  );
+  --color-accent-ink: #ffffff; /* text on accent-fill */
+  --color-accent-soft: color-mix(
+    in srgb,
+    var(--color-accent-fill) 20%,
+    transparent
+  ); /* tinted backgrounds */
+  /* Selection (canvas outlines and handles, selected Explorer rows). Its
+     own tokens, so it can differ from the brand accent; for now it
+     follows it. select-ink is text on a select background. */
+  --color-select: var(--color-accent);
+  --color-select-soft: var(--color-accent-soft);
+  --color-select-ink: #0b1633;
+  /* Yellow, not the accent, so a warning never looks like a selection. */
   --color-warn: #e3c84a;
   --color-danger: #e5534b;
   --color-guide: #e0457b; /* alignment guides */
@@ -83,17 +111,18 @@ body {
   border-radius: 4px;
   background-color: var(--color-raised);
   box-shadow:
-    0 0 0 1px rgb(229 162 60 / 0.45),
+    0 0 0 1px color-mix(in srgb, var(--color-select) 45%, transparent),
     0 8px 20px rgb(0 0 0 / 0.45);
 }
 
 /* Checkboxes (Properties and the Export dialog): drawn by us, not the
    browser, so they match the text boxes: the same dark background and thin
-   border, and when ticked the background stays dark with an amber tick.
+   border, and when ticked the background stays dark with an accent tick.
    (The browser's own checkbox fills the whole box with the colour.)
    appearance: none turns off the browser's drawing. The tick is a small
-   SVG picture; its colour is the accent, #e5a23c, written out because a
-   picture can't read CSS variables. */
+   SVG picture; its colour is the accent, #8cacf3 (what --color-accent
+   works out to), written out because a picture can't read CSS variables.
+   An accent setting would have to update it too. */
 .check-box {
   appearance: none;
   cursor: pointer;
@@ -108,7 +137,7 @@ body {
   box-shadow: inset 0 0 0 1px var(--color-hover);
 }
 .check-box:checked {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23e5a23c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238cacf3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
 }
 .check-box:focus-visible {
   outline: 2px solid var(--color-accent);
