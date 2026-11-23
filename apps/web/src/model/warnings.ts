@@ -135,7 +135,7 @@ function textWarnings(
   const space = width(' ')
 
   const tooSmallOn = (Object.keys(DEVICES) as DeviceId[]).filter((device) => {
-    const area = contentArea(node, absoluteBox(doc, id, DEVICES[device]))
+    const area = contentArea(node, absoluteBox(doc, id, DEVICES[device]), doc)
     if (p.TextWrapped) {
       // Only a single word wider than the box sticks out sideways.
       const lineCount = words.reduce(

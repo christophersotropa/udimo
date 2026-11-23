@@ -22,6 +22,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { fontCss } from '../../model/fonts.ts'
 import {
   absoluteBox,
+  canvasSize,
   contentArea,
   cornerRadiusPixels,
   layoutSlot,
@@ -498,7 +499,29 @@ function ScrollingContent({
   children: ReactNode
 }) {
   const screen = useViewStore(screenOf)
-  const { CanvasSize, ScrollBarThickness } = resolveProps(node)
+  const {
+    CanvasSize,
+    ScrollBarThickness,
+    AutomaticCanvasSize,
+    ScrollingDirection,
+    ScrollBarImageColor3,
+    ScrollBarImageTransparency,
+  } = resolveProps(node)
+  // AutomaticCanvasSize: the canvas grows to fit the children, which only
+  // the layout maths can work out, so it's given in pixels then. Otherwise
+  // CSS works it out from CanvasSize (below). useShallow: re-render only
+  // when the size really changes.
+  const autoCanvas = useDocumentStore(
+    useShallow((state) => {
+      if (AutomaticCanvasSize === 'None') return null
+      const box = absoluteBox(state.document, node.id, screen)
+      const { width, height } = canvasSize(node, box, state.document)
+      return { width, height }
+    }),
+  )
+  // Scroll bars only show along the way it can scroll.
+  const scrollsX = ScrollingDirection !== 'Y'
+  const scrollsY = ScrollingDirection !== 'X'
   // Each returns a plain number, so the component only re-renders when the
   // scroll bar length actually changes.
   const shownX = useDocumentStore((state) =>
@@ -508,10 +531,18 @@ function ScrollingContent({
     visibleFraction(state.document, node.id, screen, 'y'),
   )
   // Studio draws its default scroll bar as a light grey bar with round
-  // ends (compared side by side in build 33), so the canvas does too.
+  // ends (compared side by side in build 33), even though its default
+  // ScrollBarImageColor3 is black, so the default stays that grey; a colour
+  // you pick is drawn as it is. ScrollBarImageTransparency applies to both.
+  const isDefaultColor =
+    ScrollBarImageColor3.r === 0 &&
+    ScrollBarImageColor3.g === 0 &&
+    ScrollBarImageColor3.b === 0
   const bar = {
     position: 'absolute',
-    backgroundColor: 'rgb(165 165 165)',
+    backgroundColor: isDefaultColor
+      ? `rgb(165 165 165 / ${1 - ScrollBarImageTransparency})`
+      : color3ToCss(ScrollBarImageColor3, ScrollBarImageTransparency),
     borderRadius: ScrollBarThickness / 2,
   } as const
 
@@ -521,17 +552,22 @@ function ScrollingContent({
       className="absolute inset-0 overflow-hidden"
       style={{ borderRadius: 'inherit' }}
     >
+      {/* isolate: the children's ZIndex values stay inside this canvas, so
+          the scroll bars, drawn after it, are always on top (as in Roblox)
+          instead of under a child with ZIndex 1. */}
       <div
-        className="absolute top-0 left-0"
-        style={{
-          width: `max(100%, ${udimToCss(CanvasSize.xs, CanvasSize.xo)})`,
-          height: `max(100%, ${udimToCss(CanvasSize.ys, CanvasSize.yo)})`,
-        }}
+        className="absolute top-0 left-0 isolate"
+        style={
+          autoCanvas ?? {
+            width: `max(100%, ${udimToCss(CanvasSize.xs, CanvasSize.xo)})`,
+            height: `max(100%, ${udimToCss(CanvasSize.ys, CanvasSize.yo)})`,
+          }
+        }
       >
         {children}
       </div>
       {/* Scroll bars only show on an axis with more canvas than frame. */}
-      {shownY < 1 && ScrollBarThickness > 0 && (
+      {scrollsY && shownY < 1 && ScrollBarThickness > 0 && (
         <div
           style={{
             ...bar,
@@ -542,7 +578,7 @@ function ScrollingContent({
           }}
         />
       )}
-      {shownX < 1 && ScrollBarThickness > 0 && (
+      {scrollsX && shownX < 1 && ScrollBarThickness > 0 && (
         <div
           style={{
             ...bar,

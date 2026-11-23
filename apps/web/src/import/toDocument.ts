@@ -3,6 +3,7 @@ import { defaultProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  SCROLLING_DIRECTION,
   FILL_DIRECTION,
   FONT_STYLE,
   FONT_WEIGHT,
@@ -176,6 +177,10 @@ const PROP_SOURCES: Record<
   SliceScale: [['SliceScale'], asNumber],
   CanvasSize: [['CanvasSize'], asUDim2],
   ScrollBarThickness: [['ScrollBarThickness'], asNumber],
+  AutomaticCanvasSize: [['AutomaticCanvasSize'], asEnum(AUTOMATIC_SIZE)],
+  ScrollingDirection: [['ScrollingDirection'], asEnum(SCROLLING_DIRECTION)],
+  ScrollBarImageColor3: [['ScrollBarImageColor3'], asColor3],
+  ScrollBarImageTransparency: [['ScrollBarImageTransparency'], asNumber],
   AutomaticSize: [['AutomaticSize'], asEnum(AUTOMATIC_SIZE)],
 }
 

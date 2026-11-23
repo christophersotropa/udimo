@@ -18,6 +18,7 @@ import { isLaidOut } from '../../model/layout.ts'
 import {
   AUTOMATIC_SIZE,
   enumNames,
+  SCROLLING_DIRECTION,
   type FontWeight,
   SCALE_TYPE,
   TEXT_TRUNCATE,
@@ -661,6 +662,28 @@ function NodeProperties({
             value={p.CanvasSize}
             onChange={(CanvasSize) => set({ CanvasSize })}
           />
+          <Row label="AutomaticCanvasSize">
+            <SelectField
+              label="AutomaticCanvasSize"
+              value={p.AutomaticCanvasSize}
+              options={enumNames(AUTOMATIC_SIZE)}
+              onChange={(AutomaticCanvasSize) => set({ AutomaticCanvasSize })}
+            />
+          </Row>
+          {p.AutomaticCanvasSize !== 'None' && (
+            <Hint>
+              The canvas grows to fit the children; CanvasSize is the smallest
+              it gets.
+            </Hint>
+          )}
+          <Row label="ScrollingDirection">
+            <SelectField
+              label="ScrollingDirection"
+              value={p.ScrollingDirection}
+              options={enumNames(SCROLLING_DIRECTION)}
+              onChange={(ScrollingDirection) => set({ ScrollingDirection })}
+            />
+          </Row>
           <Row label="ScrollBarThickness">
             <NumberField
               label="ScrollBarThickness"
@@ -668,6 +691,24 @@ function NodeProperties({
               min={0}
               value={p.ScrollBarThickness}
               onChange={(ScrollBarThickness) => set({ ScrollBarThickness })}
+            />
+          </Row>
+          <Row label="Bar color" name="ScrollBarImageColor3">
+            <ColorField
+              label="ScrollBarImageColor3"
+              value={p.ScrollBarImageColor3}
+              onChange={(ScrollBarImageColor3) => set({ ScrollBarImageColor3 })}
+            />
+          </Row>
+          <Row label="Bar transparency" name="ScrollBarImageTransparency">
+            <NumberField
+              label="ScrollBarImageTransparency"
+              min={0}
+              max={1}
+              value={p.ScrollBarImageTransparency}
+              onChange={(ScrollBarImageTransparency) =>
+                set({ ScrollBarImageTransparency })
+              }
             />
           </Row>
         </Section>

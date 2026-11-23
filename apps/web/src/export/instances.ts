@@ -4,6 +4,7 @@ import { resolveProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  SCROLLING_DIRECTION,
   BORDER_MODE,
   FILL_DIRECTION,
   type FontStyle,
@@ -220,6 +221,10 @@ function elementProperties(doc: UiDocument, id: NodeId): Property[] {
     properties.push(
       udim2('CanvasSize', p.CanvasSize),
       int('ScrollBarThickness', p.ScrollBarThickness),
+      enumProp('AutomaticCanvasSize', AUTOMATIC_SIZE, p.AutomaticCanvasSize),
+      enumProp('ScrollingDirection', SCROLLING_DIRECTION, p.ScrollingDirection),
+      color3('ScrollBarImageColor3', p.ScrollBarImageColor3),
+      float('ScrollBarImageTransparency', p.ScrollBarImageTransparency),
     )
   }
 

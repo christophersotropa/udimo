@@ -99,6 +99,7 @@ export function planWrap(
   const parentBox = contentArea(
     doc.nodes[parentId],
     absoluteBox(doc, parentId, screen),
+    doc,
   )
   const parent = {
     width: Math.max(1, parentBox.width),

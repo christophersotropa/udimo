@@ -8,6 +8,7 @@ import gradientPaddingAspect from '../../../../docs/reference/gradient-padding-a
 import imageClasses from '../../../../docs/reference/image-classes.rbxmx?raw'
 import imageOptions from '../../../../docs/reference/image-options.rbxmx?raw'
 import listGridLayouts from '../../../../docs/reference/list-grid-layouts.rbxmx?raw'
+import scrolling from '../../../../docs/reference/scrolling.rbxmx?raw'
 import sizing from '../../../../docs/reference/sizing.rbxmx?raw'
 import textClasses from '../../../../docs/reference/text-classes.rbxmx?raw'
 import textOptions from '../../../../docs/reference/text-options.rbxmx?raw'
@@ -28,6 +29,7 @@ const STUDIO_FILES = {
   'image-classes': imageClasses,
   'image-options': imageOptions,
   'list-grid-layouts': listGridLayouts,
+  scrolling,
   sizing,
   'text-classes': textClasses,
   'text-options': textOptions,

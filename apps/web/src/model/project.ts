@@ -2,6 +2,7 @@ import { isValidTimeline } from '../lib/sequence.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  SCROLLING_DIRECTION,
   FILL_DIRECTION,
   FONT_STYLE,
   FONT_WEIGHT,
@@ -241,6 +242,10 @@ export const PROP_CHECKS: Record<keyof Props, (value: unknown) => boolean> = {
   SliceScale: (v: unknown) => isNumber(v) && v >= 0,
   CanvasSize: isUDim2,
   ScrollBarThickness: isNumber,
+  AutomaticCanvasSize: isOneOf(AUTOMATIC_SIZE),
+  ScrollingDirection: isOneOf(SCROLLING_DIRECTION),
+  ScrollBarImageColor3: isColor3,
+  ScrollBarImageTransparency: isNumber,
   AutomaticSize: isOneOf(AUTOMATIC_SIZE),
 }
 

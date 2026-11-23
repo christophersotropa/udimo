@@ -191,7 +191,7 @@ export function snapContext(
   if (ids.some((id) => doc.nodes[id].parentId !== parentId)) return null
 
   const parentBox = absoluteBox(doc, parentId, screen)
-  const area = contentArea(doc.nodes[parentId], parentBox)
+  const area = contentArea(doc.nodes[parentId], parentBox, doc)
   const origin = { x: parentBox.x + area.x, y: parentBox.y + area.y }
   const local = (id: NodeId): Box => {
     const box = absoluteBox(doc, id, screen)

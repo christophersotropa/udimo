@@ -67,6 +67,7 @@ export function planUnitConversion(
     const area = contentArea(
       doc.nodes[parentId],
       absoluteBox(doc, parentId, screen),
+      doc,
     )
     const { Position, Size } = resolveProps(node)
     plan.set(id, {
