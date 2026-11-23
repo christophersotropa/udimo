@@ -1,5 +1,6 @@
 import { type ReactNode, useMemo, useState } from 'react'
 import { documentToLuau } from '../../export/luau.ts'
+import { countInstances, exportTree } from '../../export/instances.ts'
 import { documentForExport } from '../../export/options.ts'
 import { documentToRbxmx } from '../../export/rbxmx.ts'
 import { downloadTextFile } from '../../lib/download.ts'
@@ -79,6 +80,9 @@ function ExportContent({
   const { format, convertToScale, keepOnRespawn, buttonScript, fileName } =
     settings
   const [copied, setCopied] = useState(false)
+  // The file just downloaded, to confirm it and say what's next in Studio.
+  // (Starts empty on every opening: the dialog draws this only while open.)
+  const [downloaded, setDownloaded] = useState<string | null>(null)
   const doc = useDocumentStore((state) => state.document)
   const screen = useViewStore(screenOf)
   const rootName = doc.nodes[doc.rootId].name
@@ -93,8 +97,17 @@ function ExportContent({
     [doc, convertToScale, screen],
   )
   const warnings = useMemo(() => exportWarnings(exported, measure), [exported])
-  const options = { resetOnSpawn: !keepOnRespawn, buttonScript }
-  const instances = Object.keys(doc.nodes).length - 1
+  const options = useMemo(
+    () => ({ resetOnSpawn: !keepOnRespawn, buttonScript }),
+    [keepOnRespawn, buttonScript],
+  )
+  // Counted from the same tree the file is written from, so it matches what
+  // Studio's Explorer will show: the ScreenGui, modifiers and script too.
+  const instances = useMemo(
+    () => countInstances(exportTree(exported, options)),
+    [exported, options],
+  )
+  const problems = warnings.filter((w) => w.level === 'warning').length
   const buttons = Object.values(doc.nodes).filter(
     (node) =>
       node.className === 'TextButton' || node.className === 'ImageButton',
@@ -106,7 +119,8 @@ function ExportContent({
       documentToRbxmx(exported, options),
       'application/xml',
     )
-    onClose()
+    // Stay open to confirm it and point to the next step in Studio.
+    setDownloaded(file)
   }
 
   async function copy() {
@@ -127,6 +141,15 @@ function ExportContent({
     if (device) useViewStore.getState().setDevice(device)
     if (warning.nodeId) useDocumentStore.getState().select(warning.nodeId)
     onClose()
+    // The dialog closes to show the problem, so say where the others went.
+    const others = warnings.length - 1
+    if (others > 0) {
+      useViewStore
+        .getState()
+        .showNotice(
+          `${others} more export check${others === 1 ? '' : 's'}: press ⌘E to see ${others === 1 ? 'it' : 'them'}`,
+        )
+    }
   }
 
   return (
@@ -208,8 +231,11 @@ function ExportContent({
           </div>
         </div>
 
-        {/* Right: what to do in Studio, and the checks */}
+        {/* Right: the checks and what to do in Studio */}
         <div className="space-y-5 p-5">
+          {/* With warnings, they come first: worth reading before the
+              download, not after the instructions. */}
+          {problems > 0 && <Checks warnings={warnings} onShow={show} />}
           <div className="space-y-2">
             <Label>In Roblox Studio</Label>
             <ol className="space-y-2 text-body">
@@ -251,25 +277,51 @@ function ExportContent({
             </ol>
           </div>
 
-          <Checks warnings={warnings} onShow={show} />
+          {problems === 0 && <Checks warnings={warnings} onShow={show} />}
         </div>
       </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-4 border-t border-line px-5 py-3">
-        <p className="text-xs text-muted">
-          Generated in your browser. Nothing is uploaded.
-        </p>
-        <div className="flex gap-2">
-          <Button onClick={onClose}>Cancel</Button>
-          {format === 'rbxmx' ? (
-            <Button variant="primary" onClick={download}>
-              Download {file}
-            </Button>
+        {downloaded ? (
+          // role="status": screen readers announce it when it appears.
+          <p role="status" className="text-xs text-ink">
+            Downloaded <span className="font-mono">{downloaded}</span>. Next, in
+            Studio: right-click <Code>StarterGui</Code> and choose{' '}
+            <Code>Insert from File…</Code>
+          </p>
+        ) : (
+          <p className="text-xs text-muted">
+            Generated in your browser. Nothing is uploaded.
+          </p>
+        )}
+        <div className="flex shrink-0 gap-2">
+          {downloaded ? (
+            <>
+              <Button onClick={download}>Download again</Button>
+              <Button variant="primary" onClick={onClose}>
+                Done
+              </Button>
+            </>
           ) : (
-            <Button variant="primary" onClick={copy} className="min-w-36">
-              {copied ? 'Copied!' : 'Copy Luau script'}
-            </Button>
+            <>
+              <Button onClick={onClose}>Cancel</Button>
+              {format === 'rbxmx' ? (
+                <Button variant="primary" onClick={download}>
+                  {problems > 0
+                    ? `Download anyway (${problems} warning${problems === 1 ? '' : 's'})`
+                    : `Download ${file}`}
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={copy} className="min-w-36">
+                  {copied
+                    ? 'Copied!'
+                    : problems > 0
+                      ? `Copy anyway (${problems} warning${problems === 1 ? '' : 's'})`
+                      : 'Copy Luau script'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

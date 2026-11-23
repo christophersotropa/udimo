@@ -1,4 +1,4 @@
-import type { NodeId } from '../../model/types.ts'
+import type { ModifierClass, NodeId } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { useViewStore } from '../../store/viewStore.ts'
 
@@ -19,4 +19,18 @@ export function openMenuFor(
     store.select(targetId)
   }
   useViewStore.getState().openContextMenu({ x, y, targetId, insertOnly })
+}
+
+// Opens the right-click menu for one modifier on an element (its line in
+// the Explorer). The element is selected, as a click on the line does, but
+// the menu's actions are the modifier's own: Studio users expect Delete on
+// a UICorner line to remove the corner, never the Frame it's on.
+export function openModifierMenu(
+  ownerId: NodeId,
+  modifier: ModifierClass,
+  x: number,
+  y: number,
+) {
+  useDocumentStore.getState().select(ownerId)
+  useViewStore.getState().openContextMenu({ x, y, targetId: ownerId, modifier })
 }

@@ -2,3 +2,5 @@
 dist
 coverage
 package-lock.json
+# Impeccable's own files (reports, caches, settings): not ours to format
+**/.impeccable

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { fitView, type Point, type View, zoomAt } from '../lib/viewport.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
-import type { NodeId } from '../model/types.ts'
+import type { ModifierClass, NodeId } from '../model/types.ts'
 import type { SaveStatus } from './autosave.ts'
 import {
   clampPanelWidth,
@@ -37,7 +37,15 @@ export type ContextMenuState = {
   y: number
   targetId: NodeId
   insertOnly?: boolean
+  // Opened on a modifier's line in the Explorer: the menu is about that
+  // modifier (Edit, Delete), not about the element it's on.
+  modifier?: ModifierClass
 }
+
+// A request to show a modifier's fields in Properties: from a click on its
+// line in the Explorer, or "Edit UICorner" in its menu. A new object each
+// time, so asking twice for the same one still counts as a new request.
+export type ModifierReveal = { id: NodeId; modifier: ModifierClass }
 
 // Editor view state: which device screen is shown, and how it's zoomed and
 // panned. Like the selection it's not part of the document, so it's never
@@ -75,6 +83,9 @@ export type ViewState = {
   // A short message in the status bar (say, why a dropped file couldn't
   // be used), or null. It clears itself after a few seconds.
   notice: string | null
+  // The latest "show this modifier's fields" request (ModifiersSection
+  // opens and scrolls to it), or null.
+  modifierReveal: ModifierReveal | null
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -103,6 +114,9 @@ export type ViewState = {
   resetPanels: () => void
   setPanelDrag: (drag: PanelDrag | null) => void
   showNotice: (text: string) => void
+  // Asks Properties to open a modifier's fields, unfolding the Modifiers
+  // section first if you had folded it shut.
+  revealModifier: (id: NodeId, modifier: ModifierClass) => void
 }
 
 // The screen size for a device.
@@ -138,6 +152,7 @@ export function createViewStore() {
     panels: DEFAULT_PANEL_LAYOUT,
     panelDrag: null,
     notice: null,
+    modifierReveal: null,
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -196,6 +211,13 @@ export function createViewStore() {
       clearTimeout(noticeTimer)
       noticeTimer = setTimeout(() => set({ notice: null }), NOTICE_MS)
     },
+
+    revealModifier: (id, modifier) =>
+      set({
+        modifierReveal: { id, modifier },
+        // The section title Section folds by (ModifiersSection).
+        closedSections: get().closedSections.filter((t) => t !== 'Modifiers'),
+      }),
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.

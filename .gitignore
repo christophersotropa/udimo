@@ -167,5 +167,5 @@ vite.config.ts.timestamp-*
 # Impeccable (design tool). Its shared settings (.impeccable/config.json)
 # are committed; reports and per-machine files are not.
 **/.impeccable/audit/
-.impeccable/config.local.json
-.impeccable/hook.cache.json
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json
