@@ -148,9 +148,8 @@ export type Props = {
   SliceCenter?: Rect
   // Slice: how big the corners and edges are drawn (2 = twice the size)
   SliceScale?: number
-  // Grows the element to fit its contents across (X), down (Y) or both;
-  // Size is then the smallest it gets. Exported as set; the canvas still
-  // shows Size (drawing the growth is a later build).
+  // Grows the element to fit its contents (its text, its children) across
+  // (X), down (Y) or both; Size is then the smallest it gets (layout.ts).
   AutomaticSize?: AutomaticSize
   // ScrollingFrame: the size of the scrollable area its children sit on
   // (Scale is a fraction of the frame), and the scroll bar width in pixels

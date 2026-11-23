@@ -107,7 +107,7 @@ export function planWrap(
 
   // The box around all the elements, widened to whole pixels, because
   // Roblox Offsets are whole pixels.
-  const boxes = ids.map((id) => boxInParent(doc.nodes[id], parent))
+  const boxes = ids.map((id) => boxInParent(doc.nodes[id], parent, doc))
   const left = Math.floor(Math.min(...boxes.map((b) => b.x)))
   const top = Math.floor(Math.min(...boxes.map((b) => b.y)))
   const right = Math.ceil(Math.max(...boxes.map((b) => b.x + b.width)))

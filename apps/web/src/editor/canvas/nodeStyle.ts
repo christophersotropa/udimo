@@ -15,7 +15,9 @@ import type { UiNode } from '../../model/types.ts'
 // on the element's size on screen, which this function can't see).
 export type NodePixels = {
   cornerRadius: number // UICorner radius, 0 for none
-  aspectSize: ScreenSize | null // the size a UIAspectRatioConstraint forces
+  // A size the UDim2 can't give: one a UIAspectRatioConstraint forces, or
+  // AutomaticSize grows to (null if neither applies).
+  fixedSize: ScreenSize | null
   // Where the parent's UIListLayout or UIGridLayout puts this element,
   // from the corner of the parent's content area.
   slot: Box | null
@@ -43,12 +45,12 @@ export function nodeStyle(node: UiNode, pixels: NodePixels): CSSProperties {
     borderRadius: pixels.cornerRadius || undefined,
   }
 
-  // A UIAspectRatioConstraint replaces the UDim2 size with its own.
-  // (Position and AnchorPoint still work: AnchorPoint's shift uses the
-  // element's actual size.)
-  if (pixels.aspectSize) {
-    style.width = pixels.aspectSize.width
-    style.height = pixels.aspectSize.height
+  // A UIAspectRatioConstraint or AutomaticSize replaces the UDim2 size
+  // with its own. (Position and AnchorPoint still work: AnchorPoint's shift
+  // uses the element's actual size, so it grows away from that point.)
+  if (pixels.fixedSize) {
+    style.width = pixels.fixedSize.width
+    style.height = pixels.fixedSize.height
   }
 
   // A layout decides where the element goes, ignoring Position and

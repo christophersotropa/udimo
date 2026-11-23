@@ -3,7 +3,7 @@ import type { Props } from '../../model/types.ts'
 import { createDocumentStore } from '../../store/documentStore.ts'
 import { nodeStyle } from './nodeStyle.ts'
 
-const NO_PIXELS = { cornerRadius: 0, aspectSize: null, slot: null }
+const NO_PIXELS = { cornerRadius: 0, fixedSize: null, slot: null }
 
 // A node with a default black UIStroke.
 function strokedNode(className: 'Frame' | 'TextButton', border = false) {

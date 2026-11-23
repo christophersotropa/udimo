@@ -1,7 +1,11 @@
+import { richTextPlain } from '../lib/richText.ts'
+import { wrappedLineCount } from '../lib/text.ts'
 import { arrangeGrid, arrangeList, type LayoutItem } from './arrange.ts'
+import { isTextClass } from './classes.ts'
 import { resolveProps } from './defaults.ts'
 import { resolveModifier } from './modifiers.ts'
 import type { ScreenSize } from './screen.ts'
+import { textMetrics } from './textMetrics.ts'
 import type { NodeId, UDim, UiDocument, UiNode } from './types.ts'
 
 // Turning UDim2 values into real pixels, the same way Roblox (and the canvas)
@@ -37,16 +41,26 @@ export function clampSize(length: number, min: number, max: number | null) {
 
 // Where an element sits inside a parent area of the given pixel size,
 // measured from the area's top-left corner. Each axis is Scale × parent +
-// Offset; a UIAspectRatioConstraint then shrinks the box to its shape, and
-// a UISizeConstraint keeps it between its MinSize and MaxSize; then
-// AnchorPoint shifts the box so that point lands on Position.
-export function boxInParent(node: UiNode, parent: ScreenSize): Box {
-  const { Size, Position, AnchorPoint } = resolveProps(node)
+// Offset; a UIAspectRatioConstraint then shrinks the box to its shape;
+// AutomaticSize grows it to fit its contents (given the document, which
+// holds its children); a UISizeConstraint keeps it between its MinSize and
+// MaxSize; then AnchorPoint shifts the box so that point lands on Position
+// (so a growing element grows away from its AnchorPoint).
+export function boxInParent(
+  node: UiNode,
+  parent: ScreenSize,
+  doc?: UiDocument,
+): Box {
+  const { Size, Position, AnchorPoint, AutomaticSize } = resolveProps(node)
   let width = Size.xs * parent.width + Size.xo
   let height = Size.ys * parent.height + Size.yo
 
   const aspect = resolveModifier(node, 'UIAspectRatioConstraint')
   if (aspect) ({ width, height } = fitAspect(width, height, aspect.AspectRatio))
+
+  if (doc && AutomaticSize !== 'None') {
+    ;({ width, height } = grownSize(doc, node, { width, height }))
+  }
 
   const limits = resolveModifier(node, 'UISizeConstraint')
   if (limits) {
@@ -59,6 +73,89 @@ export function boxInParent(node: UiNode, parent: ScreenSize): Box {
     y: Position.ys * parent.height + Position.yo - AnchorPoint.y * height,
     width,
     height,
+  }
+}
+
+// The size of an element's text: its widest line, and its lines' height.
+// With `wrapAt`, lines wrap at that width first (TextWrapped). Measured
+// with textMetrics (the browser's measurements in the editor).
+export function textBounds(node: UiNode, wrapAt: number | null): ScreenSize {
+  const p = resolveProps(node)
+  const metrics = textMetrics()
+  // What's shown: an empty TextBox shows its placeholder; RichText's tags
+  // take no room.
+  const shown =
+    node.className === 'TextBox' && p.Text === '' ? p.PlaceholderText : p.Text
+  const lines = (p.RichText ? richTextPlain(shown) : shown).split('\n')
+  const widthOf = (text: string) => metrics.width(text, p.FontFace, p.TextSize)
+  const lineHeight = p.TextSize * metrics.lineHeight(p.FontFace) * p.LineHeight
+
+  if (wrapAt === null) {
+    return {
+      width: Math.max(...lines.map(widthOf)),
+      height: lines.length * lineHeight,
+    }
+  }
+  let count = 0
+  let widest = 0
+  for (const line of lines) {
+    const words = line.split(' ')
+    count += wrappedLineCount(words.map(widthOf), widthOf(' '), wrapAt)
+    widest = Math.max(widest, Math.min(wrapAt, widthOf(line)))
+  }
+  return { width: widest, height: count * lineHeight }
+}
+
+// AutomaticSize: an element of size `base` grown to fit what's in it,
+// along X, Y or both, never shrunk. What's in it: its text (unless
+// TextScaled, which fits the text to the box instead), and its visible
+// children where they sit (or where its layout puts them), plus its
+// UIPadding. Children sized by Scale are measured against `base`: they'd
+// otherwise grow with the element that grows to fit them, forever.
+// With only Y growing, TextWrapped text wraps at the element's width.
+function grownSize(
+  doc: UiDocument,
+  node: UiNode,
+  base: ScreenSize,
+): ScreenSize {
+  const p = resolveProps(node)
+  const area = contentArea(node, base)
+  // UIPadding on the right and bottom, which the contents also need. Read
+  // from the UIPadding itself, not from what's left of the area: an
+  // element starting at 0 tall (a list that grows) has no room for its
+  // padding yet.
+  const canvas = canvasSize(node, base)
+  const padding = resolveModifier(node, 'UIPadding')
+  const padRight = padding ? udimPixels(padding.PaddingRight, canvas.width) : 0
+  const padBottom = padding
+    ? udimPixels(padding.PaddingBottom, canvas.height)
+    : 0
+  let needWidth = 0
+  let needHeight = 0
+  const reach = (right: number, bottom: number) => {
+    needWidth = Math.max(needWidth, right + padRight)
+    needHeight = Math.max(needHeight, bottom + padBottom)
+  }
+
+  if (isTextClass(node.className) && !p.TextScaled) {
+    const wrapAt = p.TextWrapped && p.AutomaticSize === 'Y' ? area.width : null
+    const text = textBounds(node, wrapAt)
+    reach(area.x + text.width, area.y + text.height)
+  }
+
+  const slots = layoutBoxes(doc, node.id, area)
+  for (const childId of node.children) {
+    const child = doc.nodes[childId]
+    if (!child || !resolveProps(child).Visible) continue
+    const box = slots ? slots.get(childId) : boxInParent(child, area, doc)
+    if (box) reach(area.x + box.x + box.width, area.y + box.y + box.height)
+  }
+
+  const growsX = p.AutomaticSize === 'X' || p.AutomaticSize === 'XY'
+  const growsY = p.AutomaticSize === 'Y' || p.AutomaticSize === 'XY'
+  return {
+    width: growsX ? Math.max(base.width, needWidth) : base.width,
+    height: growsY ? Math.max(base.height, needHeight) : base.height,
   }
 }
 
@@ -124,7 +221,7 @@ export function layoutBoxes(
     .filter((childId) => isLaidOut(doc, childId))
     .map((childId) => {
       const child = doc.nodes[childId]
-      const { width, height } = boxInParent(child, area)
+      const { width, height } = boxInParent(child, area, doc)
       return {
         id: childId,
         name: child.name,
@@ -146,7 +243,7 @@ function boxInContentArea(
   const placed = isLaidOut(doc, node.id)
     ? layoutBoxes(doc, node.parentId!, area)?.get(node.id)
     : undefined
-  return placed ?? boxInParent(node, area)
+  return placed ?? boxInParent(node, area, doc)
 }
 
 // The box a layout gives an element, measured from the corner of its
@@ -225,6 +322,17 @@ function placedOnScreen(
     }
   }
   return { box, scale: k * s }
+}
+
+// How many times bigger an element is drawn than its own pixels say: its
+// UIScale times all its parents' (1 when nothing is scaled). Dragging uses
+// it to turn pointer movement into the element's own pixels.
+export function drawnScale(
+  doc: UiDocument,
+  id: NodeId,
+  screen: ScreenSize,
+): number {
+  return placedOnScreen(doc, id, screen).scale
 }
 
 export function visualBox(

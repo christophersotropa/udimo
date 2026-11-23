@@ -43,6 +43,9 @@ import '@fontsource/fredoka-one/400.css'
 import '@fontsource/luckiest-guy/400.css'
 import App from './app/App.tsx'
 import { createSampleDocument } from './app/sampleDocument.ts'
+import { measureLineHeight, measureTextWidth } from './lib/text.ts'
+import { fontCss } from './model/fonts.ts'
+import { setTextMetrics } from './model/textMetrics.ts'
 import {
   getBrowserStorage,
   loadAutosave,
@@ -51,6 +54,19 @@ import {
 import { useDocumentStore } from './store/documentStore.ts'
 import { loadPanelLayout, savePanelLayout } from './store/panelLayout.ts'
 import { useViewStore } from './store/viewStore.ts'
+
+// Text is measured by the browser for the sizing maths (AutomaticSize
+// growing to fit text; see model/textMetrics.ts). Web fonts arrive after
+// the first drawing, and change how wide text is, so when they do, every
+// size is worked out again: an empty update makes every part of the canvas
+// re-check its sizes, and only the ones that changed redraw.
+setTextMetrics({
+  width: (text, font, size) => measureTextWidth(text, fontCss(font, size)),
+  lineHeight: (font) => measureLineHeight(fontCss(font, 100)),
+})
+document.fonts.addEventListener('loadingdone', () =>
+  useDocumentStore.setState({}),
+)
 
 // Before the first render: reopen your autosaved work, or show the starter
 // layout on your first visit. Then keep autosaving from here on.
