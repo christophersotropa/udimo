@@ -8,11 +8,13 @@ export function Dialog({
   open,
   onClose,
   label,
+  width = 'w-[760px]',
   children,
 }: {
   open: boolean
   onClose: () => void
   label: string // what screen readers announce
+  width?: string // a Tailwind width class; Export's 760px unless given
   children: ReactNode
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -34,7 +36,7 @@ export function Dialog({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="m-auto max-h-[calc(100vh-2rem)] w-[760px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md bg-panel p-0 text-ink shadow-2xl shadow-black/60 ring-1 ring-line"
+      className={`m-auto max-h-[calc(100vh-2rem)] ${width} max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md bg-panel p-0 text-ink shadow-2xl shadow-black/60 ring-1 ring-line`}
     >
       {open && children}
     </dialog>

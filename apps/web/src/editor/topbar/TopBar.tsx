@@ -2,6 +2,7 @@ import { DEVICES, type DeviceId } from '../../model/screen.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { useViewStore } from '../../store/viewStore.ts'
 import { ExportDialog } from '../export/ExportDialog.tsx'
+import { ImportReportDialog } from '../import/ImportReportDialog.tsx'
 import { CursorIcon, HandIcon } from '../panels/icons.tsx'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { SegmentedControl } from '../ui/SegmentedControl.tsx'
@@ -35,6 +36,7 @@ export function TopBar() {
       </div>
 
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
+      <ImportReportDialog />
     </header>
   )
 }

@@ -9,6 +9,7 @@ import { NodeView } from './NodeView.tsx'
 import { ZoomBar } from './ZoomBar.tsx'
 import { CanvasOverlay } from './CanvasOverlay.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
+import { importRbxmxFile } from '../topbar/projectFiles.ts'
 
 // The game screen is laid out at its real size (the chosen device's), so
 // Offset pixels mean the same thing as in Roblox. Then the whole screen is
@@ -148,8 +149,9 @@ export function Canvas() {
         useDocumentStore.getState().select(id)
         useViewStore.getState().setEditingTextId(id)
       }}
-      // Drop an image file from your computer: onto an image element to
-      // preview it there, anywhere else to add a new ImageLabel showing it.
+      // Drop a file from your computer: an .rbxmx from Studio is imported
+      // (topbar/projectFiles.ts); an image goes onto an image element to
+      // preview it there, anywhere else as a new ImageLabel showing it.
       // dragover must say "a drop is welcome here", or the browser just
       // opens the file in the tab.
       onDragOver={(event) => {
@@ -161,7 +163,8 @@ export function Canvas() {
         const file = event.dataTransfer.files[0]
         if (!file) return
         event.preventDefault()
-        void dropImage(file, event.clientX, event.clientY)
+        if (/\.rbxmx?$/i.test(file.name)) void importRbxmxFile(file)
+        else void dropImage(file, event.clientX, event.clientY)
       }}
       onContextMenu={(event) => {
         event.preventDefault()

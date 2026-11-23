@@ -292,4 +292,11 @@ describe('importRbxmx', () => {
     expect(() => importRbxmx(text)).toThrow(RbxmxError)
     expect(() => importRbxmx(text)).toThrow(message)
   })
+
+  it('reports paths from the file’s own top element when it has no ScreenGui', () => {
+    const { skipped } = importRbxmx(
+      file(['Frame', named('Card'), [['LocalScript', named('Hover')]]]),
+    )
+    expect(skipped[0].path).toBe('Card')
+  })
 })

@@ -3,6 +3,7 @@ import { fitView, type Point, type View, zoomAt } from '../lib/viewport.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from '../model/screen.ts'
 import type { Guide } from '../model/snap.ts'
 import type { ModifierClass, NodeId } from '../model/types.ts'
+import type { ImportSummary } from '../import/summary.ts'
 import type { SaveStatus } from './autosave.ts'
 import {
   clampPanelWidth,
@@ -86,6 +87,9 @@ export type ViewState = {
   // The latest "show this modifier's fields" request (ModifiersSection
   // opens and scrolls to it), or null.
   modifierReveal: ModifierReveal | null
+  // What the last .rbxmx import did, shown in the Import dialog, or why it
+  // failed (error); null when the dialog is closed.
+  importReport: (ImportSummary & { error?: string }) | null
 
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
@@ -117,6 +121,7 @@ export type ViewState = {
   // Asks Properties to open a modifier's fields, unfolding the Modifiers
   // section first if you had folded it shut.
   revealModifier: (id: NodeId, modifier: ModifierClass) => void
+  setImportReport: (report: ViewState['importReport']) => void
 }
 
 // The screen size for a device.
@@ -153,6 +158,7 @@ export function createViewStore() {
     panelDrag: null,
     notice: null,
     modifierReveal: null,
+    importReport: null,
 
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
@@ -218,6 +224,8 @@ export function createViewStore() {
         // The section title Section folds by (ModifiersSection).
         closedSections: get().closedSections.filter((t) => t !== 'Modifiers'),
       }),
+
+    setImportReport: (importReport) => set({ importReport }),
 
     setGuides: (guides) => {
       // Skip the update (and the redraw) when there were none and still are.
