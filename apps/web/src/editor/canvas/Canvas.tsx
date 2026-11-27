@@ -22,7 +22,7 @@ export function Canvas() {
     (state) => state.document.nodes[state.document.rootId].name,
   )
   const view = useViewStore(useShallow(currentView))
-  const { handlers, cursor } = useCanvasPointer(view.zoom)
+  const { handlers, cursor, marquee } = useCanvasPointer(view.zoom)
 
   useLayoutEffect(() => {
     const area = areaRef.current
@@ -222,6 +222,21 @@ export function Canvas() {
           <CanvasOverlay />
         </div>
       </div>
+      {/* The selection box, drawn on the canvas area rather than inside
+          the screen, so it still shows where it reaches past the screen's
+          edge. Its corners are game pixels, turned back into area pixels
+          with the current view. */}
+      {marquee && (
+        <div
+          className="pointer-events-none absolute border border-select bg-select-soft"
+          style={{
+            left: view.x + marquee.x * view.zoom,
+            top: view.y + marquee.y * view.zoom,
+            width: marquee.width * view.zoom,
+            height: marquee.height * view.zoom,
+          }}
+        />
+      )}
       <ZoomBar />
     </main>
   )
