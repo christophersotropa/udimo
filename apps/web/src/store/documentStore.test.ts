@@ -280,6 +280,26 @@ describe('document store', () => {
       expect(selection()).toEqual([b])
     })
 
+    it('setSelection replaces it, dropping repeats', () => {
+      const { actions, selection, rootId } = setup()
+      const a = actions.addNode(rootId, 'Frame')
+      const b = actions.addNode(rootId, 'Frame')
+      actions.select(a)
+      actions.setSelection([b, a, b])
+      expect(selection()).toEqual([b, a])
+      actions.setSelection([])
+      expect(selection()).toEqual([])
+    })
+
+    it('setSelection refuses the root and unknown ids', () => {
+      const { actions, selection, rootId } = setup()
+      const a = actions.addNode(rootId, 'Frame')
+      actions.select(a)
+      expect(() => actions.setSelection([rootId])).toThrow('root')
+      expect(() => actions.setSelection(['nope'])).toThrow('No node')
+      expect(selection()).toEqual([a])
+    })
+
     it('clearSelection empties it', () => {
       const { actions, selection, rootId } = setup()
       actions.select(actions.addNode(rootId, 'Frame'))

@@ -12,7 +12,8 @@ import {
 } from '../../lib/resize.ts'
 import { addOffset } from '../../lib/udim2.ts'
 import { resolveProps } from '../../model/defaults.ts'
-import { drawnScale, isLaidOut } from '../../model/layout.ts'
+import { type Box, drawnScale, isLaidOut } from '../../model/layout.ts'
+import { boxBetween, elementsInBox } from '../../model/marquee.ts'
 import { topLevelNodes } from '../../model/tree.ts'
 import type { NodeId, UDim2 } from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
@@ -23,7 +24,7 @@ import {
   snapMove,
   snapResize,
 } from '../../model/snap.ts'
-import { screenOf, useViewStore } from '../../store/viewStore.ts'
+import { currentView, screenOf, useViewStore } from '../../store/viewStore.ts'
 
 // How far (in screen pixels) the pointer must move before a click becomes a
 // drag, so a slightly shaky click doesn't nudge anything.
@@ -48,7 +49,21 @@ function onScreen(guides: Guide[], origin: { x: number; y: number }): Guide[] {
   })
 }
 
-// What a drag does: move the selection, resize one element, or pan the view.
+// Where the pointer is, in game pixels from the screen's top-left corner.
+// The canvas area (the element with the pointer handlers) holds the zoomed
+// screen at the view's position, so: from the area's corner, less where
+// the screen sits in it, divided by the zoom.
+function gamePoint(event: ReactPointerEvent<HTMLElement>) {
+  const area = event.currentTarget.getBoundingClientRect()
+  const view = currentView(useViewStore.getState())
+  return {
+    x: (event.clientX - area.left - view.x) / view.zoom,
+    y: (event.clientY - area.top - view.y) / view.zoom,
+  }
+}
+
+// What a drag does: move the selection, resize one element, pan the view,
+// or draw a selection box.
 // The `kind` field tells them apart: this is called a "discriminated union".
 type DragAction =
   | {
@@ -74,6 +89,14 @@ type DragAction =
       snap: SnapContext | null
     }
   | {
+      kind: 'marquee'
+      // Where the box began, in game pixels (so it stays put on the design
+      // if the view is scrolled mid-drag).
+      start: { x: number; y: number }
+      // What was selected before: Shift + drag adds to it.
+      base: NodeId[]
+    }
+  | {
       kind: 'pan'
       // Where the pointer was at the last move. Panning isn't undone and
       // isn't rounded, so it can simply follow each move.
@@ -89,10 +112,12 @@ type Drag = DragAction & {
   started: boolean
 }
 
-// Click, Shift-click, drag to move, drag a handle to resize, and pan with
-// the middle button or Space + drag. "Pointer" events cover mouse, pen and
-// touch with one API. `scale` is the canvas zoom, used to turn screen pixels
-// into game pixels. Also returns the cursor to show.
+// Click, Shift-click, drag to move, drag a handle to resize, drag across
+// empty space to select with a box, and pan with the middle button or
+// Space + drag. "Pointer" events cover mouse, pen and touch with one API.
+// `scale` is the canvas zoom, used to turn screen pixels into game pixels.
+// Also returns the cursor to show, and the selection box to draw (null
+// when there isn't one), in game pixels.
 export function useCanvasPointer(scale: number) {
   // A ref holds the drag in progress without re-rendering on every move.
   const drag = useRef<Drag | null>(null)
@@ -103,6 +128,7 @@ export function useCanvasPointer(scale: number) {
   // The same two facts as state, just to pick the cursor.
   const [spaceDown, setSpaceDown] = useState(false)
   const [panning, setPanning] = useState(false)
+  const [marquee, setMarquee] = useState<Box | null>(null)
   const handTool = useViewStore((state) => state.tool === 'hand')
 
   useEffect(() => {
@@ -222,7 +248,14 @@ export function useCanvasPointer(scale: number) {
     const store = useDocumentStore.getState()
 
     if (!id) {
-      if (!event.shiftKey) store.clearSelection() // clicked empty space
+      // Empty space: a click clears the selection (Shift keeps it), and a
+      // drag from here draws a selection box.
+      if (!event.shiftKey) store.clearSelection()
+      beginDrag(event, {
+        kind: 'marquee',
+        start: gamePoint(event),
+        base: useDocumentStore.getState().selection,
+      })
       return
     }
 
@@ -280,6 +313,19 @@ export function useCanvasPointer(scale: number) {
     if (!current.started && Math.hypot(screenDx, screenDy) < DRAG_THRESHOLD) {
       return
     }
+
+    // A selection box changes only the selection, never the document, so
+    // it needs no undo step: select whatever the box touches right now.
+    if (current.kind === 'marquee') {
+      current.started = true
+      const box = boxBetween(current.start, gamePoint(event))
+      setMarquee(box)
+      const { document: doc, setSelection } = useDocumentStore.getState()
+      const hits = elementsInBox(doc, box, screenOf(useViewStore.getState()))
+      setSelection([...current.base, ...hits])
+      return
+    }
+
     const { updateProps, beginGroup } = useDocumentStore.getState()
     if (!current.started) {
       current.started = true
@@ -350,6 +396,7 @@ export function useCanvasPointer(scale: number) {
     if (drag.current?.pointerId !== event.pointerId) return
     if (drag.current.started) useDocumentStore.getState().endGroup()
     if (drag.current.kind === 'pan') setPanning(false)
+    setMarquee(null)
     useViewStore.getState().setGuides([]) // guides only show mid-drag
     drag.current = null
   }
@@ -370,5 +417,6 @@ export function useCanvasPointer(scale: number) {
     // A hand while Space is held or the hand tool is on, a closed hand
     // while panning.
     cursor: panning ? 'grabbing' : spaceDown || handTool ? 'grab' : undefined,
+    marquee,
   }
 }

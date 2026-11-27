@@ -32,6 +32,9 @@ export type DocumentState = {
   // Selects one element. With `additive` (Shift-click) it's added to the
   // selection instead, or removed if it was already selected.
   select: (id: NodeId, additive?: boolean) => void
+  // Replaces the whole selection with `ids` (repeats dropped), e.g. the
+  // elements under a selection box. Does nothing if that's already it.
+  setSelection: (ids: NodeId[]) => void
   clearSelection: () => void
 
   undo: () => void
@@ -159,6 +162,24 @@ export function createDocumentStore(
             } else {
               state.selection.push(id)
             }
+          })
+        },
+
+        setSelection: (ids) => {
+          const unique = [...new Set(ids)]
+          const { document, selection } = get()
+          for (const id of unique) {
+            getNode(document, id) // throws if the id doesn't exist
+            assertNotRoot(document, id, 'select')
+          }
+          // Skip the update when nothing changed, so a selection box that
+          // moves without touching anything new doesn't redraw the editor.
+          const same =
+            unique.length === selection.length &&
+            unique.every((id, i) => id === selection[i])
+          if (same) return
+          set((state) => {
+            state.selection = unique
           })
         },
 
