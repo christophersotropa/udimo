@@ -5,6 +5,9 @@ import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
   EASING_DIRECTION,
+  ITEM_LINE_ALIGNMENT,
+  UI_FLEX_ALIGNMENT,
+  UI_FLEX_MODE,
   EASING_STYLE,
   SCROLLING_DIRECTION,
   BORDER_MODE,
@@ -112,12 +115,16 @@ const color3 = (name: string, value: Color3) =>
   prop(name, { type: 'Color3', value })
 // An enum property whose enum has the same name as the property, like
 // FillDirection: Enum.FillDirection.
+// `enumName` is the enum's own name, for scripts (Enum.FillDirection.
+// Vertical); most share their property's name, but not all: HorizontalFlex
+// takes an Enum.UIFlexAlignment.
 function enumProp<T extends Record<string, number>>(
   name: string,
   table: T,
   item: keyof T & string,
+  enumName = name,
 ): Property {
-  return prop(name, { type: 'enum', enumName: name, item, token: table[item] })
+  return prop(name, { type: 'enum', enumName, item, token: table[item] })
 }
 
 // A FontFace. For its default font (Source Sans Pro, regular) Studio also
@@ -300,6 +307,20 @@ const MODIFIER_PROPERTIES: {
     udim('Padding', list.Padding),
     enumProp('SortOrder', SORT_ORDER, list.SortOrder),
     enumProp('VerticalAlignment', VERTICAL_ALIGNMENT, list.VerticalAlignment),
+    enumProp(
+      'HorizontalFlex',
+      UI_FLEX_ALIGNMENT,
+      list.HorizontalFlex,
+      'UIFlexAlignment',
+    ),
+    enumProp(
+      'VerticalFlex',
+      UI_FLEX_ALIGNMENT,
+      list.VerticalFlex,
+      'UIFlexAlignment',
+    ),
+    bool('Wraps', list.Wraps),
+    enumProp('ItemLineAlignment', ITEM_LINE_ALIGNMENT, list.ItemLineAlignment),
   ],
   UIGridLayout: (grid) => [
     udim2('CellPadding', grid.CellPadding),
@@ -332,6 +353,12 @@ const MODIFIER_PROPERTIES: {
     ),
     enumProp('SortOrder', SORT_ORDER, page.SortOrder),
     enumProp('VerticalAlignment', VERTICAL_ALIGNMENT, page.VerticalAlignment),
+  ],
+  UIFlexItem: (item) => [
+    enumProp('FlexMode', UI_FLEX_MODE, item.FlexMode, 'UIFlexMode'),
+    float('GrowRatio', item.GrowRatio),
+    enumProp('ItemLineAlignment', ITEM_LINE_ALIGNMENT, item.ItemLineAlignment),
+    float('ShrinkRatio', item.ShrinkRatio),
   ],
 }
 

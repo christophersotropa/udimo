@@ -62,6 +62,35 @@ export const EASING_STYLE = {
   Cubic: 10,
 } as const
 export const EASING_DIRECTION = { In: 0, Out: 1, InOut: 2 } as const
+// Flex on a UIListLayout (docs/reference/flex-layouts.rbxmx). How a
+// list shares out the room left over along a line: not at all (None), by
+// growing its children (Fill), or as space around or between them.
+export const UI_FLEX_ALIGNMENT = {
+  None: 0,
+  Fill: 1,
+  SpaceAround: 2,
+  SpaceBetween: 3,
+  SpaceEvenly: 4,
+} as const
+// Where a child sits across its line: Automatic follows the list's
+// alignment (or stretches, when the list flexes that way).
+export const ITEM_LINE_ALIGNMENT = {
+  Automatic: 0,
+  Start: 1,
+  Center: 2,
+  End: 3,
+  Stretch: 4,
+} as const
+// How a UIFlexItem's element grows into spare room and shrinks when there's
+// too little: neither (None: the list decides), grow only, shrink only,
+// both (Fill), or by GrowRatio and ShrinkRatio (Custom).
+export const UI_FLEX_MODE = {
+  None: 0,
+  Grow: 1,
+  Shrink: 2,
+  Fill: 3,
+  Custom: 4,
+} as const
 // Upright or slanted text (Roblox's FontStyle).
 export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
@@ -88,6 +117,9 @@ export type AutomaticSize = keyof typeof AUTOMATIC_SIZE
 export type ScrollingDirection = keyof typeof SCROLLING_DIRECTION
 export type EasingStyle = keyof typeof EASING_STYLE
 export type EasingDirection = keyof typeof EASING_DIRECTION
+export type UIFlexAlignment = keyof typeof UI_FLEX_ALIGNMENT
+export type ItemLineAlignment = keyof typeof ITEM_LINE_ALIGNMENT
+export type UIFlexMode = keyof typeof UI_FLEX_MODE
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

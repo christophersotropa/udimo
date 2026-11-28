@@ -25,6 +25,7 @@ import sizingReference from '../../../../docs/reference/sizing.rbxmx?raw'
 // page Frames beside it: one as inserted, one with settings changed
 // (build 57).
 import pageLayoutReference from '../../../../docs/reference/ui-page-layout.rbxmx?raw'
+import flexReference from '../../../../docs/reference/flex-layouts.rbxmx?raw'
 import { readRbxmx, type RawInstance } from '../import/readRbxmx.ts'
 import type { ModifierProps, Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
@@ -523,26 +524,33 @@ describe('escapeXml', () => {
   })
 })
 
-describe('matches the Studio reference file for UIPageLayout (build 57)', () => {
-  // The UIPageLayout inside the Frame called `frameName`, as propertiesOf
-  // gives it. Found by reading the file's tree, then picked from the
-  // file's UIPageLayouts by its place in file order (the order the
-  // tree is written in), so the test doesn't depend on which Frame
-  // Studio wrote first.
-  function studioLayoutIn(frameName: string): Map<string, string> {
-    const layouts: { parentName: unknown }[] = []
-    const visit = (instance: RawInstance, parent: RawInstance | null) => {
-      if (instance.className === 'UIPageLayout') {
-        const name = parent?.properties.get('Name')
-        layouts.push({ parentName: name?.type === 'string' && name.value })
-      }
-      for (const child of instance.children) visit(child, instance)
+// The `className` instance inside the instance called `parentName`, in a
+// Studio reference file, as propertiesOf gives it. Found by reading the
+// file's tree, then picked from the file's instances of that class by its
+// place in file order (the order the tree is written in), so the test
+// doesn't depend on which Frame Studio wrote first.
+function studioInstanceIn(
+  reference: string,
+  className: string,
+  parentName: string,
+): Map<string, string> {
+  const found: { parentName: unknown }[] = []
+  const visit = (instance: RawInstance, parent: RawInstance | null) => {
+    if (instance.className === className) {
+      const name = parent?.properties.get('Name')
+      found.push({ parentName: name?.type === 'string' && name.value })
     }
-    for (const top of readRbxmx(pageLayoutReference)) visit(top, null)
-    const index = layouts.findIndex((l) => l.parentName === frameName)
-    if (index === -1) throw new Error(`No UIPageLayout in ${frameName}`)
-    return allPropertiesOf(pageLayoutReference, 'UIPageLayout')[index]
+    for (const child of instance.children) visit(child, instance)
   }
+  for (const top of readRbxmx(reference)) visit(top, null)
+  const index = found.findIndex((f) => f.parentName === parentName)
+  if (index === -1) throw new Error(`No ${className} in ${parentName}`)
+  return allPropertiesOf(reference, className)[index]
+}
+
+describe('matches the Studio reference file for UIPageLayout (build 57)', () => {
+  const studioLayoutIn = (frameName: string) =>
+    studioInstanceIn(pageLayoutReference, 'UIPageLayout', frameName)
 
   // Ours: a Frame with a UIPageLayout set to `props`.
   function ourLayout(props: ModifierProps['UIPageLayout']) {
@@ -574,6 +582,62 @@ describe('matches the Studio reference file for UIPageLayout (build 57)', () => 
     // fails these tests instead of stopping the whole file.
     it.each([...mine])('%s', (name, value) => {
       expect(studioLayoutIn(frameName).get(name)).toBe(value)
+    })
+  })
+})
+
+describe('matches the Studio reference file for flex layouts (build 58)', () => {
+  // Ours: a Frame with `modifier` set to `props`.
+  function ours<K extends 'UIListLayout' | 'UIFlexItem'>(
+    modifier: K,
+    props: ModifierProps[K],
+  ) {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const frame = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(frame, modifier)
+    updateModifier(frame, modifier, props)
+    return propertiesOf(documentToRbxmx(store.getState().document), modifier)
+  }
+
+  describe.each([
+    ['Defaults', {}],
+    [
+      'Changed',
+      {
+        FillDirection: 'Horizontal',
+        HorizontalFlex: 'SpaceBetween',
+        VerticalFlex: 'Fill',
+        Wraps: true,
+        ItemLineAlignment: 'Center',
+      },
+    ],
+  ] as const)('the UIListLayout in %s', (frameName, props) => {
+    // Looked up inside each test, like the UIPageLayout ones.
+    it.each([...ours('UIListLayout', props)])('%s', (name, value) => {
+      expect(
+        studioInstanceIn(flexReference, 'UIListLayout', frameName).get(name),
+      ).toBe(value)
+    })
+  })
+
+  describe.each([
+    ['Item', {}],
+    [
+      'Grow',
+      {
+        FlexMode: 'Custom',
+        GrowRatio: 2,
+        ShrinkRatio: 0.5,
+        ItemLineAlignment: 'End',
+      },
+    ],
+    ['Fill', { FlexMode: 'Fill' }],
+  ] as const)('the UIFlexItem in %s', (frameName, props) => {
+    it.each([...ours('UIFlexItem', props)])('%s', (name, value) => {
+      expect(
+        studioInstanceIn(flexReference, 'UIFlexItem', frameName).get(name),
+      ).toBe(value)
     })
   })
 })

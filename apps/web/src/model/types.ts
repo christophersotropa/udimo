@@ -6,11 +6,14 @@ import type {
   ScrollingDirection,
   FillDirection,
   HorizontalAlignment,
+  ItemLineAlignment,
   ScaleType,
   SortOrder,
   TextTruncate,
   TextXAlignment,
   TextYAlignment,
+  UIFlexAlignment,
+  UIFlexMode,
   VerticalAlignment,
 } from './enums.ts'
 import type { FontFace } from './fonts.ts'
@@ -237,6 +240,14 @@ export type ModifierProps = {
     VerticalAlignment?: VerticalAlignment
     SortOrder?: SortOrder
     Padding?: UDim // the gap between children
+    // Flex: share out the room left over in each line, along it
+    // (HorizontalFlex in a row, VerticalFlex in a column) or across it.
+    HorizontalFlex?: UIFlexAlignment
+    VerticalFlex?: UIFlexAlignment
+    // Start a new line when the next child doesn't fit.
+    Wraps?: boolean
+    // Where children sit across their line (a UIFlexItem can override it).
+    ItemLineAlignment?: ItemLineAlignment
   }
   UIGridLayout: {
     // Children in a grid of equal cells, filling rows (Horizontal) or
@@ -272,6 +283,17 @@ export type ModifierProps = {
     ScrollWheelInputEnabled?: boolean
     TouchInputEnabled?: boolean
     GamepadInputEnabled?: boolean
+  }
+  UIFlexItem: {
+    // On a child of an element with a UIListLayout: how this one child
+    // grows into the line's spare room or shrinks when it's too full,
+    // overriding the list's own flex. GrowRatio and ShrinkRatio are only
+    // used with FlexMode Custom: a child with GrowRatio 2 gets twice the
+    // share of one with 1.
+    FlexMode?: UIFlexMode
+    GrowRatio?: number
+    ShrinkRatio?: number
+    ItemLineAlignment?: ItemLineAlignment
   }
 }
 export type ModifierClass = keyof ModifierProps

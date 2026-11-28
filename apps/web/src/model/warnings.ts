@@ -259,6 +259,24 @@ function pageClipWarnings(doc: UiDocument, id: NodeId): Warning[] {
   ]
 }
 
+// A UIFlexItem tells its element's parent list how to size it, so it
+// does nothing unless the parent has a UIListLayout.
+function flexItemWarnings(doc: UiDocument, id: NodeId): Warning[] {
+  const node = doc.nodes[id]
+  const parent = node.parentId === null ? null : doc.nodes[node.parentId]
+  if (!node.modifiers?.UIFlexItem || parent?.modifiers?.UIListLayout) return []
+  return [
+    {
+      key: `flexitem:${id}`,
+      nodeId: id,
+      level: 'info',
+      path: pathOf(doc, id),
+      message:
+        'Its UIFlexItem does nothing: only a parent with a UIListLayout uses it',
+    },
+  ]
+}
+
 // Siblings sharing a name: scripts find elements by name
 // (Window.BuyButton), so they can't tell those apart.
 function duplicateNameWarnings(doc: UiDocument): Warning[] {
@@ -325,6 +343,7 @@ export function exportWarnings(
       ...imageWarnings(doc, id),
       ...textWarnings(doc, id, measure),
       ...pageClipWarnings(doc, id),
+      ...flexItemWarnings(doc, id),
     ]),
     ...offScreenWarnings(doc),
     ...duplicateNameWarnings(doc),

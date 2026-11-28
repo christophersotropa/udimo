@@ -4,6 +4,9 @@ import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
   EASING_DIRECTION,
+  ITEM_LINE_ALIGNMENT,
+  UI_FLEX_ALIGNMENT,
+  UI_FLEX_MODE,
   EASING_STYLE,
   SCROLLING_DIRECTION,
   FILL_DIRECTION,
@@ -235,6 +238,10 @@ const MODIFIER_SOURCES: {
     VerticalAlignment: [['VerticalAlignment'], asEnum(VERTICAL_ALIGNMENT)],
     SortOrder: [['SortOrder'], asEnum(SORT_ORDER)],
     Padding: [['Padding'], asUDim],
+    HorizontalFlex: [['HorizontalFlex'], asEnum(UI_FLEX_ALIGNMENT)],
+    VerticalFlex: [['VerticalFlex'], asEnum(UI_FLEX_ALIGNMENT)],
+    Wraps: [['Wraps'], asBool],
+    ItemLineAlignment: [['ItemLineAlignment'], asEnum(ITEM_LINE_ALIGNMENT)],
   },
   UIGridLayout: {
     CellSize: [['CellSize'], asUDim2],
@@ -265,6 +272,12 @@ const MODIFIER_SOURCES: {
     ScrollWheelInputEnabled: [['ScrollWheelInputEnabled'], asBool],
     TouchInputEnabled: [['TouchInputEnabled'], asBool],
     GamepadInputEnabled: [['GamepadInputEnabled'], asBool],
+  },
+  UIFlexItem: {
+    FlexMode: [['FlexMode'], asEnum(UI_FLEX_MODE)],
+    GrowRatio: [['GrowRatio'], asNumber],
+    ShrinkRatio: [['ShrinkRatio'], asNumber],
+    ItemLineAlignment: [['ItemLineAlignment'], asEnum(ITEM_LINE_ALIGNMENT)],
   },
 }
 

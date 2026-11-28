@@ -7,6 +7,7 @@ import {
   sortForLayout,
 } from './arrange.ts'
 import { MODIFIER_DEFAULTS } from './modifiers.ts'
+import type { ModifierProps } from './types.ts'
 
 const AREA = { width: 300, height: 200 }
 
@@ -87,6 +88,149 @@ describe('arrangeList', () => {
       ['a', 100, 0],
       ['b', 200, 0],
     ])
+  })
+})
+
+describe('arrangeList with flex', () => {
+  // A row (300 × 200 area), with the flex options given.
+  const row = (change: Partial<ModifierProps['UIListLayout']> = {}) => ({
+    ...MODIFIER_DEFAULTS.UIListLayout,
+    FillDirection: 'Horizontal' as const,
+    ...change,
+  })
+  const withFlex = (
+    base: LayoutItem,
+    change: Partial<ModifierProps['UIFlexItem']>,
+  ): LayoutItem => ({
+    ...base,
+    flexItem: { ...MODIFIER_DEFAULTS.UIFlexItem, ...change },
+  })
+  const widths = (boxes: Map<string, { width: number }>) =>
+    [...boxes.values()].map((box) => box.width)
+  const heights = (boxes: Map<string, { height: number }>) =>
+    [...boxes.values()].map((box) => box.height)
+
+  it('Fill grows the children to share the spare room', () => {
+    const boxes = arrangeList(
+      [item('a', 50), item('b', 50)],
+      AREA,
+      row({ HorizontalFlex: 'Fill' }),
+    )
+    expect(widths(boxes)).toEqual([150, 150])
+    expect(positions(boxes)).toEqual([
+      ['a', 0, 0],
+      ['b', 150, 0],
+    ])
+  })
+
+  it('Fill shrinks children that don’t fit', () => {
+    const boxes = arrangeList(
+      [item('a', 150), item('b', 150), item('c', 150)],
+      AREA,
+      row({ HorizontalFlex: 'Fill' }),
+    )
+    expect(widths(boxes)).toEqual([100, 100, 100])
+  })
+
+  it('spaces children out with SpaceBetween, SpaceAround and SpaceEvenly', () => {
+    // Three 60 px children leave 120 px to share out.
+    const three = () => [item('a', 60), item('b', 60), item('c', 60)]
+    const xs = (flex: 'SpaceBetween' | 'SpaceAround' | 'SpaceEvenly') =>
+      positions(arrangeList(three(), AREA, row({ HorizontalFlex: flex }))).map(
+        ([, x]) => x,
+      )
+    expect(xs('SpaceBetween')).toEqual([0, 120, 240])
+    expect(xs('SpaceAround')).toEqual([20, 120, 220])
+    expect(xs('SpaceEvenly')).toEqual([30, 120, 210])
+  })
+
+  it('wraps onto a new line when the next child doesn’t fit, Padding apart', () => {
+    const four = [item('a'), item('b'), item('c'), item('d')]
+    const boxes = arrangeList(
+      four,
+      AREA,
+      row({ Wraps: true, Padding: { s: 0, o: 10 } }),
+    )
+    expect(positions(boxes)).toEqual([
+      ['a', 0, 0],
+      ['b', 110, 0],
+      ['c', 0, 50],
+      ['d', 110, 50],
+    ])
+  })
+
+  it('Fill across stretches the children to the list’s height', () => {
+    const boxes = arrangeList(
+      [item('a'), item('b')],
+      AREA,
+      row({ VerticalFlex: 'Fill' }),
+    )
+    expect(heights(boxes)).toEqual([200, 200])
+  })
+
+  it('Fill across shares the height out between wrapped lines', () => {
+    // Two lines of 40 px in 200 px: each line (and child) becomes 100 px.
+    const boxes = arrangeList(
+      [item('a', 200), item('b', 200)],
+      AREA,
+      row({ Wraps: true, VerticalFlex: 'Fill' }),
+    )
+    expect(heights(boxes)).toEqual([100, 100])
+    expect(positions(boxes)).toEqual([
+      ['a', 0, 0],
+      ['b', 0, 100],
+    ])
+  })
+
+  it('aligns children across their line with ItemLineAlignment', () => {
+    // The line is as tall as its tallest child (80 px).
+    const boxes = arrangeList(
+      [item('a', 100, 40), item('b', 100, 80)],
+      AREA,
+      row({ Wraps: true, ItemLineAlignment: 'Center' }),
+    )
+    expect(boxes.get('a')).toMatchObject({ y: 20, height: 40 })
+  })
+
+  it('shares spare room by a UIFlexItem’s grow ratio', () => {
+    // 200 px spare: GrowRatio 2 takes two thirds, Grow (1) one third.
+    const boxes = arrangeList(
+      [
+        withFlex(item('a', 50), { FlexMode: 'Custom', GrowRatio: 2 }),
+        withFlex(item('b', 50), { FlexMode: 'Grow' }),
+      ],
+      AREA,
+      row(),
+    )
+    const [a, b] = widths(boxes)
+    expect(a).toBeCloseTo(50 + 400 / 3)
+    expect(b).toBeCloseTo(50 + 200 / 3)
+  })
+
+  it('lets a UIFlexItem override the list', () => {
+    // The list fills, but Shrink never grows, so the other takes it all.
+    const boxes = arrangeList(
+      [item('a', 50), withFlex(item('b', 50), { FlexMode: 'Shrink' })],
+      AREA,
+      row({ HorizontalFlex: 'Fill' }),
+    )
+    expect(widths(boxes)).toEqual([250, 50])
+    // Its own ItemLineAlignment beats the list's alignment.
+    const end = arrangeList(
+      [withFlex(item('a'), { ItemLineAlignment: 'End' })],
+      AREA,
+      row(),
+    )
+    expect(end.get('a')).toMatchObject({ y: 160 })
+  })
+
+  it('stacks a column the same way, along its height', () => {
+    const boxes = arrangeList([item('a', 100, 50), item('b', 100, 50)], AREA, {
+      ...MODIFIER_DEFAULTS.UIListLayout,
+      VerticalFlex: 'Fill',
+      HorizontalFlex: 'Fill',
+    })
+    expect(boxes.get('b')).toEqual({ x: 0, y: 100, width: 300, height: 100 })
   })
 })
 

@@ -62,6 +62,12 @@ export const CATALOG: CatalogEntry[] = [
   },
   {
     kind: 'modifier',
+    className: 'UIFlexItem',
+    group: 'Layout',
+    hint: 'Modifier',
+  },
+  {
+    kind: 'modifier',
     className: 'UIPadding',
     group: 'Layout',
     hint: 'Modifier',
