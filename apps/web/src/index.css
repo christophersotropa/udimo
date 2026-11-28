@@ -59,6 +59,11 @@
   --color-warn: #e3c84a;
   --color-danger: #e5534b;
   --color-guide: #e0457b; /* alignment guides */
+  /* The logic graph's two roles (editor/logic): events start a chain
+     (green, "go"), actions do something. Neither is the accent, so a node's
+     role never looks like a selection. */
+  --color-event: #4cb782;
+  --color-action: #9d86e9;
   --color-screen: #232323; /* the game screen's checkerboard... */
   --color-screen-alt: #1d1d1d; /* ...and its other square */
 
@@ -158,4 +163,42 @@ textarea {
 /* Native <dialog>: the dimmed layer behind it. */
 dialog::backdrop {
   background: rgb(0 0 0 / 0.6);
+}
+
+/* The logic graph (editor/logic/LogicEditor.tsx): React Flow drawn with the
+   editor's tokens. React Flow reads these --xy-* variables; its own styles
+   sit in a CSS layer, so these win without !important. */
+.logic-graph {
+  --xy-background-color: var(--color-app);
+  --xy-background-pattern-color: var(--color-line);
+  --xy-edge-stroke: var(--color-muted);
+  --xy-edge-stroke-width: 2;
+  --xy-edge-stroke-selected: var(--color-select);
+  --xy-connectionline-stroke: var(--color-select);
+  --xy-connectionline-stroke-width: 2;
+  --xy-selection-background-color: var(--color-select-soft);
+  --xy-selection-border: 1px solid var(--color-select);
+  --xy-controls-button-background-color: var(--color-raised);
+  --xy-controls-button-background-color-hover: var(--color-hover);
+  --xy-controls-button-color: var(--color-muted);
+  --xy-controls-button-color-hover: var(--color-ink);
+  --xy-controls-button-border-color: var(--color-line);
+  --xy-controls-box-shadow: 0 0 0 1px var(--color-line);
+  --xy-attribution-background-color: transparent;
+}
+.logic-graph .react-flow__attribution a {
+  color: var(--color-faint);
+}
+/* The round dots wires join: hollow, filling in under the pointer or
+   while a wire you're drawing could join them. */
+.logic-graph .graph-handle {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--color-muted);
+  background-color: var(--color-raised);
+}
+.logic-graph .graph-handle:hover,
+.logic-graph .graph-handle.connectingto.valid {
+  border-color: var(--color-select);
+  background-color: var(--color-select);
 }

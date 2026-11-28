@@ -21,6 +21,7 @@ export function StatusBar() {
   const zoom = useViewStore(useShallow((state) => currentView(state).zoom))
   const status = useViewStore((state) => state.saveStatus)
   const notice = useViewStore((state) => state.notice)
+  const design = useViewStore((state) => state.mode === 'design')
   const { setSnapping, fit } = useViewStore.getState()
   const note = SAVE_NOTES[status]
 
@@ -74,24 +75,30 @@ export function StatusBar() {
             <Divider />
           </>
         )}
-        <button
-          type="button"
-          onClick={() => setSnapping(!snapping)}
-          title="Snap to the parent and siblings while dragging (hold ⌘ to skip once)"
-          className="hover:text-ink"
-        >
-          Snap {snapping ? 'on' : 'off'}
-        </button>
-        <Divider />
-        <button
-          type="button"
-          onClick={fit}
-          title="Zoom to fit (⌘0)"
-          className="tabular-nums hover:text-ink"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <Divider />
+        {/* Snapping and zoom belong to the Design canvas (the graph
+            has its own zoom buttons). */}
+        {design && (
+          <>
+            <button
+              type="button"
+              onClick={() => setSnapping(!snapping)}
+              title="Snap to the parent and siblings while dragging (hold ⌘ to skip once)"
+              className="hover:text-ink"
+            >
+              Snap {snapping ? 'on' : 'off'}
+            </button>
+            <Divider />
+            <button
+              type="button"
+              onClick={fit}
+              title="Zoom to fit (⌘0)"
+              className="tabular-nums hover:text-ink"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <Divider />
+          </>
+        )}
         <span className={note.warn ? 'text-warn' : undefined}>{note.text}</span>
       </div>
     </footer>

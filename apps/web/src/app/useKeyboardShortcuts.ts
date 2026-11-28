@@ -50,6 +50,8 @@ const NUDGE_BIG = 10
 //   Tools          V select, H hand (pan)
 //   Deselect       Escape
 // Inside a text box they're all left alone, so typing works normally.
+// On the Logic side only undo, redo, files and ⌘K apply (LogicEditor has
+// its own keys).
 // `enabled` false turns them all off (while the small-screen notice covers
 // the editor, so Backspace there can't delete something behind it).
 export function useKeyboardShortcuts(enabled = true) {
@@ -73,6 +75,16 @@ export function useKeyboardShortcuts(enabled = true) {
       // metaKey is Cmd on a Mac; ctrlKey is Ctrl everywhere.
       const command = event.metaKey || event.ctrlKey
       const key = event.key.toLowerCase()
+
+      // On the Logic side the graph has its own keys (Delete removes graph
+      // nodes, not elements), so only undo, redo and the file shortcuts
+      // apply there.
+      if (
+        useViewStore.getState().mode === 'logic' &&
+        !(command && ['z', 'y', 's', 'o', 'e'].includes(key))
+      ) {
+        return
+      }
 
       // preventDefault() stops the browser's own meaning for the key:
       // Cmd+D would add a bookmark, arrows would scroll the page,

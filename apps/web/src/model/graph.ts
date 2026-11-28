@@ -139,3 +139,41 @@ export function canTarget(
     element.className === 'TextButton' || element.className === 'ImageButton'
   )
 }
+
+// True if a wire may run from `from` to `to`: both exist, `to` is an
+// action (events only start chains), and it wouldn't make a loop (`from`
+// mustn't already come after `to`). A wire leaving `from` that's already
+// there is fine: the new one replaces it (see connectGraphNodes).
+export function canConnect(
+  graph: LogicGraph,
+  from: GraphNodeId,
+  to: GraphNodeId,
+): boolean {
+  const target = graph.nodes[to]
+  if (!graph.nodes[from] || !target || from === to || isEvent(target)) {
+    return false
+  }
+  return !chainFrom(graph, to).some((node) => node.id === from)
+}
+
+// The node kinds the "Add node" menu lists for a search, events first,
+// matching the title, the hint or the kind's own name. `actionsOnly` when
+// the new node will be wired after another (only actions can be).
+export function searchGraphKinds(
+  query: string,
+  actionsOnly = false,
+): GraphNodeKind[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  return (Object.keys(GRAPH_NODE_KINDS) as GraphNodeKind[])
+    .filter((kind) => {
+      const info = GRAPH_NODE_KINDS[kind]
+      if (actionsOnly && info.role !== 'action') return false
+      const text = `${info.title} ${info.hint} ${kind}`.toLowerCase()
+      return words.every((word) => text.includes(word))
+    })
+    .sort(
+      (a, b) =>
+        Number(GRAPH_NODE_KINDS[a].role === 'action') -
+        Number(GRAPH_NODE_KINDS[b].role === 'action'),
+    )
+}
