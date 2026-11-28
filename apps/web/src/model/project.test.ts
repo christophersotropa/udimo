@@ -7,7 +7,9 @@ import {
   parseProject,
   serializeProject,
 } from './project.ts'
+import { chain, shopDocument, withLogic } from './testGraphs.ts'
 import { PICTURE } from './testPictures.ts'
+import type { UiDocument } from './types.ts'
 
 // The parsed shape of a project file, loosely typed so tests can break it.
 type FileData = {
@@ -310,5 +312,56 @@ describe('preview pictures in project files', () => {
     const data = JSON.parse(serializeProject(doc))
     data.document.nodes[id].previewImage = '../../etc'
     expectRejected(JSON.stringify(data), 'invalid preview image')
+  })
+})
+
+describe('logic graphs in project files', () => {
+  // The shop with "pressed → show the window → hide the button".
+  function withGraph() {
+    const { doc, buy, window } = shopDocument()
+    const logic = chain(['Activated', buy], ['Show', window], ['Hide', buy])
+    return { doc: withLogic(doc, logic), buy }
+  }
+  // The saved file as data, to break one thing at a time.
+  const fileOf = (doc: UiDocument) => JSON.parse(serializeProject(doc))
+
+  it('are kept when saving and opening', () => {
+    const { doc } = withGraph()
+    expect(parseProject(serializeProject(doc))).toEqual(doc)
+  })
+
+  it('skip graph nodes of a kind this version doesn’t know, with their wires', () => {
+    const { doc } = withGraph()
+    const data = fileOf(doc)
+    data.document.logic.nodes.g2.kind = 'PlaySound' // from a newer Udimo
+    const { logic } = parseProject(JSON.stringify(data))
+    expect(Object.keys(logic!.nodes)).toEqual(['g1', 'g3'])
+    expect(logic!.wires).toEqual([])
+  })
+
+  it('keep a graph node whose element is gone, without the element', () => {
+    const { doc } = withGraph()
+    const data = fileOf(doc)
+    data.document.logic.nodes.g3.element = 'deleted'
+    const { logic } = parseProject(JSON.stringify(data))
+    expect(logic!.nodes.g3.element).toBeNull()
+  })
+
+  it('refuse a broken graph node', () => {
+    const { doc } = withGraph()
+    const data = fileOf(doc)
+    data.document.logic.nodes.g2.at = 'top left'
+    expectRejected(JSON.stringify(data), 'broken node')
+  })
+
+  it('refuse wires that lead to an event, or a second wire out', () => {
+    const { doc } = withGraph()
+    const intoEvent = fileOf(doc)
+    intoEvent.document.logic.wires.push({ id: 'back', from: 'g3', to: 'g1' })
+    expectRejected(JSON.stringify(intoEvent), 'broken wire')
+
+    const twoOut = fileOf(doc)
+    twoOut.document.logic.wires.push({ id: 'extra', from: 'g1', to: 'g3' })
+    expectRejected(JSON.stringify(twoOut), 'broken wire')
   })
 })

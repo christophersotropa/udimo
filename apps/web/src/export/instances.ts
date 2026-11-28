@@ -25,6 +25,7 @@ import {
 } from '../model/enums.ts'
 import { FONTS, resolveFontFace } from '../model/fonts.ts'
 import { MODIFIER_CLASSES, resolveModifier } from '../model/modifiers.ts'
+import { LOGIC_SCRIPT_NAME, logicScriptSource } from './logic.ts'
 import { BUTTON_SCRIPT_NAME, buttonScriptSource } from './scripts.ts'
 import type {
   Color3,
@@ -388,6 +389,8 @@ function modifierInstances(doc: UiDocument, id: NodeId): ExportInstance[] {
 // The whole document as instances, starting from the ScreenGui.
 // `resetOnSpawn` is the ScreenGui's ResetOnSpawn (see export/options.ts).
 // `buttonScript` adds the button-stubs LocalScript (see export/scripts.ts).
+// The logic graph's LocalScript (export/logic.ts) is always added when the
+// graph does something.
 export function exportTree(
   doc: UiDocument,
   {
@@ -408,12 +411,16 @@ export function exportTree(
     }
   }
   const root = build(doc.rootId)
-  const source = buttonScript ? buttonScriptSource(doc) : null
-  if (source) {
+  const scripts: [name: string, source: string | null][] = [
+    [LOGIC_SCRIPT_NAME, logicScriptSource(doc)],
+    [BUTTON_SCRIPT_NAME, buttonScript ? buttonScriptSource(doc) : null],
+  ]
+  for (const [name, source] of scripts) {
+    if (!source) continue
     root.children.push({
       className: 'LocalScript',
       properties: [
-        string('Name', BUTTON_SCRIPT_NAME),
+        string('Name', name),
         prop('Source', { type: 'source', value: source }),
       ],
       children: [],
@@ -424,7 +431,7 @@ export function exportTree(
 
 // How many instances a tree holds, counting itself: what Studio's Explorer
 // will show once the file is inserted (the ScreenGui, every element, every
-// modifier, and the LocalScript if there is one).
+// modifier, and any LocalScripts).
 export function countInstances(instance: ExportInstance): number {
   return instance.children.reduce(
     (total, child) => total + countInstances(child),

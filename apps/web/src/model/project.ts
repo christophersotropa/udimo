@@ -20,6 +20,14 @@ import {
   VERTICAL_ALIGNMENT,
 } from './enums.ts'
 import { FONTS } from './fonts.ts'
+import {
+  GRAPH_NODE_KINDS,
+  type GraphNode,
+  type GraphNodeId,
+  isEvent,
+  type LogicGraph,
+  type Wire,
+} from './graph.ts'
 import { isSafeImageDataUrl, withUsedImagesOnly } from './previewImages.ts'
 import type {
   ClassName,
@@ -405,6 +413,80 @@ function readImages(value: unknown): Record<string, PreviewImage> {
   return images
 }
 
+// The logic graph (model/graph.ts), checked like the elements. Graph nodes
+// of a kind this version doesn't know (maybe from a newer file) are
+// skipped with their wires, so the rest still opens. An element that's
+// gone just leaves its graph node without one. Returns undefined when
+// there's no graph.
+function readLogic(
+  value: unknown,
+  nodes: Record<NodeId, UiNode>,
+): LogicGraph | undefined {
+  if (value === undefined) return undefined
+  if (
+    !isRecord(value) ||
+    !isRecord(value.nodes) ||
+    !Array.isArray(value.wires)
+  ) {
+    fail('The logic graph can’t be read.')
+  }
+  const graphNodes: Record<GraphNodeId, GraphNode> = {}
+  const skipped = new Set<string>()
+  for (const [id, raw] of Object.entries(value.nodes)) {
+    const ok =
+      isSafeId(id) &&
+      isRecord(raw) &&
+      raw.id === id &&
+      typeof raw.kind === 'string' &&
+      isVector2(raw.at) &&
+      (raw.element === null || isString(raw.element))
+    if (!ok) fail('The logic graph has a broken node.')
+    if (!Object.hasOwn(GRAPH_NODE_KINDS, raw.kind as string)) {
+      skipped.add(id)
+      continue
+    }
+    const element = raw.element as string | null
+    const at = raw.at as { x: number; y: number }
+    graphNodes[id] = {
+      id,
+      kind: raw.kind as GraphNode['kind'],
+      at: { x: at.x, y: at.y },
+      element:
+        element !== null && Object.hasOwn(nodes, element) ? element : null,
+    }
+  }
+
+  const wires: Wire[] = []
+  const wireIds = new Set<string>()
+  const leaving = new Set<GraphNodeId>()
+  for (const raw of value.wires) {
+    if (!isRecord(raw) || !isString(raw.id) || !isSafeId(raw.id)) {
+      fail('The logic graph has a broken wire.')
+    }
+    const { id, from, to } = raw as Record<string, unknown>
+    if (!isString(from) || !isString(to))
+      fail('The logic graph has a broken wire.')
+    if (skipped.has(from) || skipped.has(to)) continue
+    const target = Object.hasOwn(graphNodes, to) ? graphNodes[to] : undefined
+    // Wires join graph nodes that are there, lead to an action, never
+    // back to where they start, and only one leaves each graph node.
+    if (
+      !Object.hasOwn(graphNodes, from) ||
+      !target ||
+      isEvent(target) ||
+      from === to ||
+      leaving.has(from) ||
+      wireIds.has(id as string)
+    ) {
+      fail('The logic graph has a broken wire.')
+    }
+    leaving.add(from)
+    wireIds.add(id as string)
+    wires.push({ id: id as string, from, to })
+  }
+  return { nodes: graphNodes, wires }
+}
+
 function readDocument(value: unknown): UiDocument {
   if (!isRecord(value) || !isRecord(value.nodes) || !isString(value.rootId)) {
     fail('The project has no document in it.')
@@ -454,7 +536,9 @@ function readDocument(value: unknown): UiDocument {
       delete node.previewImage
     }
   }
-  return Object.keys(images).length > 0
-    ? { rootId, nodes, images }
-    : { rootId, nodes }
+  const doc: UiDocument = { rootId, nodes }
+  if (Object.keys(images).length > 0) doc.images = images
+  const logic = readLogic(value.logic, nodes)
+  if (logic) doc.logic = logic
+  return doc
 }

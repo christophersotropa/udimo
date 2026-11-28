@@ -1,3 +1,4 @@
+import type { LogicGraph } from './graph.ts'
 import type {
   ApplyStrokeMode,
   AutomaticSize,
@@ -345,4 +346,7 @@ export type UiDocument = {
   // Editor-only: preview pictures, by key (UiNode.previewImage). One
   // picture used by six elements is stored once.
   images?: Record<string, PreviewImage>
+  // What the UI does when it's used (see model/graph.ts), exported as a
+  // LocalScript. Missing until the first graph node is added.
+  logic?: LogicGraph
 }
