@@ -61,8 +61,8 @@ export const MODIFIER_DEFAULTS: {
   },
   UIPageLayout: {
     FillDirection: 'Horizontal',
-    HorizontalAlignment: 'Center',
-    VerticalAlignment: 'Center',
+    HorizontalAlignment: 'Left', // Studio's default, from the reference file
+    VerticalAlignment: 'Top',
     SortOrder: 'LayoutOrder',
     Padding: NO_SPACE,
     Animated: true,

@@ -152,7 +152,7 @@ describe('arrangeGrid', () => {
 })
 
 describe('arrangePages', () => {
-  const pages = MODIFIER_DEFAULTS.UIPageLayout // Horizontal, centred
+  const pages = MODIFIER_DEFAULTS.UIPageLayout // Horizontal, top-left
   // Three full-size pages, like most page layouts.
   const three = () => [
     item('a', 300, 200),
@@ -196,8 +196,13 @@ describe('arrangePages', () => {
   })
 
   it('aligns smaller pages, each keeping its own size', () => {
+    const centred = {
+      ...pages,
+      HorizontalAlignment: 'Center' as const,
+      VerticalAlignment: 'Center' as const,
+    }
     const small = [item('a', 100, 40), item('b', 200, 100)]
-    const boxes = arrangePages(small, AREA, pages)
+    const boxes = arrangePages(small, AREA, centred)
     // The shown page is centred both ways; the next one starts right
     // after it and is centred across the row.
     expect(positions(boxes)).toEqual([
@@ -207,14 +212,9 @@ describe('arrangePages', () => {
     expect(boxes.get('b')).toMatchObject({ width: 200, height: 100 })
   })
 
-  it('aligns to the top-left corner when asked', () => {
-    const corner = {
-      ...pages,
-      HorizontalAlignment: 'Left' as const,
-      VerticalAlignment: 'Top' as const,
-    }
+  it('aligns to the top-left corner by default, like Studio', () => {
     const small = [item('a', 100, 40), item('b', 100, 40)]
-    expect(positions(arrangePages(small, AREA, corner, 'b'))).toEqual([
+    expect(positions(arrangePages(small, AREA, pages, 'b'))).toEqual([
       ['a', -100, 0],
       ['b', 0, 0],
     ])

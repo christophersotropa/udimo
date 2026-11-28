@@ -566,8 +566,6 @@ describe('matches the Studio reference file for UIPageLayout (build 57)', () => 
         EasingStyle: 'Quart',
         Padding: { s: 0, o: 2 },
         TweenTime: 0.5,
-        HorizontalAlignment: 'Left',
-        VerticalAlignment: 'Top',
       },
     ],
   ] as const)('the %s UIPageLayout', (frameName, props) => {
