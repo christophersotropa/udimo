@@ -70,6 +70,12 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 ### Phase 4 — Interactions, scripts and animation
 
 - A node graph first (like Blueprints): event nodes (Activated, MouseEnter), action nodes (set Visible, tween, fire a RemoteEvent) and logic. It's data in the document, compiled to a readable LocalScript by `export/`
+- Decided (Nov 2026):
+  - **One way only.** Graphs are made in Udimo, saved in the project file, and exported as code. Code is never turned back into a graph: a LocalScript can hold any Luau, so that would be a decompiler. Importing a `.rbxmx` lists its scripts as left out, as it does now.
+  - **One graph per ScreenGui**, exported as one LocalScript (may change later).
+  - **The node canvas uses React Flow** (`@xyflow/react`, MIT), from build 60.
+  - **The graph editor sits behind a Design / Logic switch in the top bar** (to be reviewed once it's in use).
+  - **Intuitive but professional.** Wires show the order things happen in; each node's settings live inside it. Value wires only come with logic (build 64).
 - Interaction presets later, as ready-made graphs: this button opens that frame, tabs, toggles, close buttons
 - Hover and press states
 - Tween animations on a simple timeline (TweenService)
@@ -295,8 +301,22 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 
 Showing images by Roblox asset ID is on hold: it needs Roblox's legacy thumbnail API through a server function, and Roblox's Terms of Use need checking first (build 46 research).
 
-Each of 49–53, 57 and 58 starts with a reference `.rbxmx` saved from Studio (see above). Importing `.rbxmx` (55–56, Phase 2) was moved ahead of 51–54 in November 2026. Build 54 was "More of Roblox's built-in fonts" until late November 2026, when the selection box took its place; the fonts build is saved for later (it starts with a reference `.rbxmx` too). After these: more fonts, the node graph (Phase 4), then AI (Phase 3).
+Each of 49–53, 57 and 58 starts with a reference `.rbxmx` saved from Studio (see above). Importing `.rbxmx` (55–56, Phase 2) was moved ahead of 51–54 in November 2026. Build 54 was "More of Roblox's built-in fonts" until late November 2026, when the selection box took its place; the fonts build is saved for later (it starts with a reference `.rbxmx` too). After these: the node graph (Phase 4, below), then AI (Phase 3).
 
-Also saved for later: Alt + drag to draw a selection box inside an element and select its children, for designs where a full-screen background Frame leaves no empty canvas to start a box from (follows build 54).
+Also saved for later: more of Roblox's built-in fonts (the old build 54; it starts with a reference `.rbxmx`). Alt + drag to draw a selection box inside an element and select its children, for designs where a full-screen background Frame leaves no empty canvas to start a box from (follows build 54).
 
 Tag `v0.1.0` (the end of Phase 1) when the project owner says so. It's a separate step, not part of a build.
+
+## Third sprint: the node graph
+
+Phase 4's first part (see its decisions above). Hover and press states, the tween timeline and RemoteEvents come after these.
+
+| #   | Build                                                                                                                                                        | Commit                                                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| 59  | Graph data and compiler, no UI yet: the graph saved in the project, first nodes (pressed, hover, show, hide, toggle), a readable LocalScript in both exports | `feat(model): logic graph and LocalScript compiler`   |
+| 60  | Logic editor: Design / Logic switch, node canvas (React Flow), add nodes from a right-click search, connect and delete wires, undo                           | `feat(logic): node graph editor`                      |
+| 61  | Element references: drag from the Explorer, pick an element on a node, warnings when one is renamed or deleted                                               | `feat(logic): element references`                     |
+| 62  | Live code preview beside the graph, highlighting the selected node's lines                                                                                   | `feat(logic): live code preview`                      |
+| 63  | More actions: set text, set a property, tween (TweenService), wait                                                                                           | `feat(logic): text, property, tween and wait actions` |
+| 64  | Logic: branch, compare, variables, with value wires                                                                                                          | `feat(logic): branches, comparisons and variables`    |
+| 65  | Presets as ready-made graphs: open a frame, close button, tabs, toggle                                                                                       | `feat(logic): interaction presets`                    |
