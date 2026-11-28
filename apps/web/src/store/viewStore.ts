@@ -30,6 +30,10 @@ export type PanelDrag = {
 // What a left-drag on the canvas does: select and move, or pan the view.
 export type Tool = 'select' | 'hand'
 
+// What the middle of the editor shows: the UI's canvas (Design) or its
+// logic graph (Logic). The top bar switches between them.
+export type EditorMode = 'design' | 'logic'
+
 // An open right-click menu: where it is on the page, and the element it's
 // about (the ScreenGui for empty canvas). `insertOnly` opens just the
 // Insert Object list (from a "+" button).
@@ -54,6 +58,7 @@ export type ModifierReveal = { id: NodeId; modifier: ModifierClass }
 // touch the document store at all.
 
 export type ViewState = {
+  mode: EditorMode
   device: DeviceId
   // The canvas area's size, kept up to date by the Canvas.
   area: ScreenSize
@@ -91,6 +96,7 @@ export type ViewState = {
   // failed (error); null when the dialog is closed.
   importReport: (ImportSummary & { error?: string }) | null
 
+  setMode: (mode: EditorMode) => void
   setDevice: (device: DeviceId) => void
   setArea: (area: ScreenSize) => void
   fit: () => void
@@ -142,6 +148,7 @@ let noticeTimer: ReturnType<typeof setTimeout> | undefined
 
 export function createViewStore() {
   return create<ViewState>()((set, get) => ({
+    mode: 'design',
     device: 'pc',
     area: { width: 0, height: 0 },
     custom: null,
@@ -160,6 +167,8 @@ export function createViewStore() {
     modifierReveal: null,
     importReport: null,
 
+    // Switching closes the right-click menu, which belongs to the other side.
+    setMode: (mode) => set({ mode, contextMenu: null }),
     // A new device starts fitted, since the old zoom may not suit it.
     setDevice: (device) => set({ device, custom: null }),
     setArea: (area) => set({ area }),

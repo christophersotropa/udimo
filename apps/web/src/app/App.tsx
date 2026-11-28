@@ -6,7 +6,7 @@ import { StatusBar } from '../editor/StatusBar.tsx'
 import { TopBar } from '../editor/topbar/TopBar.tsx'
 import { PanelDropPreview } from '../editor/panels/PanelDropPreview.tsx'
 import { PanelResizer } from '../editor/panels/PanelResizer.tsx'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { SmallScreenNotice } from '../editor/SmallScreenNotice.tsx'
 import { useWindowSize } from '../editor/useWindowSize.ts'
 import { tooSmallForEditor } from '../editor/smallScreen.ts'
@@ -18,6 +18,10 @@ import {
 } from '../store/panelLayout.ts'
 import { useViewStore } from '../store/viewStore.ts'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts.ts'
+
+// The Logic side, loaded the first time you open it: it brings React Flow,
+// which the Design side doesn't need, so the editor opens faster.
+const LogicEditor = lazy(() => import('../editor/logic/LogicEditor.tsx'))
 
 // The editor fills the window exactly (h-svh), so the page itself never
 // scrolls. overflow-clip (not hidden) means it can't be scrolled at all,
@@ -58,6 +62,7 @@ function Editor({
   panels: PanelLayout
   covered: boolean
 }) {
+  const mode = useViewStore((state) => state.mode)
   return (
     <div
       inert={covered}
@@ -83,7 +88,15 @@ function Editor({
           className="grid min-h-0 min-w-0"
           style={{ gridColumn: canvasColumn(panels), gridRow: '1 / 3' }}
         >
-          <Canvas />
+          {/* Design: the UI's canvas. Logic: its graph (Explorer and
+              Properties stay, for the elements the graph works on). */}
+          {mode === 'design' ? (
+            <Canvas />
+          ) : (
+            <Suspense fallback={<div className="bg-app" />}>
+              <LogicEditor />
+            </Suspense>
+          )}
         </div>
         <PropertiesPanel />
         {/* Each side's resize edge, the full height of the workspace. */}

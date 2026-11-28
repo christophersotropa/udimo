@@ -1,6 +1,6 @@
 import { DEVICES, type DeviceId } from '../../model/screen.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
-import { useViewStore } from '../../store/viewStore.ts'
+import { type EditorMode, useViewStore } from '../../store/viewStore.ts'
 import { ExportDialog } from '../export/ExportDialog.tsx'
 import { ImportReportDialog } from '../import/ImportReportDialog.tsx'
 import { CursorIcon, HandIcon } from '../panels/icons.tsx'
@@ -10,11 +10,13 @@ import { AppMenu } from './AppMenu.tsx'
 import { CommandBar } from './CommandBar.tsx'
 
 // The bar across the top, in three parts: the Udimo menu (File, Edit,
-// View, Insert, Arrange) and the design's name on the left; the command
-// field in the middle; the tools, device and Export on the right.
+// View, Insert, Arrange), the design's name and the Design / Logic switch
+// on the left; the command field in the middle; the tools, device (on the
+// Design side) and Export on the right.
 // The middle column is "auto" between two equal "1fr" columns, which keeps
 // the command field centered whatever the sides hold.
 export function TopBar() {
+  const mode = useViewStore((state) => state.mode)
   const exportOpen = useViewStore((state) => state.exportOpen)
   const setExportOpen = useViewStore((state) => state.setExportOpen)
 
@@ -23,13 +25,19 @@ export function TopBar() {
       <div className="flex min-w-0 items-center gap-1">
         <AppMenu />
         <DesignName />
+        <ModeSwitch />
       </div>
 
       <CommandBar />
 
       <div className="flex items-center justify-end gap-2">
-        <Tools />
-        <DeviceTabs />
+        {/* The tools and devices are the Design canvas's. */}
+        {mode === 'design' && (
+          <>
+            <Tools />
+            <DeviceTabs />
+          </>
+        )}
         <Button variant="primary" onClick={() => setExportOpen(true)}>
           Export
         </Button>
@@ -51,6 +59,25 @@ function DesignName() {
       <span className="text-faint">/</span>
       <span className="truncate text-muted">{name}</span>
     </p>
+  )
+}
+
+// Design (the canvas) or Logic (the graph), after the design's name.
+function ModeSwitch() {
+  const mode = useViewStore((state) => state.mode)
+  const setMode = useViewStore((state) => state.setMode)
+  return (
+    <div className="ml-2">
+      <SegmentedControl<EditorMode>
+        label="Editor"
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'design', label: 'Design' },
+          { value: 'logic', label: 'Logic' },
+        ]}
+      />
+    </div>
   )
 }
 

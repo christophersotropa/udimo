@@ -449,3 +449,75 @@ describe('document store', () => {
     })
   })
 })
+
+describe('the logic graph', () => {
+  function setup() {
+    const store = createDocumentStore()
+    const s = () => store.getState()
+    const pressed = s().addGraphNode('Activated', { x: 0, y: 0 })
+    const show = s().addGraphNode('Show', { x: 200, y: 0 })
+    const hide = s().addGraphNode('Hide', { x: 400, y: 0 })
+    return { store, s, pressed, show, hide }
+  }
+
+  it('adds graph nodes, one undo step each', () => {
+    const { s, pressed } = setup()
+    expect(s().document.logic!.nodes[pressed]).toMatchObject({
+      kind: 'Activated',
+      element: null,
+    })
+    expect(s().past).toHaveLength(3)
+    s().undo()
+    s().undo()
+    s().undo()
+    expect(s().document.logic).toBeUndefined()
+  })
+
+  it('wires graph nodes, a new wire out replacing the old one', () => {
+    const { s, pressed, show, hide } = setup()
+    expect(s().connectGraphNodes(pressed, show)).toBe(true)
+    expect(s().connectGraphNodes(pressed, hide)).toBe(true)
+    expect(s().document.logic!.wires.map((w) => [w.from, w.to])).toEqual([
+      [pressed, hide],
+    ])
+  })
+
+  it('refuses a wire canConnect refuses, saving no undo step', () => {
+    const { s, pressed, show } = setup()
+    const steps = s().past.length
+    expect(s().connectGraphNodes(show, pressed)).toBe(false)
+    expect(s().past).toHaveLength(steps)
+  })
+
+  it('moves graph nodes, skipping moves that go nowhere', () => {
+    const { s, show } = setup()
+    const steps = s().past.length
+    s().moveGraphNodes({ [show]: { x: 200, y: 0 } })
+    expect(s().past).toHaveLength(steps)
+    s().moveGraphNodes({ [show]: { x: 250, y: 40 } })
+    expect(s().document.logic!.nodes[show].at).toEqual({ x: 250, y: 40 })
+  })
+
+  it('deletes graph nodes with their wires, and an emptied graph', () => {
+    const { s, pressed, show, hide } = setup()
+    s().connectGraphNodes(pressed, show)
+    s().connectGraphNodes(show, hide)
+    s().deleteGraphItems([show], [])
+    expect(Object.keys(s().document.logic!.nodes)).toEqual([pressed, hide])
+    expect(s().document.logic!.wires).toEqual([])
+    s().deleteGraphItems([pressed, hide], [])
+    expect(s().document.logic).toBeUndefined()
+  })
+
+  it('deletes a wire on its own', () => {
+    const { s, pressed, show } = setup()
+    s().connectGraphNodes(pressed, show)
+    const [wire] = s().document.logic!.wires
+    s().deleteGraphItems([], [wire.id])
+    expect(s().document.logic!.wires).toEqual([])
+    // Deleting nothing saves no step.
+    const steps = s().past.length
+    s().deleteGraphItems([], ['gone'])
+    expect(s().past).toHaveLength(steps)
+  })
+})

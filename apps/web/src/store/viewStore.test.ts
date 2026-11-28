@@ -116,3 +116,14 @@ describe('view store', () => {
     expect(state().modifierReveal).not.toBe(first)
   })
 })
+
+describe('editor mode', () => {
+  it('starts on Design, and switching closes the right-click menu', () => {
+    const view = createViewStore()
+    expect(view.getState().mode).toBe('design')
+    view.getState().openContextMenu({ x: 0, y: 0, targetId: 'n1' })
+    view.getState().setMode('logic')
+    expect(view.getState().mode).toBe('logic')
+    expect(view.getState().contextMenu).toBeNull()
+  })
+})

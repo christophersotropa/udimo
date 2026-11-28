@@ -3,6 +3,12 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createId } from '../lib/ids.ts'
 import { createEmptyDocument } from '../model/document.ts'
+import {
+  canConnect,
+  type GraphNodeId,
+  type GraphNodeKind,
+  type WireId,
+} from '../model/graph.ts'
 import { LAYOUT_MODIFIERS } from '../model/modifiers.ts'
 import { isInside } from '../model/tree.ts'
 import type {
@@ -84,6 +90,22 @@ export type DocumentState = {
   moveNode: (id: NodeId, newParentId: NodeId, index?: number) => void
   // Deletes a node and everything inside it.
   deleteNode: (id: NodeId) => void
+
+  // The logic graph (model/graph.ts). Each is one undo step, like the
+  // element edits above.
+  // Adds a graph node at a point on the graph's canvas and returns its id.
+  addGraphNode: (
+    kind: GraphNodeKind,
+    at: { x: number; y: number },
+    element?: NodeId | null,
+  ) => GraphNodeId
+  // Moves graph nodes (a drag: group it with beginGroup/endGroup).
+  moveGraphNodes: (moves: Record<GraphNodeId, { x: number; y: number }>) => void
+  // Wires `from` to `to`, replacing any wire already leaving `from`.
+  // Returns false (and changes nothing) if canConnect says no.
+  connectGraphNodes: (from: GraphNodeId, to: GraphNodeId) => boolean
+  // Deletes graph nodes (with every wire touching them) and wires.
+  deleteGraphItems: (nodeIds: GraphNodeId[], wireIds: WireId[]) => void
 }
 
 // How many undo steps to keep. Old versions share every unchanged node with
@@ -383,6 +405,59 @@ export function createDocumentStore(
               toDelete.push(...current.children)
               delete doc.nodes[current.id]
             }
+          })
+        },
+
+        addGraphNode: (kind, at, element = null) => {
+          const id = createId()
+          change((doc) => {
+            doc.logic ??= { nodes: {}, wires: [] }
+            doc.logic.nodes[id] = { id, kind, at: { ...at }, element }
+          })
+          return id
+        },
+
+        moveGraphNodes: (moves) => {
+          change((doc) => {
+            for (const [id, at] of Object.entries(moves)) {
+              const node = doc.logic?.nodes[id]
+              // Only write real moves, so a drag that ends where it began
+              // saves no undo step.
+              if (node && (node.at.x !== at.x || node.at.y !== at.y)) {
+                node.at = { x: at.x, y: at.y }
+              }
+            }
+          })
+        },
+
+        connectGraphNodes: (from, to) => {
+          const graph = get().document.logic
+          if (!graph || !canConnect(graph, from, to)) return false
+          change((doc) => {
+            const logic = doc.logic!
+            // Already wired just so: nothing to do.
+            if (logic.wires.some((w) => w.from === from && w.to === to)) return
+            logic.wires = logic.wires.filter((w) => w.from !== from)
+            logic.wires.push({ id: createId(), from, to })
+          })
+          return true
+        },
+
+        deleteGraphItems: (nodeIds, wireIds) => {
+          change((doc) => {
+            const logic = doc.logic
+            if (!logic) return
+            const nodes = new Set(nodeIds.filter((id) => logic.nodes[id]))
+            const wires = new Set(wireIds)
+            const kept = logic.wires.filter(
+              (w) => !wires.has(w.id) && !nodes.has(w.from) && !nodes.has(w.to),
+            )
+            // Only replace the list if a wire went (a new list counts as a
+            // change, and would save an undo step that does nothing).
+            if (kept.length !== logic.wires.length) logic.wires = kept
+            for (const id of nodes) delete logic.nodes[id]
+            // An empty graph goes away, so the file doesn't keep an empty one.
+            if (Object.keys(logic.nodes).length === 0) delete doc.logic
           })
         },
       }

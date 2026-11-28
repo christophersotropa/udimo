@@ -115,6 +115,17 @@ export const MENUS: Menu[] = [
   {
     title: 'View',
     entries: [
+      {
+        label: 'Design',
+        run: () => view().setMode('design'),
+        checked: () => view().mode === 'design',
+      },
+      {
+        label: 'Logic',
+        run: () => view().setMode('logic'),
+        checked: () => view().mode === 'logic',
+      },
+      'separator',
       { label: 'Zoom In', shortcut: '⌘+', run: actions.zoomIn },
       { label: 'Zoom Out', shortcut: '⌘−', run: actions.zoomOut },
       { label: 'Zoom to 100%', run: actions.zoomTo100 },
