@@ -2,6 +2,8 @@ import { isValidTimeline } from '../lib/sequence.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  EASING_DIRECTION,
+  EASING_STYLE,
   SCROLLING_DIRECTION,
   FILL_DIRECTION,
   FONT_STYLE,
@@ -198,6 +200,21 @@ export const MODIFIER_CHECKS: {
     HorizontalAlignment: isOneOf(HORIZONTAL_ALIGNMENT),
     VerticalAlignment: isOneOf(VERTICAL_ALIGNMENT),
     SortOrder: isOneOf(SORT_ORDER),
+  },
+  UIPageLayout: {
+    FillDirection: isOneOf(FILL_DIRECTION),
+    HorizontalAlignment: isOneOf(HORIZONTAL_ALIGNMENT),
+    VerticalAlignment: isOneOf(VERTICAL_ALIGNMENT),
+    SortOrder: isOneOf(SORT_ORDER),
+    Padding: isUDim,
+    Animated: isBoolean,
+    TweenTime: isPositive,
+    EasingStyle: isOneOf(EASING_STYLE),
+    EasingDirection: isOneOf(EASING_DIRECTION),
+    Circular: isBoolean,
+    ScrollWheelInputEnabled: isBoolean,
+    TouchInputEnabled: isBoolean,
+    GamepadInputEnabled: isBoolean,
   },
 }
 

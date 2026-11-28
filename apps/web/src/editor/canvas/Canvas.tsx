@@ -9,6 +9,7 @@ import { NodeView } from './NodeView.tsx'
 import { ZoomBar } from './ZoomBar.tsx'
 import { CanvasOverlay } from './CanvasOverlay.tsx'
 import { useCanvasPointer } from './useCanvasPointer.ts'
+import { useShowSelectedPage } from './useShowSelectedPage.ts'
 import { importRbxmxFile } from '../topbar/projectFiles.ts'
 
 // The game screen is laid out at its real size (the chosen device's), so
@@ -23,6 +24,7 @@ export function Canvas() {
   )
   const view = useViewStore(useShallow(currentView))
   const { handlers, cursor, marquee } = useCanvasPointer(view.zoom)
+  useShowSelectedPage()
 
   useLayoutEffect(() => {
     const area = areaRef.current

@@ -56,6 +56,10 @@ export type DocumentState = {
   renameNode: (id: NodeId, name: string) => void
   // Locks or unlocks an element on the canvas (see UiNode.locked).
   setLocked: (id: NodeId, locked: boolean) => void
+  // Turns its parent's UIPageLayout to this page on the canvas (see
+  // UiNode.shownPage). Not an undo step: like scrolling, it changes the
+  // view, not the design. Does nothing if `id` isn't a page.
+  showPage: (id: NodeId) => void
   // Shows a picture from your computer on an image element (see
   // UiNode.previewImage), or none (null). `image` is stored under `key`
   // unless a picture is already there (the same file, used again).
@@ -278,6 +282,20 @@ export function createDocumentStore(
             // instead of storing `false`.
             if (locked) node.locked = true
             else delete node.locked
+          })
+        },
+
+        showPage: (id) => {
+          const node = get().document.nodes[id]
+          const parentId = node?.parentId
+          if (!parentId) return
+          const parent = get().document.nodes[parentId]
+          if (!parent.modifiers?.UIPageLayout || parent.shownPage === id) return
+          // Straight onto the document, skipping change(), so no undo step
+          // is saved. (Undo goes back to a version with whatever page was
+          // shown then, which is harmless.)
+          set((state) => {
+            state.document.nodes[parentId].shownPage = id
           })
         },
 

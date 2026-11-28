@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   arrangeGrid,
   arrangeList,
+  arrangePages,
   type LayoutItem,
   sortForLayout,
 } from './arrange.ts'
@@ -147,5 +148,92 @@ describe('arrangeGrid', () => {
       VerticalAlignment: 'Bottom',
     })
     expect(positions(boxes)).toEqual([['a', 100, 100]])
+  })
+})
+
+describe('arrangePages', () => {
+  const pages = MODIFIER_DEFAULTS.UIPageLayout // Horizontal, top-left
+  // Three full-size pages, like most page layouts.
+  const three = () => [
+    item('a', 300, 200),
+    item('b', 300, 200),
+    item('c', 300, 200),
+  ]
+
+  it('shows the first page in place, the others in a row after it', () => {
+    expect(positions(arrangePages(three(), AREA, pages))).toEqual([
+      ['a', 0, 0],
+      ['b', 300, 0],
+      ['c', 600, 0],
+    ])
+  })
+
+  it('puts the shown page in place, with the others either side', () => {
+    const gap = { ...pages, Padding: { s: 0, o: 10 } }
+    expect(positions(arrangePages(three(), AREA, gap, 'b'))).toEqual([
+      ['a', -310, 0],
+      ['b', 0, 0],
+      ['c', 310, 0],
+    ])
+  })
+
+  it('shows the first page when the shown one isn’t a page', () => {
+    const boxes = arrangePages(three(), AREA, pages, 'gone')
+    expect(boxes.get('a')).toMatchObject({ x: 0, y: 0 })
+  })
+
+  it('stacks pages in a column when Vertical, Padding a fraction of the height', () => {
+    const column = {
+      ...pages,
+      FillDirection: 'Vertical' as const,
+      Padding: { s: 0.1, o: 0 }, // 20 px of 200
+    }
+    expect(positions(arrangePages(three(), AREA, column, 'c'))).toEqual([
+      ['a', 0, -440],
+      ['b', 0, -220],
+      ['c', 0, 0],
+    ])
+  })
+
+  it('aligns smaller pages, each keeping its own size', () => {
+    const centred = {
+      ...pages,
+      HorizontalAlignment: 'Center' as const,
+      VerticalAlignment: 'Center' as const,
+    }
+    const small = [item('a', 100, 40), item('b', 200, 100)]
+    const boxes = arrangePages(small, AREA, centred)
+    // The shown page is centred both ways; the next one starts right
+    // after it and is centred across the row.
+    expect(positions(boxes)).toEqual([
+      ['a', 100, 80],
+      ['b', 200, 50],
+    ])
+    expect(boxes.get('b')).toMatchObject({ width: 200, height: 100 })
+  })
+
+  it('aligns to the top-left corner by default, like Studio', () => {
+    const small = [item('a', 100, 40), item('b', 100, 40)]
+    expect(positions(arrangePages(small, AREA, pages, 'b'))).toEqual([
+      ['a', -100, 0],
+      ['b', 0, 0],
+    ])
+  })
+
+  it('orders pages by SortOrder', () => {
+    const named = { ...pages, SortOrder: 'Name' as const }
+    const boxes = arrangePages(
+      [item('Shop', 300, 200), item('Bag', 300, 200)],
+      AREA,
+      named,
+    )
+    expect(positions(boxes)).toEqual([
+      ['Bag', 0, 0],
+      ['Shop', 300, 0],
+    ])
+  })
+
+  it('handles no pages at all', () => {
+    expect(arrangePages([], AREA, pages).size).toBe(0)
   })
 })

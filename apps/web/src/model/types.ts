@@ -1,6 +1,8 @@
 import type {
   ApplyStrokeMode,
   AutomaticSize,
+  EasingDirection,
+  EasingStyle,
   ScrollingDirection,
   FillDirection,
   HorizontalAlignment,
@@ -248,6 +250,29 @@ export type ModifierProps = {
     VerticalAlignment?: VerticalAlignment
     SortOrder?: SortOrder
   }
+  UIPageLayout: {
+    // The children become pages, one after another in a row (Horizontal)
+    // or a column; each keeps its own size. The page being shown is
+    // aligned inside the element and the others continue either side of
+    // it, Padding apart. A game flips pages with the scroll wheel, a swipe
+    // or a gamepad (each can be turned off), or from a script.
+    FillDirection?: FillDirection
+    HorizontalAlignment?: HorizontalAlignment
+    VerticalAlignment?: VerticalAlignment
+    SortOrder?: SortOrder
+    Padding?: UDim // the gap between pages
+    // Slide to the new page (else jump), taking TweenTime seconds, with
+    // this easing.
+    Animated?: boolean
+    TweenTime?: number
+    EasingStyle?: EasingStyle
+    EasingDirection?: EasingDirection
+    // Going past the last page comes back to the first (and back again).
+    Circular?: boolean
+    ScrollWheelInputEnabled?: boolean
+    TouchInputEnabled?: boolean
+    GamepadInputEnabled?: boolean
+  }
 }
 export type ModifierClass = keyof ModifierProps
 // An element's modifiers: a modifier is on when its key is present.
@@ -272,6 +297,11 @@ export type UiNode = {
   // on the canvas, as a key into UiDocument.images. Never exported: in
   // Roblox the Image property (an uploaded asset ID) is what counts.
   previewImage?: string
+  // Editor-only, on an element with a UIPageLayout: the page (one of its
+  // children) the canvas shows; missing or not a page means the first.
+  // In game a page layout always starts on its first page, so this is
+  // never exported, and isn't kept in project files either.
+  shownPage?: NodeId
 }
 
 // A picture picked from your computer to preview an image element. Kept

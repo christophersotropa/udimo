@@ -21,7 +21,12 @@ import imageOptionsReference from '../../../../docs/reference/image-options.rbxm
 // A TextLabel with UIScale, UISizeConstraint and UITextSizeConstraint at
 // their defaults, then one of each changed (build 51).
 import sizingReference from '../../../../docs/reference/sizing.rbxmx?raw'
-import type { Props } from '../model/types.ts'
+// Two Frames, "Defaults" and "Changed", each with a UIPageLayout and two
+// page Frames beside it: one as inserted, one with settings changed
+// (build 57).
+import pageLayoutReference from '../../../../docs/reference/ui-page-layout.rbxmx?raw'
+import { readRbxmx, type RawInstance } from '../import/readRbxmx.ts'
+import type { ModifierProps, Props } from '../model/types.ts'
 import { createDocumentStore } from '../store/documentStore.ts'
 import { documentToRbxmx, escapeXml } from './rbxmx.ts'
 import {
@@ -514,6 +519,61 @@ describe('escapeXml', () => {
           'AutomaticSize',
         ),
       )
+    })
+  })
+})
+
+describe('matches the Studio reference file for UIPageLayout (build 57)', () => {
+  // The UIPageLayout inside the Frame called `frameName`, as propertiesOf
+  // gives it. Found by reading the file's tree, then picked from the
+  // file's UIPageLayouts by its place in file order (the order the
+  // tree is written in), so the test doesn't depend on which Frame
+  // Studio wrote first.
+  function studioLayoutIn(frameName: string): Map<string, string> {
+    const layouts: { parentName: unknown }[] = []
+    const visit = (instance: RawInstance, parent: RawInstance | null) => {
+      if (instance.className === 'UIPageLayout') {
+        const name = parent?.properties.get('Name')
+        layouts.push({ parentName: name?.type === 'string' && name.value })
+      }
+      for (const child of instance.children) visit(child, instance)
+    }
+    for (const top of readRbxmx(pageLayoutReference)) visit(top, null)
+    const index = layouts.findIndex((l) => l.parentName === frameName)
+    if (index === -1) throw new Error(`No UIPageLayout in ${frameName}`)
+    return allPropertiesOf(pageLayoutReference, 'UIPageLayout')[index]
+  }
+
+  // Ours: a Frame with a UIPageLayout set to `props`.
+  function ourLayout(props: ModifierProps['UIPageLayout']) {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const frame = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(frame, 'UIPageLayout')
+    updateModifier(frame, 'UIPageLayout', props)
+    return propertiesOf(
+      documentToRbxmx(store.getState().document),
+      'UIPageLayout',
+    )
+  }
+
+  describe.each([
+    ['Defaults', {}],
+    [
+      'Changed',
+      {
+        EasingDirection: 'InOut',
+        EasingStyle: 'Quart',
+        Padding: { s: 0, o: 2 },
+        TweenTime: 0.5,
+      },
+    ],
+  ] as const)('the %s UIPageLayout', (frameName, props) => {
+    const mine = ourLayout(props)
+    // Looked up inside each test, so a reference file without this Frame
+    // fails these tests instead of stopping the whole file.
+    it.each([...mine])('%s', (name, value) => {
+      expect(studioLayoutIn(frameName).get(name)).toBe(value)
     })
   })
 })

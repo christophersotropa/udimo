@@ -4,6 +4,8 @@ import { resolveProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  EASING_DIRECTION,
+  EASING_STYLE,
   SCROLLING_DIRECTION,
   BORDER_MODE,
   FILL_DIRECTION,
@@ -311,6 +313,25 @@ const MODIFIER_PROPERTIES: {
     ),
     enumProp('SortOrder', SORT_ORDER, grid.SortOrder),
     enumProp('VerticalAlignment', VERTICAL_ALIGNMENT, grid.VerticalAlignment),
+  ],
+  UIPageLayout: (page) => [
+    bool('Animated', page.Animated),
+    bool('Circular', page.Circular),
+    enumProp('EasingDirection', EASING_DIRECTION, page.EasingDirection),
+    enumProp('EasingStyle', EASING_STYLE, page.EasingStyle),
+    bool('GamepadInputEnabled', page.GamepadInputEnabled),
+    udim('Padding', page.Padding),
+    bool('ScrollWheelInputEnabled', page.ScrollWheelInputEnabled),
+    bool('TouchInputEnabled', page.TouchInputEnabled),
+    float('TweenTime', page.TweenTime),
+    enumProp('FillDirection', FILL_DIRECTION, page.FillDirection),
+    enumProp(
+      'HorizontalAlignment',
+      HORIZONTAL_ALIGNMENT,
+      page.HorizontalAlignment,
+    ),
+    enumProp('SortOrder', SORT_ORDER, page.SortOrder),
+    enumProp('VerticalAlignment', VERTICAL_ALIGNMENT, page.VerticalAlignment),
   ],
 }
 
