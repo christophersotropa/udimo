@@ -4,6 +4,7 @@ import { wrappedLineCount } from '../lib/text.ts'
 import { isImageClass, isTextClass } from './classes.ts'
 import { PLACEHOLDER_IMAGE, resolveProps } from './defaults.ts'
 import { absoluteBox, contentArea } from './layout.ts'
+import { pagesOf } from './pages.ts'
 import { previewOf } from './previewImages.ts'
 import { DEVICES, type DeviceId, type ScreenSize } from './screen.ts'
 import type { NodeId, Props, UiDocument } from './types.ts'
@@ -179,8 +180,9 @@ function isOffScreen(
 }
 
 // Elements that stick out past the screen's edges. Only the outermost one
-// is reported (its children move with it), and ScrollingFrame contents are
-// skipped, since they're meant to scroll.
+// is reported (its children move with it), and ScrollingFrame contents and
+// UIPageLayout pages are skipped, since they're meant to scroll or turn
+// into view.
 function offScreenWarnings(doc: UiDocument): Warning[] {
   const devicesFor = new Map<NodeId, DeviceId[]>()
   for (const device of Object.keys(DEVICES) as DeviceId[]) {
@@ -191,9 +193,15 @@ function offScreenWarnings(doc: UiDocument): Warning[] {
         if (off) {
           devicesFor.set(childId, [...(devicesFor.get(childId) ?? []), device])
         }
-        // Children move with an off-screen parent, and a ScrollingFrame's
-        // contents are meant to scroll: don't look inside either.
-        if (!off && doc.nodes[childId].className !== 'ScrollingFrame') {
+        // Children move with an off-screen parent, a ScrollingFrame's
+        // contents are meant to scroll, and pages wait beside the one
+        // shown: don't look inside any of them.
+        const child = doc.nodes[childId]
+        if (
+          !off &&
+          child.className !== 'ScrollingFrame' &&
+          !child.modifiers?.UIPageLayout
+        ) {
           visit(childId)
         }
       }
@@ -225,6 +233,30 @@ function topBarWarning(doc: UiDocument): Warning[] {
       path: pathOf(doc, id),
       message: `In the top ${TOP_BAR_HEIGHT} px: sits lower in game, under Roblox’s top bar`,
     }))
+}
+
+// A UIPageLayout lines its pages up beside the one shown, and they stay
+// visible there unless the element clips them: in game you'd see the
+// next page peeking out, or the whole row.
+function pageClipWarnings(doc: UiDocument, id: NodeId): Warning[] {
+  const node = doc.nodes[id]
+  if (
+    !node.modifiers?.UIPageLayout ||
+    resolveProps(node).ClipsDescendants ||
+    pagesOf(doc, id).length < 2
+  ) {
+    return []
+  }
+  return [
+    {
+      key: `pageclip:${id}`,
+      nodeId: id,
+      level: 'warning',
+      path: pathOf(doc, id),
+      message:
+        'Its other pages show beside the current one: turn on ClipsDescendants to show one page at a time',
+    },
+  ]
 }
 
 // Siblings sharing a name: scripts find elements by name
@@ -292,6 +324,7 @@ export function exportWarnings(
     ...elements.flatMap((id) => [
       ...imageWarnings(doc, id),
       ...textWarnings(doc, id, measure),
+      ...pageClipWarnings(doc, id),
     ]),
     ...offScreenWarnings(doc),
     ...duplicateNameWarnings(doc),

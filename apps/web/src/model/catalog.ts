@@ -56,6 +56,12 @@ export const CATALOG: CatalogEntry[] = [
   },
   {
     kind: 'modifier',
+    className: 'UIPageLayout',
+    group: 'Layout',
+    hint: 'Modifier',
+  },
+  {
+    kind: 'modifier',
     className: 'UIPadding',
     group: 'Layout',
     hint: 'Modifier',

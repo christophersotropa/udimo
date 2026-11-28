@@ -45,6 +45,23 @@ export const SCALE_TYPE = {
   Fit: 3,
   Crop: 4,
 } as const
+// How a UIPageLayout's page turn moves (docs/reference/ui-page-layout.rbxmx):
+// the shape of the motion, and whether it eases at the start (In), the
+// end (Out) or both. The same enums TweenService uses.
+export const EASING_STYLE = {
+  Linear: 0,
+  Sine: 1,
+  Back: 2,
+  Quad: 3,
+  Quart: 4,
+  Quint: 5,
+  Bounce: 6,
+  Elastic: 7,
+  Exponential: 8,
+  Circular: 9,
+  Cubic: 10,
+} as const
+export const EASING_DIRECTION = { In: 0, Out: 1, InOut: 2 } as const
 // Upright or slanted text (Roblox's FontStyle).
 export const FONT_STYLE = { Normal: 0, Italic: 1 } as const
 // UIStroke on a text element: outline the text (Contextual) or the box.
@@ -69,6 +86,8 @@ export type TextTruncate = keyof typeof TEXT_TRUNCATE
 export type ScaleType = keyof typeof SCALE_TYPE
 export type AutomaticSize = keyof typeof AUTOMATIC_SIZE
 export type ScrollingDirection = keyof typeof SCROLLING_DIRECTION
+export type EasingStyle = keyof typeof EASING_STYLE
+export type EasingDirection = keyof typeof EASING_DIRECTION
 
 // The names of an enum, for dropdowns and file checks.
 export function enumNames<T extends Record<string, number>>(table: T) {

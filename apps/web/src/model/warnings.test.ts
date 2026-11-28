@@ -186,6 +186,44 @@ describe('exportWarnings', () => {
     })
   })
 
+  describe('page layouts', () => {
+    // A 500 × 200 Frame with a UIPageLayout and two full-size pages: the
+    // second waits to the right of the first.
+    function book(props: Props = {}) {
+      const result = setup('Frame', {
+        Size: { xs: 0, xo: 500, ys: 0, yo: 200 },
+        ...props,
+      })
+      const { store, id } = result
+      store.getState().addModifier(id, 'UIPageLayout')
+      const full = { Size: { xs: 1, xo: 0, ys: 1, yo: 0 } }
+      for (const name of ['Shop', 'Bag']) {
+        const page = store.getState().addNode(id, 'Frame', full)
+        store.getState().renameNode(page, name)
+      }
+      return result
+    }
+
+    it('says to clip the other pages, without calling them off-screen', () => {
+      // On the phone (844 wide) the second page (600 to 1100 px) is past the edge,
+      // but it's a page waiting to be turned to, not a mistake.
+      expect(messages(book().warnings())).toEqual([
+        'Its other pages show beside the current one: turn on ClipsDescendants to show one page at a time',
+      ])
+    })
+
+    it('has nothing to say once ClipsDescendants is on', () => {
+      expect(book({ ClipsDescendants: true }).warnings()).toEqual([])
+    })
+
+    it('says nothing about a page layout with one page', () => {
+      const { store, id, warnings } = setup()
+      store.getState().addModifier(id, 'UIPageLayout')
+      store.getState().addNode(id, 'Frame')
+      expect(warnings()).toEqual([])
+    })
+  })
+
   describe("Roblox's top bar", () => {
     it('notes top-level elements in the top strip', () => {
       const [note] = setup('Frame', {

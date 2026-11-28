@@ -6,7 +6,8 @@ import type {
 import type { ScreenSize } from './screen.ts'
 import type { ModifierProps, NodeId, UDim } from './types.ts'
 
-// The layout engine: where UIListLayout and UIGridLayout put each child.
+// The layout engine: where UIListLayout, UIGridLayout and UIPageLayout put
+// each child.
 // Plain functions with no document access (layout.ts feeds them sizes), so
 // they're easy to test. Every Box is measured from the corner of the
 // parent's content area (see contentArea in layout.ts).
@@ -146,6 +147,58 @@ export function arrangeGrid(
       y: top + row * (cell.height + gap.y),
       width: cell.width,
       height: cell.height,
+    })
+  })
+  return boxes
+}
+
+// UIPageLayout: the children are pages in a row (Horizontal) or a column,
+// each keeping its own size, with Padding between them. The page being
+// shown (`shownId`, or the first if it isn't one of them) is aligned
+// inside the area on both axes; the pages before it continue backwards
+// from it, and the ones after it forwards, each aligned across the row.
+// (In game a page turn slides the whole row until the new page sits
+// where the shown one does.)
+export function arrangePages(
+  items: LayoutItem[],
+  area: ScreenSize,
+  page: Required<ModifierProps['UIPageLayout']>,
+  shownId?: NodeId,
+): Map<NodeId, Box> {
+  const vertical = page.FillDirection === 'Vertical'
+  const gap = udimPixels(page.Padding, vertical ? area.height : area.width)
+  const ordered = sortForLayout(items, page.SortOrder)
+  const shown = Math.max(
+    0,
+    ordered.findIndex((item) => item.id === shownId),
+  )
+
+  const along = (item: LayoutItem) => (vertical ? item.height : item.width)
+  // Where each page starts along the row: the shown one by its alignment,
+  // the rest from their neighbour towards it.
+  const starts: number[] = []
+  if (ordered.length > 0) {
+    starts[shown] = vertical
+      ? alignStart(page.VerticalAlignment, area.height, ordered[shown].height)
+      : alignStart(page.HorizontalAlignment, area.width, ordered[shown].width)
+  }
+  for (let i = shown + 1; i < ordered.length; i++) {
+    starts[i] = starts[i - 1] + along(ordered[i - 1]) + gap
+  }
+  for (let i = shown - 1; i >= 0; i--) {
+    starts[i] = starts[i + 1] - gap - along(ordered[i])
+  }
+
+  const boxes = new Map<NodeId, Box>()
+  ordered.forEach((item, i) => {
+    const across = vertical
+      ? alignStart(page.HorizontalAlignment, area.width, item.width)
+      : alignStart(page.VerticalAlignment, area.height, item.height)
+    boxes.set(item.id, {
+      x: vertical ? across : starts[i],
+      y: vertical ? starts[i] : across,
+      width: item.width,
+      height: item.height,
     })
   })
   return boxes

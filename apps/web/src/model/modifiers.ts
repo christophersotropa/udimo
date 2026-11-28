@@ -8,7 +8,7 @@ const NO_SPACE = { s: 0, o: 0 }
 
 // What a modifier starts with when you insert it in Studio, checked against
 // the files in docs/reference/ (corner-stroke, gradient-padding-aspect,
-// list-grid-layouts and sizing).
+// list-grid-layouts, sizing and ui-page-layout).
 export const MODIFIER_DEFAULTS: {
   [K in ModifierClass]: Required<ModifierProps[K]>
 } = {
@@ -59,14 +59,35 @@ export const MODIFIER_DEFAULTS: {
     VerticalAlignment: 'Top',
     SortOrder: 'LayoutOrder',
   },
+  UIPageLayout: {
+    FillDirection: 'Horizontal',
+    HorizontalAlignment: 'Center',
+    VerticalAlignment: 'Center',
+    SortOrder: 'LayoutOrder',
+    Padding: NO_SPACE,
+    Animated: true,
+    TweenTime: 1,
+    EasingStyle: 'Back',
+    EasingDirection: 'Out',
+    Circular: false,
+    ScrollWheelInputEnabled: true,
+    TouchInputEnabled: true,
+    GamepadInputEnabled: true,
+  },
 }
 
 // The layout modifiers. An element can only have one: adding one removes
-// the other, because Roblox would only use one of them anyway.
+// the others, because Roblox would only use one of them anyway.
 export const LAYOUT_MODIFIERS: ModifierClass[] = [
   'UIListLayout',
   'UIGridLayout',
+  'UIPageLayout',
 ]
+
+// True if the element has a layout modifier (which places its children).
+export function hasLayout(node: UiNode): boolean {
+  return LAYOUT_MODIFIERS.some((layout) => node.modifiers?.[layout])
+}
 
 // Every modifier class, in the order they're shown and exported.
 export const MODIFIER_CLASSES = Object.keys(
@@ -127,6 +148,8 @@ const SUMMARIES: {
       s === 0 ? `${o}` : udimText({ s, o })
     return `${size(CellSize.xs, CellSize.xo)} × ${size(CellSize.ys, CellSize.yo)} cells`
   },
+  UIPageLayout: ({ FillDirection, Animated, TweenTime }) =>
+    `${FillDirection} pages${Animated ? `, ${TweenTime} s` : ''}`,
 }
 
 // A short description of a modifier's settings, for its card in the

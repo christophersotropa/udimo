@@ -1,9 +1,14 @@
 import { richTextPlain } from '../lib/richText.ts'
 import { wrappedLineCount } from '../lib/text.ts'
-import { arrangeGrid, arrangeList, type LayoutItem } from './arrange.ts'
+import {
+  arrangeGrid,
+  arrangeList,
+  arrangePages,
+  type LayoutItem,
+} from './arrange.ts'
 import { isTextClass } from './classes.ts'
 import { resolveProps } from './defaults.ts'
-import { resolveModifier } from './modifiers.ts'
+import { hasLayout, resolveModifier } from './modifiers.ts'
 import type { AutomaticSize } from './enums.ts'
 import type { ScreenSize } from './screen.ts'
 import { textMetrics } from './textMetrics.ts'
@@ -236,16 +241,13 @@ export function contentArea(
 }
 
 // True if `id`'s parent has a layout that places it: the parent has a
-// UIListLayout or UIGridLayout, and the element is visible (layouts skip
-// hidden children, leaving no gap). Its Position is then ignored.
+// UIListLayout, UIGridLayout or UIPageLayout, and the element is visible
+// (layouts skip hidden children, leaving no gap). Its Position is then
+// ignored.
 export function isLaidOut(doc: UiDocument, id: NodeId): boolean {
   const node = doc.nodes[id]
   if (!node || node.parentId === null) return false
-  const parent = doc.nodes[node.parentId]
-  const hasLayout = Boolean(
-    parent.modifiers?.UIListLayout || parent.modifiers?.UIGridLayout,
-  )
-  return hasLayout && resolveProps(node).Visible
+  return hasLayout(doc.nodes[node.parentId]) && resolveProps(node).Visible
 }
 
 // Where a parent's layout puts each of its children, measured from the
@@ -258,7 +260,8 @@ export function layoutBoxes(
   const parent = doc.nodes[parentId]
   const list = resolveModifier(parent, 'UIListLayout')
   const grid = resolveModifier(parent, 'UIGridLayout')
-  if (!list && !grid) return null
+  const pages = resolveModifier(parent, 'UIPageLayout')
+  if (!list && !grid && !pages) return null
 
   const items: LayoutItem[] = parent.children
     .filter((childId) => isLaidOut(doc, childId))
@@ -273,7 +276,9 @@ export function layoutBoxes(
         height,
       }
     })
-  return list ? arrangeList(items, area, list) : arrangeGrid(items, area, grid!)
+  if (list) return arrangeList(items, area, list)
+  if (grid) return arrangeGrid(items, area, grid)
+  return arrangePages(items, area, pages!, parent.shownPage)
 }
 
 // Where an element sits inside its parent's content area: placed by the

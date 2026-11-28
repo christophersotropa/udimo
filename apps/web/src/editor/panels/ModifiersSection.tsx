@@ -5,6 +5,8 @@ import { isTextClass } from '../../model/classes.ts'
 import { resolveProps } from '../../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
+  EASING_DIRECTION,
+  EASING_STYLE,
   enumNames,
   FILL_DIRECTION,
   HORIZONTAL_ALIGNMENT,
@@ -18,7 +20,12 @@ import {
   modifierSummary,
   resolveModifier,
 } from '../../model/modifiers.ts'
-import type { ModifierClass, NodeId, UiNode } from '../../model/types.ts'
+import type {
+  ModifierClass,
+  ModifierProps,
+  NodeId,
+  UiNode,
+} from '../../model/types.ts'
 import { useDocumentStore } from '../../store/documentStore.ts'
 import { useViewStore } from '../../store/viewStore.ts'
 import { MenuItem, Popover } from '../ui/Popover.tsx'
@@ -30,6 +37,7 @@ import {
   Row,
   Section,
   SelectField,
+  ToggleField,
   UDim2Row,
   UDimRow,
 } from './fields.tsx'
@@ -529,6 +537,112 @@ function ModifierFields({
               }
             />
           </Row>
+        </>
+      )
+    }
+    case 'UIPageLayout': {
+      const page = resolveModifier(node, 'UIPageLayout')!
+      const set = (change: ModifierProps['UIPageLayout']) =>
+        update(id, 'UIPageLayout', change)
+      return (
+        <>
+          <Row label="Direction">
+            <SelectField
+              label="UIPageLayout FillDirection"
+              value={page.FillDirection}
+              options={enumNames(FILL_DIRECTION)}
+              onChange={(FillDirection) => set({ FillDirection })}
+            />
+          </Row>
+          <AlignmentRows
+            horizontal={page.HorizontalAlignment}
+            vertical={page.VerticalAlignment}
+            onChange={set}
+          />
+          <Row label="Sort by">
+            <SelectField
+              label="UIPageLayout SortOrder"
+              value={page.SortOrder}
+              options={enumNames(SORT_ORDER)}
+              onChange={(SortOrder) => set({ SortOrder })}
+            />
+          </Row>
+          <UDimRow
+            label="Gap"
+            value={page.Padding}
+            onChange={(Padding) => set({ Padding })}
+          />
+          <Row label="Animated">
+            <ToggleField
+              label="UIPageLayout Animated"
+              value={page.Animated}
+              onChange={(Animated) => set({ Animated })}
+            />
+          </Row>
+          {page.Animated && (
+            <>
+              <Row label="Tween time" name="TweenTime">
+                {/* Seconds. Roblox won't go below 0.01. */}
+                <NumberField
+                  label="UIPageLayout TweenTime"
+                  min={0.01}
+                  value={page.TweenTime}
+                  onChange={(TweenTime) => set({ TweenTime })}
+                />
+              </Row>
+              <Row label="Easing" name="EasingStyle">
+                <SelectField
+                  label="UIPageLayout EasingStyle"
+                  value={page.EasingStyle}
+                  options={enumNames(EASING_STYLE)}
+                  onChange={(EasingStyle) => set({ EasingStyle })}
+                />
+              </Row>
+              <Row label="Ease" name="EasingDirection">
+                <SelectField
+                  label="UIPageLayout EasingDirection"
+                  value={page.EasingDirection}
+                  options={enumNames(EASING_DIRECTION)}
+                  onChange={(EasingDirection) => set({ EasingDirection })}
+                />
+              </Row>
+            </>
+          )}
+          <Row label="Circular">
+            <ToggleField
+              label="UIPageLayout Circular"
+              value={page.Circular}
+              onChange={(Circular) => set({ Circular })}
+            />
+          </Row>
+          <Row label="Scroll wheel" name="ScrollWheelInputEnabled">
+            <ToggleField
+              label="UIPageLayout ScrollWheelInputEnabled"
+              value={page.ScrollWheelInputEnabled}
+              onChange={(ScrollWheelInputEnabled) =>
+                set({ ScrollWheelInputEnabled })
+              }
+            />
+          </Row>
+          <Row label="Touch" name="TouchInputEnabled">
+            <ToggleField
+              label="UIPageLayout TouchInputEnabled"
+              value={page.TouchInputEnabled}
+              onChange={(TouchInputEnabled) => set({ TouchInputEnabled })}
+            />
+          </Row>
+          <Row label="Gamepad" name="GamepadInputEnabled">
+            <ToggleField
+              label="UIPageLayout GamepadInputEnabled"
+              value={page.GamepadInputEnabled}
+              onChange={(GamepadInputEnabled) => set({ GamepadInputEnabled })}
+            />
+          </Row>
+          <Hint>
+            The canvas shows one page at a time and turns instantly; the
+            animation plays in game. Select a page, or use the arrows above the
+            element, to turn to it.
+          </Hint>
         </>
       )
     }

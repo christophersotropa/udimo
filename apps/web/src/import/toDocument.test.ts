@@ -13,6 +13,7 @@ import scrolling from '../../../../docs/reference/scrolling.rbxmx?raw'
 import sizing from '../../../../docs/reference/sizing.rbxmx?raw'
 import textClasses from '../../../../docs/reference/text-classes.rbxmx?raw'
 import textOptions from '../../../../docs/reference/text-options.rbxmx?raw'
+import uiPageLayout from '../../../../docs/reference/ui-page-layout.rbxmx?raw'
 import { createPetInventoryDocument } from '../app/petInventory.ts'
 import { createSampleDocument } from '../app/sampleDocument.ts'
 import { documentToRbxmx } from '../export/rbxmx.ts'
@@ -35,6 +36,7 @@ const STUDIO_FILES = {
   sizing,
   'text-classes': textClasses,
   'text-options': textOptions,
+  'ui-page-layout': uiPageLayout,
 }
 
 // The classes that appear in a file, each once.

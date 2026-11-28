@@ -1,5 +1,6 @@
 import { resolveProps } from './defaults.ts'
 import { absoluteBox, boxInParent, contentArea } from './layout.ts'
+import { hasLayout } from './modifiers.ts'
 import type { ScreenSize } from './screen.ts'
 import { inTreeOrder, topLevelNodes } from './tree.ts'
 import type { NodeId, Props, UDim2, UiDocument } from './types.ts'
@@ -87,10 +88,9 @@ export function planWrap(
   const parentId = doc.nodes[ids[0]].parentId
   if (parentId === null) return null
   if (ids.some((id) => doc.nodes[id].parentId !== parentId)) return null
-  // Inside a UIListLayout or UIGridLayout, the layout would move the new
+  // Inside a layout (list, grid or pages), the layout would move the new
   // Frame, so "nothing moves on screen" can't be kept. Not supported (yet).
-  const { modifiers } = doc.nodes[parentId]
-  if (modifiers?.UIListLayout || modifiers?.UIGridLayout) return null
+  if (hasLayout(doc.nodes[parentId])) return null
 
   // The area the elements are laid out in now: the parent, its scrollable
   // canvas, minus padding (see contentArea). Positions here are measured

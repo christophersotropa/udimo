@@ -3,6 +3,8 @@ import { defaultProps } from '../model/defaults.ts'
 import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
+  EASING_DIRECTION,
+  EASING_STYLE,
   SCROLLING_DIRECTION,
   FILL_DIRECTION,
   FONT_STYLE,
@@ -245,6 +247,24 @@ const MODIFIER_SOURCES: {
     ],
     VerticalAlignment: [['VerticalAlignment'], asEnum(VERTICAL_ALIGNMENT)],
     SortOrder: [['SortOrder'], asEnum(SORT_ORDER)],
+  },
+  UIPageLayout: {
+    FillDirection: [['FillDirection'], asEnum(FILL_DIRECTION)],
+    HorizontalAlignment: [
+      ['HorizontalAlignment'],
+      asEnum(HORIZONTAL_ALIGNMENT),
+    ],
+    VerticalAlignment: [['VerticalAlignment'], asEnum(VERTICAL_ALIGNMENT)],
+    SortOrder: [['SortOrder'], asEnum(SORT_ORDER)],
+    Padding: [['Padding'], asUDim],
+    Animated: [['Animated'], asBool],
+    TweenTime: [['TweenTime'], asNumber],
+    EasingStyle: [['EasingStyle'], asEnum(EASING_STYLE)],
+    EasingDirection: [['EasingDirection'], asEnum(EASING_DIRECTION)],
+    Circular: [['Circular'], asBool],
+    ScrollWheelInputEnabled: [['ScrollWheelInputEnabled'], asBool],
+    TouchInputEnabled: [['TouchInputEnabled'], asBool],
+    GamepadInputEnabled: [['GamepadInputEnabled'], asBool],
   },
 }
 

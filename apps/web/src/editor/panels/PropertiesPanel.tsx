@@ -15,6 +15,7 @@ import {
   WEIGHT_LABELS,
 } from '../../model/fonts.ts'
 import { isLaidOut } from '../../model/layout.ts'
+import { LAYOUT_MODIFIERS } from '../../model/modifiers.ts'
 import {
   AUTOMATIC_SIZE,
   enumNames,
@@ -131,7 +132,7 @@ function NodeProperties({
   const parentLayout = useDocumentStore((state) => {
     if (!isLaidOut(state.document, id)) return null
     const parent = state.document.nodes[state.document.nodes[id].parentId!]
-    return parent.modifiers?.UIListLayout ? 'UIListLayout' : 'UIGridLayout'
+    return LAYOUT_MODIFIERS.find((layout) => parent.modifiers?.[layout]) ?? null
   })
   if (!node) return null
 

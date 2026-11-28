@@ -218,6 +218,11 @@ describe('document store', () => {
         'UICorner',
         'UIGridLayout',
       ])
+      actions.addModifier(frame, 'UIPageLayout')
+      expect(Object.keys(doc().nodes[frame].modifiers ?? {}).sort()).toEqual([
+        'UICorner',
+        'UIPageLayout',
+      ])
     })
 
     it('refuses modifiers on the ScreenGui', () => {

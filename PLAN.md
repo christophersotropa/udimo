@@ -30,7 +30,7 @@ Phase 1 (the MVP) is the only phase that has to be great; everything after it is
 - [x] Elements: Frame, TextLabel, TextButton, TextBox, ImageLabel, ImageButton, ScrollingFrame
 - [x] Modifiers as toggles: UICorner, UIStroke, UIGradient, UIPadding, UIListLayout, UIGridLayout, UIAspectRatioConstraint
 - [x] Canvas inside a device frame (PC, tablet, phone presets), zoom and pan
-- [x] Click and Shift-click to select; drag to move; 8 handles to resize; arrow keys to nudge
+- [x] Click and Shift-click to select, or drag a box across empty canvas; drag to move; 8 handles to resize; arrow keys to nudge
 - [x] Snapping and alignment guides against siblings and the parent
 - [x] Insert objects: right-click menu (searchable) and the Insert menu
 
@@ -290,9 +290,13 @@ Finishes Phase 1. Each build that adds a class or modifier starts by saving a re
 | 54  | Selection box: drag across empty canvas to select every element it touches (Shift + drag adds to the selection)          | `feat(canvas): drag a box to select`                       |
 | 55  | `.rbxmx` importer: read a Studio file into a document, with a report of what was left out (no UI yet)                    | `feat(import): read .rbxmx files into a document`          |
 | 56  | Import in the editor: File menu, command field and dropping a file on the canvas                                         | `feat(editor): import .rbxmx files`                        |
+| 57  | UIPageLayout: a Frame's children become pages, one shown at a time; flip pages on the canvas while editing               | `feat(model): add UIPageLayout`                            |
+| 58  | Flex layouts: UIFlexItem, plus UIListLayout's flex options (HorizontalFlex, VerticalFlex, Wraps, ItemLineAlignment)      | `feat(model): add UIFlexItem and flex list layouts`        |
 
 Showing images by Roblox asset ID is on hold: it needs Roblox's legacy thumbnail API through a server function, and Roblox's Terms of Use need checking first (build 46 research).
 
-Each of 49–53 starts with a reference `.rbxmx` saved from Studio (see above). Importing `.rbxmx` (55–56, Phase 2) was moved ahead of 51–54 in November 2026. Build 54 was "More of Roblox's built-in fonts" until late November 2026, when the selection box took its place; the fonts build is saved for later (it starts with a reference `.rbxmx` too). After these: more fonts, UIPageLayout and UIFlexItem, the node graph (Phase 4), then AI (Phase 3).
+Each of 49–53, 57 and 58 starts with a reference `.rbxmx` saved from Studio (see above). Importing `.rbxmx` (55–56, Phase 2) was moved ahead of 51–54 in November 2026. Build 54 was "More of Roblox's built-in fonts" until late November 2026, when the selection box took its place; the fonts build is saved for later (it starts with a reference `.rbxmx` too). After these: more fonts, the node graph (Phase 4), then AI (Phase 3).
+
+Also saved for later: Alt + drag to draw a selection box inside an element and select its children, for designs where a full-screen background Frame leaves no empty canvas to start a box from (follows build 54).
 
 Tag `v0.1.0` (the end of Phase 1) when the project owner says so. It's a separate step, not part of a build.
