@@ -11,7 +11,10 @@ import {
   FILL_DIRECTION,
   HORIZONTAL_ALIGNMENT,
   type HorizontalAlignment,
+  ITEM_LINE_ALIGNMENT,
   SORT_ORDER,
+  UI_FLEX_ALIGNMENT,
+  UI_FLEX_MODE,
   VERTICAL_ALIGNMENT,
   type VerticalAlignment,
 } from '../../model/enums.ts'
@@ -212,6 +215,13 @@ function ModifierFields({
 }) {
   const node = useDocumentStore((state) => state.document.nodes[id])
   const update = useDocumentStore((state) => state.updateModifier)
+  // A UIFlexItem only works on a child of a list.
+  const inList = useDocumentStore((state) => {
+    const parentId = state.document.nodes[id]?.parentId
+    return !!(
+      parentId && state.document.nodes[parentId]?.modifiers?.UIListLayout
+    )
+  })
   if (!node) return null
 
   switch (modifier) {
@@ -481,6 +491,44 @@ function ModifierFields({
             value={list.Padding}
             onChange={(Padding) => update(id, 'UIListLayout', { Padding })}
           />
+          {/* Flex: sharing out the room left over (see arrangeList). */}
+          <Row label="Flex X" name="HorizontalFlex">
+            <SelectField
+              label="UIListLayout HorizontalFlex"
+              value={list.HorizontalFlex}
+              options={enumNames(UI_FLEX_ALIGNMENT)}
+              onChange={(HorizontalFlex) =>
+                update(id, 'UIListLayout', { HorizontalFlex })
+              }
+            />
+          </Row>
+          <Row label="Flex Y" name="VerticalFlex">
+            <SelectField
+              label="UIListLayout VerticalFlex"
+              value={list.VerticalFlex}
+              options={enumNames(UI_FLEX_ALIGNMENT)}
+              onChange={(VerticalFlex) =>
+                update(id, 'UIListLayout', { VerticalFlex })
+              }
+            />
+          </Row>
+          <Row label="Wraps">
+            <ToggleField
+              label="UIListLayout Wraps"
+              value={list.Wraps}
+              onChange={(Wraps) => update(id, 'UIListLayout', { Wraps })}
+            />
+          </Row>
+          <Row label="Line align" name="ItemLineAlignment">
+            <SelectField
+              label="UIListLayout ItemLineAlignment"
+              value={list.ItemLineAlignment}
+              options={enumNames(ITEM_LINE_ALIGNMENT)}
+              onChange={(ItemLineAlignment) =>
+                update(id, 'UIListLayout', { ItemLineAlignment })
+              }
+            />
+          </Row>
         </>
       )
     }
@@ -643,6 +691,55 @@ function ModifierFields({
             animation plays in game. Select a page, or use the arrows above the
             element, to turn to it.
           </Hint>
+        </>
+      )
+    }
+    case 'UIFlexItem': {
+      const flex = resolveModifier(node, 'UIFlexItem')!
+      const set = (change: ModifierProps['UIFlexItem']) =>
+        update(id, 'UIFlexItem', change)
+      return (
+        <>
+          <Row label="Mode" name="FlexMode">
+            <SelectField
+              label="UIFlexItem FlexMode"
+              value={flex.FlexMode}
+              options={enumNames(UI_FLEX_MODE)}
+              onChange={(FlexMode) => set({ FlexMode })}
+            />
+          </Row>
+          {/* The ratios only count in Custom mode. */}
+          {flex.FlexMode === 'Custom' && (
+            <>
+              <Row label="Grow ratio" name="GrowRatio">
+                <NumberField
+                  label="UIFlexItem GrowRatio"
+                  min={0}
+                  value={flex.GrowRatio}
+                  onChange={(GrowRatio) => set({ GrowRatio })}
+                />
+              </Row>
+              <Row label="Shrink ratio" name="ShrinkRatio">
+                <NumberField
+                  label="UIFlexItem ShrinkRatio"
+                  min={0}
+                  value={flex.ShrinkRatio}
+                  onChange={(ShrinkRatio) => set({ ShrinkRatio })}
+                />
+              </Row>
+            </>
+          )}
+          <Row label="Line align" name="ItemLineAlignment">
+            <SelectField
+              label="UIFlexItem ItemLineAlignment"
+              value={flex.ItemLineAlignment}
+              options={enumNames(ITEM_LINE_ALIGNMENT)}
+              onChange={(ItemLineAlignment) => set({ ItemLineAlignment })}
+            />
+          </Row>
+          {!inList && (
+            <Hint>Only takes effect when its parent has a UIListLayout.</Hint>
+          )}
         </>
       )
     }

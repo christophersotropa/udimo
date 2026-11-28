@@ -14,6 +14,7 @@ import sizing from '../../../../docs/reference/sizing.rbxmx?raw'
 import textClasses from '../../../../docs/reference/text-classes.rbxmx?raw'
 import textOptions from '../../../../docs/reference/text-options.rbxmx?raw'
 import uiPageLayout from '../../../../docs/reference/ui-page-layout.rbxmx?raw'
+import flexLayouts from '../../../../docs/reference/flex-layouts.rbxmx?raw'
 import { createPetInventoryDocument } from '../app/petInventory.ts'
 import { createSampleDocument } from '../app/sampleDocument.ts'
 import { documentToRbxmx } from '../export/rbxmx.ts'
@@ -37,6 +38,7 @@ const STUDIO_FILES = {
   'text-classes': textClasses,
   'text-options': textOptions,
   'ui-page-layout': uiPageLayout,
+  'flex-layouts': flexLayouts,
 }
 
 // The classes that appear in a file, each once.

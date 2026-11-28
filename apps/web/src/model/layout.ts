@@ -274,6 +274,7 @@ export function layoutBoxes(
         layoutOrder: resolveProps(child).LayoutOrder,
         width,
         height,
+        flexItem: resolveModifier(child, 'UIFlexItem') ?? undefined,
       }
     })
   if (list) return arrangeList(items, area, list)

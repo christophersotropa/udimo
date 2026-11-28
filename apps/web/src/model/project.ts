@@ -3,6 +3,9 @@ import {
   APPLY_STROKE_MODE,
   AUTOMATIC_SIZE,
   EASING_DIRECTION,
+  ITEM_LINE_ALIGNMENT,
+  UI_FLEX_ALIGNMENT,
+  UI_FLEX_MODE,
   EASING_STYLE,
   SCROLLING_DIRECTION,
   FILL_DIRECTION,
@@ -139,6 +142,7 @@ const isSequence = (isKeypoint: (k: JsonRecord) => boolean) => (v: unknown) =>
 const isColorSequence = isSequence((k) => isColor3(k.color))
 const isNumberSequence = isSequence((k) => isNumber(k.value))
 const isPositive = (v: unknown) => isNumber(v) && v > 0
+const isNonNegative = (v: unknown) => isNumber(v) && v >= 0
 const isWholeNumber = (v: unknown) => isNumber(v) && Number.isInteger(v)
 // A whole text size, which Roblox keeps between 1 and 100.
 const isTextSize = (v: unknown) =>
@@ -191,6 +195,10 @@ export const MODIFIER_CHECKS: {
     VerticalAlignment: isOneOf(VERTICAL_ALIGNMENT),
     SortOrder: isOneOf(SORT_ORDER),
     Padding: isUDim,
+    HorizontalFlex: isOneOf(UI_FLEX_ALIGNMENT),
+    VerticalFlex: isOneOf(UI_FLEX_ALIGNMENT),
+    Wraps: isBoolean,
+    ItemLineAlignment: isOneOf(ITEM_LINE_ALIGNMENT),
   },
   UIGridLayout: {
     CellSize: isUDim2,
@@ -215,6 +223,12 @@ export const MODIFIER_CHECKS: {
     ScrollWheelInputEnabled: isBoolean,
     TouchInputEnabled: isBoolean,
     GamepadInputEnabled: isBoolean,
+  },
+  UIFlexItem: {
+    FlexMode: isOneOf(UI_FLEX_MODE),
+    GrowRatio: isNonNegative,
+    ShrinkRatio: isNonNegative,
+    ItemLineAlignment: isOneOf(ITEM_LINE_ALIGNMENT),
   },
 }
 

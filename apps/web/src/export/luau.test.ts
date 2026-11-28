@@ -87,6 +87,26 @@ describe('documentToLuau', () => {
     expect(luau).toContain('Image = "rbxassetid://123456",')
   })
 
+  it('names the enum, not the property, where they differ', () => {
+    const store = createDocumentStore()
+    const { addNode, addModifier, updateModifier } = store.getState()
+    const list = addNode(store.getState().document.rootId, 'Frame')
+    addModifier(list, 'UIListLayout')
+    updateModifier(list, 'UIListLayout', { HorizontalFlex: 'SpaceBetween' })
+    const child = addNode(list, 'Frame')
+    addModifier(child, 'UIFlexItem')
+    updateModifier(child, 'UIFlexItem', { FlexMode: 'Grow' })
+    const luau = documentToLuau(store.getState().document)
+
+    expect(luau).toContain(
+      'HorizontalFlex = Enum.UIFlexAlignment.SpaceBetween,',
+    )
+    expect(luau).toContain('FlexMode = Enum.UIFlexMode.Grow,')
+    expect(luau).toContain(
+      'ItemLineAlignment = Enum.ItemLineAlignment.Automatic,',
+    )
+  })
+
   it('writes font weights by name', () => {
     const store = createDocumentStore()
     store.getState().addNode(store.getState().document.rootId, 'TextLabel', {

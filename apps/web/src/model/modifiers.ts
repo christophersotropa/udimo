@@ -8,7 +8,7 @@ const NO_SPACE = { s: 0, o: 0 }
 
 // What a modifier starts with when you insert it in Studio, checked against
 // the files in docs/reference/ (corner-stroke, gradient-padding-aspect,
-// list-grid-layouts, sizing and ui-page-layout).
+// list-grid-layouts, sizing, ui-page-layout and flex-layouts).
 export const MODIFIER_DEFAULTS: {
   [K in ModifierClass]: Required<ModifierProps[K]>
 } = {
@@ -49,6 +49,10 @@ export const MODIFIER_DEFAULTS: {
     VerticalAlignment: 'Top',
     SortOrder: 'LayoutOrder',
     Padding: NO_SPACE,
+    HorizontalFlex: 'None',
+    VerticalFlex: 'None',
+    Wraps: false,
+    ItemLineAlignment: 'Automatic',
   },
   UIGridLayout: {
     CellSize: { xs: 0, xo: 100, ys: 0, yo: 100 },
@@ -73,6 +77,12 @@ export const MODIFIER_DEFAULTS: {
     ScrollWheelInputEnabled: true,
     TouchInputEnabled: true,
     GamepadInputEnabled: true,
+  },
+  UIFlexItem: {
+    FlexMode: 'None',
+    GrowRatio: 0,
+    ShrinkRatio: 0,
+    ItemLineAlignment: 'Automatic',
   },
 }
 
@@ -141,8 +151,8 @@ const SUMMARIES: {
   },
   UITextSizeConstraint: ({ MinTextSize, MaxTextSize }) =>
     `text ${MinTextSize}–${MaxTextSize}`,
-  UIListLayout: ({ FillDirection, Padding }) =>
-    `${FillDirection}, ${udimText(Padding)} gap`,
+  UIListLayout: ({ FillDirection, Padding, Wraps }) =>
+    `${FillDirection}, ${udimText(Padding)} gap${Wraps ? ', wraps' : ''}`,
   UIGridLayout: ({ CellSize }) => {
     const size = (s: number, o: number) =>
       s === 0 ? `${o}` : udimText({ s, o })
@@ -150,6 +160,12 @@ const SUMMARIES: {
   },
   UIPageLayout: ({ FillDirection, Animated, TweenTime }) =>
     `${FillDirection} pages${Animated ? `, ${TweenTime} s` : ''}`,
+  UIFlexItem: ({ FlexMode, GrowRatio, ShrinkRatio }) =>
+    FlexMode === 'Custom'
+      ? `grow ${GrowRatio}, shrink ${ShrinkRatio}`
+      : FlexMode === 'None'
+        ? 'as the list says'
+        : FlexMode,
 }
 
 // A short description of a modifier's settings, for its card in the

@@ -224,6 +224,24 @@ describe('exportWarnings', () => {
     })
   })
 
+  describe('flex items', () => {
+    it('notes a UIFlexItem whose parent has no UIListLayout', () => {
+      const { store, id, warnings } = setup()
+      store.getState().addModifier(id, 'UIFlexItem')
+      expect(messages(warnings())).toEqual([
+        'Its UIFlexItem does nothing: only a parent with a UIListLayout uses it',
+      ])
+    })
+
+    it('says nothing when the parent has a UIListLayout', () => {
+      const { store, id, warnings } = setup()
+      store.getState().addModifier(id, 'UIListLayout')
+      const child = store.getState().addNode(id, 'Frame')
+      store.getState().addModifier(child, 'UIFlexItem')
+      expect(warnings()).toEqual([])
+    })
+  })
+
   describe("Roblox's top bar", () => {
     it('notes top-level elements in the top strip', () => {
       const [note] = setup('Frame', {
